@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>คู่มือการใช้งาน — วิสัญญีพยาบาล รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family:'Sarabun', system-ui, sans-serif; background:#f5f3ff; }
+  .grad { background: linear-gradient(135deg, #6d28d9 0%, #9333ea 55%, #c026d3 100%); }
+  .card { background:#fff; border-radius:16px; box-shadow:0 1px 4px rgba(0,0,0,.07); }
+  .step-num { width:32px; height:32px; border-radius:999px; background:linear-gradient(135deg,#9333ea,#7c3aed);
+    color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; }
+  .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:999px;
+    font-size:12px; font-weight:600; }
+  .tag-purple { background:#f3e8ff; color:#7c3aed; }
+  .tag-green  { background:#dcfce7; color:#15803d; }
+  .tag-amber  { background:#fef3c7; color:#b45309; }
+  .tag-blue   { background:#dbeafe; color:#1d4ed8; }
+  .feature-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center;
+    justify-content:center; font-size:1.6rem; flex-shrink:0; }
+  .toc-link { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px;
+    text-decoration:none; color:#374151; transition:all .15s; }
+  .toc-link:hover { background:#f3e8ff; color:#7c3aed; }
+  .screen-mock { background:#1e1b4b; border-radius:12px; padding:10px; }
+  .screen-bar  { background:linear-gradient(135deg,#6d28d9,#9333ea); border-radius:8px; padding:8px 12px;
+    color:#fff; font-size:12px; font-weight:600; margin-bottom:8px; }
+  .screen-item { background:rgba(255,255,255,.08); border-radius:8px; padding:8px 12px; color:#e9d5ff;
+    font-size:12px; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  details summary { cursor:pointer; list-style:none; }
+  details summary::-webkit-details-marker { display:none; }
+  details[open] summary .arrow { transform:rotate(90deg); }
+  .arrow { transition:transform .2s; display:inline-block; }
+  @media print {
+    .no-print { display:none !important; }
+    body { background:#fff; }
+    .card { box-shadow:none; border:1px solid #e5e7eb; }
+  }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- HERO -->
+<div class="grad text-white">
+  <div class="max-w-3xl mx-auto px-4 py-10 sm:py-14">
+    <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-3">User Guide · คู่มือการใช้งาน</div>
+    <h1 class="text-3xl sm:text-4xl font-bold leading-tight mb-3">
+      ระบบบริหารจัดการ<br>หน่วยงานวิสัญญีพยาบาล
+    </h1>
+    <p class="text-white/75 text-base mb-6">โรงพยาบาลสกลนคร · เวอร์ชัน 2 · Real-time Supabase</p>
+    <div class="flex gap-3 flex-wrap">
+      <a href="index.html" class="flex items-center gap-2 bg-white text-purple-700 font-semibold px-5 py-2.5 rounded-xl text-sm shadow hover:bg-purple-50 transition">
+        🏠 เปิดระบบ
+      </a>
+      <button onclick="window.print()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white px-5 py-2.5 rounded-xl text-sm border border-white/25 transition no-print">
+        🖨️ พิมพ์คู่มือ
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="max-w-3xl mx-auto px-4 py-8 space-y-8">
+
+  <!-- สารบัญ -->
+  <div class="card p-5">
+    <div class="font-bold text-lg text-purple-700 mb-4 flex items-center gap-2">📑 สารบัญ</div>
+    <div class="grid sm:grid-cols-2 gap-1">
+      <a href="#overview" class="toc-link"><span class="text-xl">🏠</span><span>ภาพรวมระบบ</span></a>
+      <a href="#dashboard" class="toc-link"><span class="text-xl">📊</span><span>หน้า Dashboard หลัก</span></a>
+      <a href="#staff-page" class="toc-link"><span class="text-xl">👥</span><span>หน้าบุคลากร</span></a>
+      <a href="#service-log" class="toc-link"><span class="text-xl">📋</span><span>ลงยอดบริการ</span></a>
+      <a href="#inspection" class="toc-link"><span class="text-xl">🔧</span><span>ตรวจเครื่องมือ</span></a>
+      <a href="#login" class="toc-link"><span class="text-xl">🔐</span><span>เข้าสู่ระบบ / สมัครสมาชิก</span></a>
+      <a href="#roles" class="toc-link"><span class="text-xl">🎭</span><span>สิทธิ์ผู้ใช้งาน</span></a>
+      <a href="#faq" class="toc-link"><span class="text-xl">❓</span><span>คำถามที่พบบ่อย</span></a>
+    </div>
+  </div>
+
+  <!-- ภาพรวม -->
+  <div id="overview" class="card p-6">
+    <div class="font-bold text-xl text-slate-800 mb-4 flex items-center gap-2">🏠 ภาพรวมระบบ</div>
+    <p class="text-slate-600 leading-relaxed mb-5">
+      ระบบบริหารจัดการหน่วยงานวิสัญญีพยาบาลเป็นเว็บแอปพลิเคชันที่ทุกเครื่องแชร์ข้อมูลกัน<br>
+      แบบ <b>Real-time</b> ผ่าน Supabase — ไม่ต้องติดตั้งแอป ใช้ได้ทั้งมือถือ แท็บเล็ต และคอมพิวเตอร์
+    </p>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100">
+        <div class="feature-icon bg-purple-100">📱</div>
+        <div>
+          <div class="font-semibold text-purple-800">ใช้ได้ทุกอุปกรณ์</div>
+          <div class="text-xs text-purple-600 mt-0.5">มือถือ · แท็บเล็ต · คอมพิวเตอร์</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+        <div class="feature-icon bg-emerald-100">🔄</div>
+        <div>
+          <div class="font-semibold text-emerald-800">Real-time Sync</div>
+          <div class="text-xs text-emerald-600 mt-0.5">ข้อมูลอัปเดตพร้อมกันทุกเครื่อง</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-blue-50 border border-blue-100">
+        <div class="feature-icon bg-blue-100">🔐</div>
+        <div>
+          <div class="font-semibold text-blue-800">ระบบสิทธิ์</div>
+          <div class="text-xs text-blue-600 mt-0.5">Admin แก้ไขได้ · ทั่วไปดูได้อย่างเดียว</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
+        <div class="feature-icon bg-amber-100">📥</div>
+        <div>
+          <div class="font-semibold text-amber-800">Export ข้อมูลได้</div>
+          <div class="text-xs text-amber-600 mt-0.5">Excel · PDF · รายงานสรุป</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- หน้าในระบบ -->
+    <div class="mt-5 font-semibold text-slate-700 mb-3">หน้าทั้งหมดในระบบ</div>
+    <div class="space-y-2">
+      <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:border-purple-200 transition">
+        <span class="text-lg">🏠</span>
+        <div class="flex-1">
+          <span class="font-medium">index.html</span>
+          <span class="text-slate-500 text-sm"> — Dashboard หลัก · KPI · ยอดบริการ · เครื่องมือ</span>
+        </div>
+        <span class="tag tag-purple">หน้าหลัก</span>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:border-purple-200 transition">
+        <span class="text-lg">👥</span>
+        <div class="flex-1">
+          <span class="font-medium">staff.html</span>
+          <span class="text-slate-500 text-sm"> — ประกาศ · รายชื่อ · KPI · เอกสาร · ตารางเวร</span>
+        </div>
+        <span class="tag tag-purple">บุคลากร</span>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:border-purple-200 transition">
+        <span class="text-lg">📋</span>
+        <div class="flex-1">
+          <span class="font-medium">service-log.html</span>
+          <span class="text-slate-500 text-sm"> — ลงยอดบริการรายวัน · Pre/Post-op</span>
+        </div>
+        <span class="tag tag-green">ลงข้อมูล</span>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:border-purple-200 transition">
+        <span class="text-lg">🔧</span>
+        <div class="flex-1">
+          <span class="font-medium">inspection.html</span>
+          <span class="text-slate-500 text-sm"> — ตรวจเครื่อง Machine &amp; Monitor รายวัน</span>
+        </div>
+        <span class="tag tag-green">ลงข้อมูล</span>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:border-purple-200 transition">
+        <span class="text-lg">✨</span>
+        <div class="flex-1">
+          <span class="font-medium">signup.html</span>
+          <span class="text-slate-500 text-sm"> — สมัครบัญชีผู้ใช้งาน</span>
+        </div>
+        <span class="tag tag-blue">ลงทะเบียน</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard หลัก -->
+  <div id="dashboard" class="card p-6">
+    <div class="font-bold text-xl text-slate-800 mb-1 flex items-center gap-2">📊 หน้า Dashboard หลัก</div>
+    <div class="text-sm text-slate-500 mb-5">เปิดจาก <code class="bg-slate-100 px-1.5 py-0.5 rounded text-purple-700">index.html</code></div>
+
+    <div class="space-y-4">
+      <!-- Nav -->
+      <details class="border border-purple-100 rounded-xl overflow-hidden" open>
+        <summary class="flex items-center justify-between px-4 py-3 bg-purple-50 font-semibold text-purple-800">
+          <span>🗂️ การนำทาง (Nav Bar)</span>
+          <span class="arrow text-purple-400">▶</span>
+        </summary>
+        <div class="p-4 space-y-3 text-sm text-slate-700">
+          <p>Nav Bar อยู่ด้านบนสุด มี <b>2 แท็บหลัก</b> ที่มองเห็นตลอด และ <b>ปุ่มสามขีด ☰</b> ด้านขวาสำหรับหมวดอื่น</p>
+          <div class="screen-mock">
+            <div class="screen-bar">[ ℹ️ เกี่ยวกับหน่วยงาน ]  [ 📈 ผลลัพธ์การทำงาน ]  · · ·  [ ☰ ]</div>
+            <div class="screen-item">📋 ยอดบริการรายวัน</div>
+            <div class="screen-item">📋 Pre/Post op</div>
+            <div class="screen-item">🔧 สรุปตรวจเครื่อง</div>
+            <div class="screen-item">📦 ทะเบียนเครื่องมือ</div>
+            <div class="screen-item">📊 KPI 15 ตัว</div>
+            <div class="screen-item">📑 รายงาน &amp; Export</div>
+            <div class="screen-item">📣 ประกาศ</div>
+          </div>
+          <div class="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-100 text-amber-800">
+            <span>💡</span>
+            <span>กดปุ่ม <b>☰</b> มุมขวา เพื่อเปิดเมนูแบบ Dropdown เลือกหมวดอื่นๆ ได้</span>
+          </div>
+        </div>
+      </details>
+
+      <!-- แท็บต่างๆ -->
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-semibold text-slate-700">
+          <span>ℹ️ เกี่ยวกับหน่วยงาน</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600 space-y-2">
+          <p>แสดงข้อมูลพื้นฐานของหน่วยงาน ได้แก่:</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>วิสัยทัศน์และพันธกิจ</li>
+            <li>บทบาทหน้าที่ (ด้านบริหาร / บริการ / วิชาการ)</li>
+            <li>สถิติบุคลากรแบ่งตามตำแหน่ง (ดึงจาก Supabase แบบ real-time)</li>
+            <li>ที่ตั้งและเบอร์โทรภายใน</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-semibold text-slate-700">
+          <span>📈 ผลลัพธ์การทำงาน</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600 space-y-2">
+          <p>แสดงผลลัพธ์ปีงบประมาณ เลือกปีได้จาก dropdown:</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>จำนวนผู้ป่วยทั้งปี · ความพึงพอใจ</li>
+            <li>กราฟ ASA Classification</li>
+            <li>ตาราง Choice of Anesthesia</li>
+            <li>บริการ CVT · โรคร่วม · สาเหตุการเสียชีวิต</li>
+          </ul>
+          <div class="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100 text-blue-800">
+            <span>🔐</span><span>ต้อง Login เพื่อ <b>เพิ่ม/แก้ไขข้อมูล</b></span>
+          </div>
+        </div>
+      </details>
+
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-semibold text-slate-700">
+          <span>📊 KPI 15 ตัว</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600 space-y-2">
+          <p>แสดงสถานะ KPI ทั้ง 15 ตัว พร้อม:</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Gauge ความพึงพอใจ (KPI-15) พร้อม trend 5 ปี</li>
+            <li>Card แต่ละ KPI — สีเขียว = ผ่านเป้า / สีแดง = ไม่ผ่าน</li>
+            <li>คลิกที่ KPI เพื่อดูรายละเอียดและ trend กราฟ</li>
+          </ul>
+          <div class="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100 text-blue-800">
+            <span>🔐</span><span>ต้อง Login เพื่อเห็น summary box และปุ่มลงข้อมูล KPI</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-semibold text-slate-700">
+          <span>📑 รายงาน &amp; Export</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600">
+          <p class="mb-2">Export ข้อมูลออกไฟล์ได้หลายรูปแบบ:</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-green-50 text-green-800 text-xs"><span>📊</span> KPI ย้อนหลัง 5 ปี (Excel)</div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-green-50 text-green-800 text-xs"><span>📈</span> ยอดบริการเปรียบเทียบ (Excel)</div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-green-50 text-green-800 text-xs"><span>🔧</span> ตรวจสอบเครื่องมือ (Excel)</div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-rose-50 text-rose-800 text-xs"><span>📅</span> ตารางเวรรายเดือน (PDF)</div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-rose-50 text-rose-800 text-xs"><span>👥</span> รายงานบุคลากร (PDF)</div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-rose-50 text-rose-800 text-xs"><span>🖨️</span> Dashboard สรุปประจำเดือน (PDF)</div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- หน้าบุคลากร -->
+  <div id="staff-page" class="card p-6">
+    <div class="font-bold text-xl text-slate-800 mb-1 flex items-center gap-2">👥 หน้าบุคลากร</div>
+    <div class="text-sm text-slate-500 mb-5">เปิดจาก <code class="bg-slate-100 px-1.5 py-0.5 rounded text-purple-700">staff.html</code> หรือกด "👥 บุคลากร" ในหน้าหลัก</div>
+
+    <div class="flex items-start gap-2 p-3 mb-4 bg-purple-50 rounded-xl border border-purple-100 text-purple-800 text-sm">
+      <span class="text-lg">📣</span>
+      <span>หน้านี้เปิดมาที่ <b>ประกาศ</b> โดยอัตโนมัติ กด <b>☰ เมนู</b> มุมขวาเพื่อเลือกหมวดอื่น</span>
+    </div>
+
+    <div class="screen-mock mb-5">
+      <div class="screen-bar">[ 📣 ประกาศ ]  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  · [ ☰ เมนู ]</div>
+      <div class="grid grid-cols-2 gap-1">
+        <div class="screen-item">📣 ประกาศ</div>
+        <div class="screen-item">📝 ลงข้อมูล KPI</div>
+        <div class="screen-item">🔧 เครื่องมือ</div>
+        <div class="screen-item">📅 ตารางเวร</div>
+        <div class="screen-item">📚 ประชุมวิชาการ</div>
+        <div class="screen-item">🎯 กิจกรรม</div>
+        <div class="screen-item">↪ Refer</div>
+        <div class="screen-item">📄 เอกสารวิชาการ</div>
+        <div class="screen-item">📊 สถิติบริการ</div>
+        <div class="screen-item">📒 รายชื่อทั้งหมด</div>
+        <div class="screen-item col-span-2">👤 บัญชี Login</div>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <details class="border border-slate-100 rounded-xl overflow-hidden" open>
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-semibold text-slate-700">
+          <span>📒 รายชื่อบุคลากรทั้งหมด</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600 space-y-3">
+          <div class="space-y-2">
+            <div class="flex items-start gap-3">
+              <div class="step-num">1</div>
+              <div>กด <b>☰ เมนู</b> ด้านขวาบน → เลือก <b>📒 รายชื่อทั้งหมด</b></div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="step-num">2</div>
+              <div>กด <b>pill ตำแหน่ง</b> ด้านบนเพื่อกรองกลุ่มที่ต้องการ เช่น "⚕️ พยาบาลวิสัญญี"</div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="step-num">3</div>
+              <div>พิมพ์ <b>ค้นหา</b> ชื่อหรือชื่อเล่นในช่อง search บน hero card</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100 text-blue-800">
+            <span>🔐</span><span>ต้อง Login เพื่อเพิ่ม / แก้ไข / ลบรายชื่อ</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-semibold text-slate-700">
+          <span>📣 ประกาศ (หน้าแรก)</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600 space-y-2">
+          <p>แสดงประกาศสำคัญของหน่วยงาน ประกาศด่วนจะขึ้น <b>แบนเนอร์สีแดง</b> บนสุดของหน้าหลักโดยอัตโนมัติ</p>
+          <div class="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100 text-blue-800">
+            <span>🔐</span><span>ต้อง Login เพื่อเพิ่ม / แก้ไข / ลบประกาศ</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-semibold text-slate-700">
+          <span>📝 ลงข้อมูล KPI</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600 space-y-2">
+          <p>กรอกค่า KPI รายเดือน (ต.ค. – ก.ย.) ระบบจะคำนวณค่าเฉลี่ยปีงบฯ อัตโนมัติ</p>
+          <div class="flex items-start gap-3">
+            <div class="step-num">1</div><div>เลือก KPI จาก dropdown</div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="step-num">2</div><div>กรอกค่าแต่ละเดือน → กด <b>💾 บันทึก</b></div>
+          </div>
+          <div class="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100 text-blue-800">
+            <span>🔐</span><span>ต้อง Login ก่อนใช้งาน</span>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ลงยอดบริการ -->
+  <div id="service-log" class="card p-6">
+    <div class="font-bold text-xl text-slate-800 mb-1 flex items-center gap-2">📋 ลงยอดบริการรายวัน</div>
+    <div class="text-sm text-slate-500 mb-5">เปิดจาก <code class="bg-slate-100 px-1.5 py-0.5 rounded text-purple-700">service-log.html</code></div>
+
+    <div class="space-y-3">
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+        <div class="step-num">1</div>
+        <div>
+          <div class="font-medium">เลือกประเภทการบันทึก</div>
+          <div class="text-xs text-slate-500 mt-0.5">ยอดบริการ (ในเวลา/นอกเวลา) หรือ Pre-op / Post-op Visit</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+        <div class="step-num">2</div>
+        <div>
+          <div class="font-medium">กรอกข้อมูลให้ครบ</div>
+          <div class="text-xs text-slate-500 mt-0.5">วันที่ · จุดบริการ · เวร · จำนวนผู้ป่วย (GA/RA/MAC) · รูปภาพ (ถ้ามี)</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+        <div class="step-num">3</div>
+        <div>
+          <div class="font-medium">กด บันทึก</div>
+          <div class="text-xs text-slate-500 mt-0.5">ข้อมูลจะแสดงใน Dashboard หน้าหลัก → ยอดบริการรายวัน ทันที</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-sm flex items-start gap-2">
+      <span>⚠️</span>
+      <span>ต้อง <b>Login</b> ก่อนบันทึกข้อมูล — ดูวิธีสมัครได้ที่หัวข้อ "เข้าสู่ระบบ"</span>
+    </div>
+  </div>
+
+  <!-- ตรวจเครื่องมือ -->
+  <div id="inspection" class="card p-6">
+    <div class="font-bold text-xl text-slate-800 mb-1 flex items-center gap-2">🔧 ตรวจเครื่องมือ</div>
+    <div class="text-sm text-slate-500 mb-5">เปิดจาก <code class="bg-slate-100 px-1.5 py-0.5 rounded text-purple-700">inspection.html</code></div>
+
+    <p class="text-slate-600 text-sm mb-4 leading-relaxed">
+      บันทึกผลการตรวจ Machine (เครื่องดมยาสลบ) และ Monitor ประจำห้องผ่าตัด
+      ระบบจะสรุปผลและแสดงห้องที่พบปัญหาให้เด่นชัดบน Dashboard
+    </p>
+
+    <div class="space-y-3 mb-4">
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+        <div class="step-num">1</div>
+        <div>
+          <div class="font-medium">เลือกห้องผ่าตัด</div>
+          <div class="text-xs text-slate-500 mt-0.5">OR1–OR12 · OR41–OR45 · OR CVT · ESWL · Cath Lab</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+        <div class="step-num">2</div>
+        <div>
+          <div class="font-medium">ทำเครื่องหมาย ✓ รายการที่ผ่าน</div>
+          <div class="text-xs text-slate-500 mt-0.5">และบันทึกหมายเหตุหากพบปัญหา</div>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+        <div class="step-num">3</div>
+        <div>
+          <div class="font-medium">กด บันทึก</div>
+          <div class="text-xs text-slate-500 mt-0.5">สรุปจะแสดงใน Dashboard → สรุปตรวจเครื่อง ทันที</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login -->
+  <div id="login" class="card p-6">
+    <div class="font-bold text-xl text-slate-800 mb-1 flex items-center gap-2">🔐 เข้าสู่ระบบ / สมัครสมาชิก</div>
+    <div class="text-sm text-slate-500 mb-5">เปิดจาก <code class="bg-slate-100 px-1.5 py-0.5 rounded text-purple-700">signup.html</code></div>
+
+    <div class="grid sm:grid-cols-2 gap-4 mb-4">
+      <div class="p-4 rounded-xl border-2 border-purple-200 bg-purple-50">
+        <div class="font-bold text-purple-800 mb-3 flex items-center gap-2">✨ สมัครสมาชิกใหม่</div>
+        <div class="space-y-2 text-sm text-purple-700">
+          <div class="flex items-start gap-2"><div class="step-num" style="width:20px;height:20px;font-size:11px;flex-shrink:0">1</div><div>ไปที่ <b>signup.html</b></div></div>
+          <div class="flex items-start gap-2"><div class="step-num" style="width:20px;height:20px;font-size:11px;flex-shrink:0">2</div><div>กรอก Email + ชื่อ + รหัสผ่าน</div></div>
+          <div class="flex items-start gap-2"><div class="step-num" style="width:20px;height:20px;font-size:11px;flex-shrink:0">3</div><div>กด <b>สมัครสมาชิก</b></div></div>
+          <div class="flex items-start gap-2"><div class="step-num" style="width:20px;height:20px;font-size:11px;flex-shrink:0">4</div><div>รอ Admin อนุมัติสิทธิ์ (ถ้ามีการตั้งค่า)</div></div>
+        </div>
+      </div>
+      <div class="p-4 rounded-xl border-2 border-slate-200 bg-slate-50">
+        <div class="font-bold text-slate-800 mb-3 flex items-center gap-2">🔑 เข้าสู่ระบบ</div>
+        <div class="space-y-2 text-sm text-slate-600">
+          <div class="flex items-start gap-2"><div class="step-num" style="width:20px;height:20px;font-size:11px;flex-shrink:0">1</div><div>ไปที่ <b>staff.html</b></div></div>
+          <div class="flex items-start gap-2"><div class="step-num" style="width:20px;height:20px;font-size:11px;flex-shrink:0">2</div><div>กดเมนู <b>☰ → บัญชี Login</b></div></div>
+          <div class="flex items-start gap-2"><div class="step-num" style="width:20px;height:20px;font-size:11px;flex-shrink:0">3</div><div>กรอก Email + รหัสผ่าน → <b>เข้าสู่ระบบ</b></div></div>
+          <div class="flex items-start gap-2"><div class="step-num" style="width:20px;height:20px;font-size:11px;flex-shrink:0">4</div><div>ปุ่ม "ออกจากระบบ" จะปรากฏที่ header</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- สิทธิ์ -->
+  <div id="roles" class="card p-6">
+    <div class="font-bold text-xl text-slate-800 mb-4 flex items-center gap-2">🎭 สิทธิ์ผู้ใช้งาน</div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-purple-50 text-purple-800">
+            <th class="text-left px-4 py-2.5 rounded-tl-lg">ฟีเจอร์</th>
+            <th class="px-4 py-2.5 text-center">ไม่ได้ Login</th>
+            <th class="px-4 py-2.5 text-center rounded-tr-lg">Login แล้ว</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr><td class="px-4 py-2.5">ดู Dashboard / KPI / ผลลัพธ์</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td></tr>
+          <tr class="bg-slate-50"><td class="px-4 py-2.5">ดูรายชื่อบุคลากร</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td></tr>
+          <tr><td class="px-4 py-2.5">ดูประกาศ / เอกสาร / กิจกรรม</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td></tr>
+          <tr class="bg-slate-50"><td class="px-4 py-2.5">ลงยอดบริการ / ตรวจเครื่อง</td><td class="px-4 py-2.5 text-center text-slate-400">—</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td></tr>
+          <tr><td class="px-4 py-2.5">เพิ่ม/แก้ไขประกาศ</td><td class="px-4 py-2.5 text-center text-slate-400">—</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td></tr>
+          <tr class="bg-slate-50"><td class="px-4 py-2.5">ลงข้อมูล KPI / ผลลัพธ์การทำงาน</td><td class="px-4 py-2.5 text-center text-slate-400">—</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td></tr>
+          <tr><td class="px-4 py-2.5">เพิ่ม/ลบรายชื่อบุคลากร</td><td class="px-4 py-2.5 text-center text-slate-400">—</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td></tr>
+          <tr class="bg-slate-50"><td class="px-4 py-2.5">จัดการเครื่องมือ / ทะเบียน</td><td class="px-4 py-2.5 text-center text-slate-400">—</td><td class="px-4 py-2.5 text-center text-emerald-600">✅</td></tr>
+          <tr><td class="px-4 py-2.5 rounded-bl-lg">Export Excel / PDF</td><td class="px-4 py-2.5 text-center text-slate-400">—</td><td class="px-4 py-2.5 text-center text-emerald-600 rounded-br-lg">✅</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div id="faq" class="card p-6">
+    <div class="font-bold text-xl text-slate-800 mb-4 flex items-center gap-2">❓ คำถามที่พบบ่อย</div>
+    <div class="space-y-3">
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-medium text-slate-700 cursor-pointer">
+          <span>ข้อมูลไม่ขึ้น / โหลดช้า</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600 space-y-1">
+          <p>• ตรวจสอบการเชื่อมต่อ Internet — ระบบต้องออนไลน์ตลอด</p>
+          <p>• Refresh หน้าเว็บ (กด F5 หรือ ⌘R)</p>
+          <p>• หากขึ้น "โหลดข้อมูลล้มเหลว" ให้แจ้งผู้ดูแลระบบ</p>
+        </div>
+      </details>
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-medium text-slate-700 cursor-pointer">
+          <span>ลืมรหัสผ่าน</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600">
+          <p>ติดต่อผู้ดูแลระบบ (Admin) เพื่อรีเซ็ตรหัสผ่านผ่าน Supabase Dashboard</p>
+        </div>
+      </details>
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-medium text-slate-700 cursor-pointer">
+          <span>ข้อมูลที่บันทึกไปหายไป</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600">
+          <p>• ตรวจสอบว่ากด <b>บันทึก</b> จนขึ้นข้อความ "บันทึกแล้ว ✓" แล้ว</p>
+          <p>• ลองเลือก filter หรือช่วงเวลาอื่น — อาจกรองไว้อยู่</p>
+          <p>• หากหายจริง ให้แจ้งผู้ดูแลระบบตรวจสอบ Supabase</p>
+        </div>
+      </details>
+      <details class="border border-slate-100 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between px-4 py-3 bg-slate-50 font-medium text-slate-700 cursor-pointer">
+          <span>บน iPhone ใช้ได้ไหม</span>
+          <span class="arrow text-slate-400">▶</span>
+        </summary>
+        <div class="p-4 text-sm text-slate-600">
+          <p>ใช้ได้ทุกอุปกรณ์ รองรับ iOS Safari, Android Chrome และเบราว์เซอร์อื่นๆ</p>
+          <p class="mt-1">แนะนำให้ <b>Add to Home Screen</b> เพื่อเปิดเหมือนแอปได้เลย</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <div class="text-center py-4 text-xs text-slate-400">
+    คู่มือนี้จัดทำสำหรับบุคลากร หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · ระบบ V2
+  </div>
+
+</div><!-- end max-w-3xl -->
+
+</body>
+</html>

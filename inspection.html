@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1, user-scalable=no" />
+<title>ตรวจเครื่องประจำวัน — Machine & Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family:'Sarabun', system-ui, sans-serif; background:#0f172a; color:#f1f5f9; }
+  .grad-hero { background: linear-gradient(135deg, #0ea5e9, #2563eb 60%, #7c3aed); }
+  .card { background:#1e293b; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.25); border:1px solid #334155; }
+  .input { width:100%; padding:12px 14px; border:1px solid #334155; border-radius:10px;
+    font-size:16px; background:#0f172a; color:#f1f5f9; }
+  .input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.25); }
+  .btn { padding:14px 18px; border-radius:12px; font-weight:600; font-size:16px; cursor:pointer; transition:all .15s; width:100%; }
+  .btn-primary { background:#2563eb; color:#fff; } .btn-primary:active { background:#1d4ed8; transform: scale(0.98); }
+  .btn-ghost { background:#334155; color:#f1f5f9; }
+  .check-row { display:flex; align-items:center; gap:8px; padding:12px 14px;
+    background:#0f172a; border:1px solid #334155; border-radius:12px;
+    font-size:14px; transition:all .12s; }
+  .check-row .name { flex:1; min-width:0; }
+  .pill-group { display:flex; gap:4px; }
+  .pill { padding:6px 12px; border-radius:999px; font-size:12px; font-weight:600;
+    background:#334155; color:#cbd5e1; border:1px solid #475569; cursor:pointer;
+    user-select:none; transition:all .12s; }
+  .pill[data-active="yes"] { background:#10b981; color:#fff; border-color:#10b981; }
+  .pill[data-active="no"]  { background:#ef4444; color:#fff; border-color:#ef4444; }
+  .check-row.has-issue { border-color:#ef4444; background:#7f1d1d; }
+  .check-row.is-ok { border-color:#10b981; background:#064e3b; }
+  body.fs-mode header { display:none !important; }
+  .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:50;
+    background:#2563eb; color:#fff; padding:10px 14px; border-radius:999px;
+    box-shadow:0 6px 16px rgba(0,0,0,.18); font-size:13px; }
+  body.fs-mode .show-menu-btn { display:inline-flex; gap:6px; align-items:center; }
+  .tab-pill { flex:1; padding:10px; border-radius:10px; font-weight:600; text-align:center;
+    background:#334155; color:#cbd5e1; cursor:pointer; transition:all .12s; }
+  .tab-pill.active { background:#2563eb; color:#fff; }
+  @media (min-width: 768px) { main { max-width: 800px; margin: 0 auto; } }
+</style>
+</head>
+<body>
+
+<button class="show-menu-btn" onclick="toggleFullscreen(false)">▼ แสดงเมนู</button>
+
+<header class="grad-hero text-white px-4 py-4 sticky top-0 z-30 shadow-lg">
+  <div class="flex items-center justify-between gap-2">
+    <div>
+      <div class="font-bold text-lg">🔧 ตรวจ Machine & Monitor</div>
+      <div class="text-white/80 text-xs" id="user-info">กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="flex gap-1">
+      <a href="index.html" class="bg-white/15 text-white text-xs px-3 py-1.5 rounded-lg">🏠</a>
+      <button onclick="toggleFullscreen(true)" class="bg-white/15 text-white text-xs px-3 py-1.5 rounded-lg">⛶</button>
+      <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 text-white text-xs px-3 py-1.5 rounded-lg">ออก</button>
+    </div>
+  </div>
+</header>
+
+<div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/80 z-40 items-center justify-center p-4">
+  <div class="card p-6 max-w-sm w-full">
+    <div class="text-xl font-bold mb-1">เข้าสู่ระบบ</div>
+    <div class="text-sm text-slate-400 mb-4">เพื่อบันทึกการตรวจสอบ</div>
+    <div class="space-y-3 mb-3">
+      <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
+      <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+    </div>
+    <div id="loginError" class="text-xs text-rose-400 mb-2 hidden"></div>
+    <button onclick="signIn()" class="btn btn-primary mb-2">เข้าสู่ระบบ</button>
+    <a href="index.html" class="block text-center text-xs text-blue-400">กลับหน้าหลัก</a>
+  </div>
+</div>
+
+<main class="px-4 py-4 pb-32 space-y-4">
+
+  <div class="card p-4 space-y-3">
+    <div>
+      <label class="text-xs text-slate-400 block mb-1">วันที่ตรวจสอบ</label>
+      <input id="inspDate" type="date" class="input">
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">ห้องผ่าตัด / จุดบริการ</label>
+        <select id="inspRoom" class="input"></select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">วิสัญญีประจำห้อง (พิมพ์ค้นหาได้)</label>
+        <input id="inspNurse" list="nurses-options" class="input" placeholder="พิมพ์ชื่อ..." autocomplete="off">
+        <datalist id="nurses-options"></datalist>
+      </div>
+    </div>
+    <div>
+      <label class="text-xs text-slate-400 block mb-2">ตรวจสอบรายการ</label>
+      <div class="flex gap-2">
+        <button class="tab-pill active" data-section="machine" onclick="switchSection('machine')">Machine (17 ข้อ)</button>
+        <button class="tab-pill" data-section="monitor" onclick="switchSection('monitor')">Monitor (8 ข้อ)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Machine checklist -->
+  <div class="card p-4 space-y-2" id="machineSection">
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-semibold text-emerald-300">Machine — Anesthesia</div>
+      <div class="flex gap-1">
+        <button class="text-xs px-2 py-1 bg-emerald-700 rounded" onclick="bulkSet('machine','yes')">ทั้งหมด ✓</button>
+        <button class="text-xs px-2 py-1 bg-rose-700 rounded" onclick="bulkSet('machine','no')">ทั้งหมด ✗</button>
+        <button class="text-xs px-2 py-1 bg-slate-600 rounded" onclick="bulkSet('machine','')">รีเซ็ต</button>
+      </div>
+    </div>
+    <div id="machineList"></div>
+    <div class="mt-3">
+      <label class="text-xs text-slate-400 block mb-1">หมายเหตุ Machine (อุปกรณ์ใดชำรุดหรือหาย)</label>
+      <textarea id="machineNotes" class="input" rows="2"></textarea>
+    </div>
+  </div>
+
+  <!-- Monitor checklist -->
+  <div class="card p-4 space-y-2 hidden" id="monitorSection">
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-semibold text-blue-300">Monitor</div>
+      <div class="flex gap-1">
+        <button class="text-xs px-2 py-1 bg-emerald-700 rounded" onclick="bulkSet('monitor','yes')">มีทั้งหมด</button>
+        <button class="text-xs px-2 py-1 bg-rose-700 rounded" onclick="bulkSet('monitor','no')">ไม่มีทั้งหมด</button>
+        <button class="text-xs px-2 py-1 bg-slate-600 rounded" onclick="bulkSet('monitor','')">รีเซ็ต</button>
+      </div>
+    </div>
+    <div id="monitorList"></div>
+    <div class="mt-3">
+      <label class="text-xs text-slate-400 block mb-1">หมายเหตุ Monitor (อุปกรณ์ใดชำรุดหรือหาย)</label>
+      <textarea id="monitorNotes" class="input" rows="2"></textarea>
+    </div>
+  </div>
+
+  <div class="card p-4">
+    <div class="font-semibold mb-2">📋 ประวัติวันนี้</div>
+    <div id="historyList" class="space-y-1 text-sm"></div>
+  </div>
+
+</main>
+
+<div class="fixed bottom-0 left-0 right-0 p-3 bg-slate-900/95 backdrop-blur border-t border-slate-700 z-20">
+  <div class="max-w-3xl mx-auto">
+    <button class="btn btn-primary" onclick="saveInspection()" id="saveBtn">💾 บันทึกการตรวจสอบ</button>
+  </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+let currentUser = null, nursesList = [];
+
+// รายชื่อห้องตรวจ — ตามที่ผู้ใช้ระบุ
+const ROOMS = [
+  // OR หลัก
+  'OR1','OR2','OR3','OR4','OR5','OR6','OR7','OR8','OR9','OR10','OR11','OR12',
+  // OR ตึก 4 (ตาราง 41-45)
+  'OR41','OR42','OR43','OR44','OR45',
+  // OR เฉพาะทาง
+  'OR CVT1','OR CVT2','ESWL','Cath Lab',
+  // ห้องพักฟื้น
+  'RR2','RR3','RR ตึกหัวใจ',
+  // อื่นๆ
+  'PACU','ส่วนกลาง'
+];
+
+function populateRooms() {
+  document.getElementById('inspRoom').innerHTML =
+    ROOMS.map(r => `<option>${r}</option>`).join('');
+}
+
+async function loadNurses() {
+  try {
+    nursesList = await sbDB.list('nurses', { eq:{active:true}, order:'sort_order', asc:true });
+  } catch(e) { nursesList = []; }
+  // datalist เฉพาะพยาบาลวิสัญญี — พิมพ์ค้นหาได้
+  document.getElementById('nurses-options').innerHTML =
+    nursesList.filter(n => n.role === 'พยาบาลวิสัญญี')
+      .map(n => `<option value="${n.name}"></option>`).join('');
+}
+
+// Machine checklist — 17 รายการ (อ้างอิงจากฟอร์ม V1)
+const MACHINE_ITEMS = [
+  { code:'M01', name:'N2O, O2 มีปริมาณเพียงพอ', mode:'pr' },
+  { code:'M02', name:'ถัง O2 มีปริมาณเพียงพอ', mode:'pr' },
+  { code:'M03', name:'การทำงานของ Vaporizer พร้อมใช้งาน', mode:'pr' },
+  { code:'M04', name:'Breathing system พร้อมใช้', mode:'pr' },
+  { code:'M05', name:'Pop off valve ทำงานได้ดี', mode:'pr' },
+  { code:'M06', name:'Scavenging ใช้งานได้ดี', mode:'pr' },
+  { code:'M07', name:'Ventilator พร้อมใช้งาน', mode:'pr' },
+  { code:'M08', name:'ทำความสะอาด Water trap CO2', mode:'pr' },
+  { code:'M09', name:'ตรวจสอบความพร้อมใช้ Water trap (Pipeline)', mode:'pr' },
+  { code:'M10', name:'Desflurane, Sevoflurane (1,1)', mode:'pr' },
+  { code:'M11', name:'Laryngoscope No 0,1,2,3,4 (1,1,1,1,1)', mode:'pr' },
+  { code:'M12', name:'Face mask No.3,4,5 (2,2,1)', mode:'pr' },
+  { code:'M13', name:'Stylet เด็ก, ผู้ใหญ่ (1,1)', mode:'pr' },
+  { code:'M14', name:'Syringe 10 ml', mode:'pr' },
+  { code:'M15', name:'Stethoscope', mode:'pr' },
+  { code:'M16', name:'Magill forceps', mode:'pr' },
+  { code:'M17', name:'Ambu bag + สายต่อ', mode:'pr' },
+];
+
+// Monitor checklist — 8 รายการ
+const MONITOR_ITEMS = [
+  { code:'V01', name:'NIBP (1)', mode:'mh' },
+  { code:'V02', name:'SpO₂ (Adult=1, Ped=1, Neo=1)', mode:'mh' },
+  { code:'V03', name:'EKG (1)', mode:'mh' },
+  { code:'V04', name:'Temp (Adult=1, Ped=1)', mode:'mh' },
+  { code:'V05', name:'Cable A-line (2)', mode:'mh' },
+  { code:'V06', name:'Cuff BP Adult (M=1, L=1)', mode:'mh' },
+  { code:'V07', name:'Cuff BP Ped (S=1, M=1)', mode:'mh' },
+  { code:'V08', name:'EtCO₂ (side=1)', mode:'mh' },
+];
+// mode 'pr' = พร้อม/ไม่พร้อม, 'mh' = มี/ไม่มี
+
+let states = { machine: {}, monitor: {} };
+
+function toggleFullscreen(on) {
+  if (on === undefined) on = !document.body.classList.contains('fs-mode');
+  document.body.classList.toggle('fs-mode', !!on);
+  try { localStorage.setItem('anes_fs_insp', on ? '1' : '0'); } catch(e){}
+}
+try { if (localStorage.getItem('anes_fs_insp') === '1') toggleFullscreen(true); } catch(e){}
+
+async function ensureAuth() {
+  try {
+    const u = await sbAuth.getUser();
+    if (u) {
+      currentUser = u;
+      const p = await sbAuth.getProfile().catch(() => null);
+      document.getElementById('user-info').textContent = (p?.nickname || p?.full_name || u.email);
+      document.getElementById('signOutBtn').classList.remove('hidden');
+      document.getElementById('loginOverlay').style.display = 'none';
+      // input + datalist — autofill ถ้ามีชื่อใน profile
+      if (p?.full_name) document.getElementById('inspNurse').value = p.full_name;
+      return true;
+    }
+  } catch (e) { console.warn(e); }
+  document.getElementById('loginOverlay').style.display = 'flex';
+  return false;
+}
+async function signIn() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  err.classList.add('hidden');
+  try { await sbAuth.signIn(email, pwd); location.reload(); }
+  catch (e) { err.textContent = e.message; err.classList.remove('hidden'); }
+}
+async function signOut() { await sbAuth.signOut(); location.reload(); }
+
+document.getElementById('inspDate').value = new Date().toISOString().slice(0,10);
+
+function switchSection(s) {
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.toggle('active', b.dataset.section === s));
+  document.getElementById('machineSection').classList.toggle('hidden', s !== 'machine');
+  document.getElementById('monitorSection').classList.toggle('hidden', s !== 'monitor');
+}
+
+function renderList(section, items) {
+  const yesLabel = items[0].mode === 'pr' ? 'พร้อม' : 'มี';
+  const noLabel  = items[0].mode === 'pr' ? 'ไม่พร้อม' : 'ไม่มี';
+  const el = document.getElementById(section + 'List');
+  el.innerHTML = items.map(it => {
+    const st = states[section][it.code] || '';
+    const klass = st === 'yes' ? 'is-ok' : st === 'no' ? 'has-issue' : '';
+    return `<div class="check-row mb-2 ${klass}" data-code="${it.code}">
+      <div class="name">
+        <div class="font-medium text-sm">${it.name}</div>
+        <div class="text-xs text-slate-400">${it.code}</div>
+      </div>
+      <div class="pill-group">
+        <button class="pill" data-active="${st==='yes'?'yes':''}" onclick="setState('${section}','${it.code}','yes')">${yesLabel}</button>
+        <button class="pill" data-active="${st==='no'?'no':''}" onclick="setState('${section}','${it.code}','no')">${noLabel}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setState(section, code, val) {
+  if (states[section][code] === val) delete states[section][code];
+  else states[section][code] = val;
+  renderList(section, section === 'machine' ? MACHINE_ITEMS : MONITOR_ITEMS);
+}
+function bulkSet(section, val) {
+  states[section] = {};
+  const items = section === 'machine' ? MACHINE_ITEMS : MONITOR_ITEMS;
+  if (val) items.forEach(it => states[section][it.code] = val);
+  renderList(section, items);
+}
+
+async function saveInspection() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const machineItems = MACHINE_ITEMS.map(it => ({
+    code: it.code, name: it.name, state: states.machine[it.code] || 'pending'
+  }));
+  const monitorItems = MONITOR_ITEMS.map(it => ({
+    code: it.code, name: it.name, state: states.monitor[it.code] || 'pending'
+  }));
+  const checkedSections = [];
+  if (machineItems.some(i => i.state !== 'pending')) checkedSections.push('Machine');
+  if (monitorItems.some(i => i.state !== 'pending')) checkedSections.push('Monitor');
+  if (checkedSections.length === 0) {
+    if (!confirm('ยังไม่ได้ตรวจรายการใดเลย — บันทึกต่อไหม?')) return;
+  }
+  try {
+    document.getElementById('saveBtn').disabled = true;
+    await sbDB.insert('daily_inspections', {
+      date: document.getElementById('inspDate').value,
+      room: document.getElementById('inspRoom').value,
+      inspector_id: currentUser.id,
+      items: {
+        nurse: document.getElementById('inspNurse').value,
+        check: checkedSections.join('+') || 'ไม่ระบุ',
+        machine: machineItems,
+        monitor: monitorItems
+      },
+      notes: `Machine: ${document.getElementById('machineNotes').value}\nMonitor: ${document.getElementById('monitorNotes').value}`
+    });
+    sbUtils.toast('บันทึกแล้ว ✓','success');
+    document.getElementById('machineNotes').value = '';
+    document.getElementById('monitorNotes').value = '';
+    bulkSet('machine','');
+    bulkSet('monitor','');
+    loadHistory();
+  } catch (e) { sbUtils.toast(e.message,'error'); }
+  finally { document.getElementById('saveBtn').disabled = false; }
+}
+
+async function loadHistory() {
+  const today = new Date().toISOString().slice(0,10);
+  const hist = await sbDB.list('daily_inspections', { eq:{date: today}, order:'created_at', asc:false });
+  const el = document.getElementById('historyList');
+  if (hist.length === 0) { el.innerHTML = '<div class="text-slate-400">ยังไม่มีบันทึกวันนี้</div>'; return; }
+  el.innerHTML = hist.map(h => {
+    const m = (h.items?.machine || []).filter(i => i.state === 'yes').length;
+    const mb = (h.items?.machine || []).filter(i => i.state === 'no').length;
+    const v = (h.items?.monitor || []).filter(i => i.state === 'yes').length;
+    const vb = (h.items?.monitor || []).filter(i => i.state === 'no').length;
+    return `<div class="bg-slate-800 p-3 rounded-lg">
+      <div class="flex justify-between items-center">
+        <div class="font-medium">${h.room||'-'} · ${h.items?.nurse||''} · ${new Date(h.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
+        <div class="text-xs text-slate-400">${h.items?.check||''}</div>
+      </div>
+      <div class="text-xs text-slate-400 mt-1">
+        ${m||mb ? `Machine: ${m} พร้อม · ${mb} ไม่พร้อม` : ''}
+        ${v||vb ? ` · Monitor: ${v} มี · ${vb} ไม่มี` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function subscribeRT() { sbRT.subscribe('daily_inspections', loadHistory); }
+
+(async () => {
+  populateRooms();
+  renderList('machine', MACHINE_ITEMS);
+  renderList('monitor', MONITOR_ITEMS);
+  await loadNurses();
+  await ensureAuth();
+  await loadHistory();
+  subscribeRT();
+})();
+</script>
+</body>
+</html>

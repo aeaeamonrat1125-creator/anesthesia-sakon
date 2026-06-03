@@ -1,0 +1,1956 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>วิสัญญีพยาบาล โรงพยาบาลสกลนคร — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  body { font-family: 'Sarabun', system-ui, sans-serif; background:#f5f3ff; }
+  .grad-hero { background: linear-gradient(135deg, #6d28d9 0%, #9333ea 55%, #c026d3 100%); }
+  .card { background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04); }
+  .kpi-card { transition:transform .15s ease, box-shadow .15s ease; cursor:pointer; }
+  .kpi-card:hover { transform: translateY(-3px); box-shadow:0 12px 28px rgba(124,58,237,.14); }
+  .pulse { animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity:.7 } 50% { opacity:1 } }
+  .scroll-x { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+  .gauge-shell { position:relative; width:100%; max-width:300px; margin:0 auto; height:180px; }
+  .chart-box { position:relative; width:100%; height:240px; }
+  .chart-box-sm { position:relative; width:100%; height:180px; }
+  .chart-box-lg { position:relative; width:100%; height:300px; }
+  body.fs-mode header, body.fs-mode nav.main-nav { display:none !important; }
+  body.fs-mode main { padding-top:14px !important; }
+  .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:50;
+    background:#7c3aed; color:#fff; padding:8px 12px; border-radius:999px;
+    box-shadow:0 6px 16px rgba(124,58,237,.4); font-size:13px; }
+  body.fs-mode .show-menu-btn { display:flex; gap:6px; align-items:center; }
+  .tab-btn.active { background: rgba(255,255,255,.2); color:#fff; }
+  .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:600; }
+  .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .stat-card { background:linear-gradient(135deg,#7c3aed,#9333ea); border-radius:16px; color:#fff; }
+  .about-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<button class="show-menu-btn" onclick="toggleFullscreen(false)">
+  <span>▼</span> แสดงเมนู
+</button>
+
+<!-- Urgent announcement banner — โผล่บนสุด -->
+<div id="urgentBanner" class="hidden sticky top-0 z-40 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-start sm:items-center gap-3 flex-wrap">
+    <div class="text-2xl animate-pulse">🚨</div>
+    <div class="flex-1 min-w-0">
+      <div class="font-bold" id="urg-title">ประกาศสำคัญ</div>
+      <div class="text-sm text-white/90 line-clamp-2" id="urg-content"></div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="readUrgent()" class="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-lg">รับทราบ</button>
+      <button onclick="dismissUrgent()" class="bg-white/10 hover:bg-white/20 text-white text-sm px-3 py-1.5 rounded-lg">×</button>
+    </div>
+  </div>
+</div>
+
+<header class="grad-hero text-white">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div>
+      <div class="text-lg sm:text-xl font-bold">หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</div>
+      <div class="text-white/80 text-xs sm:text-sm flex items-center gap-2">
+        <span id="live-dot" class="w-2 h-2 rounded-full bg-emerald-400 pulse"></span>
+        <span id="live-text">เชื่อมต่อแบบ Real-time</span>
+        <span class="opacity-60">•</span>
+        <span id="header-staff-count">-- บุคลากร</span>
+      </div>
+    </div>
+    <div class="flex gap-2 items-center flex-wrap">
+      <a href="service-log.html" class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">📋 ยอดบริการ</a>
+      <a href="sheets.html"      class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">📊 G-Sheets</a>
+      <a href="inspection.html"  class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">🔧 ตรวจเครื่อง</a>
+      <a href="staff.html"       class="flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">👥 <span class="hidden sm:inline">บุคลากร</span></a>
+      <a href="signup.html"      class="hidden sm:flex bg-white/20 hover:bg-white/30 text-white text-sm font-semibold px-3 py-1.5 rounded-lg border border-white/30 items-center">✨ สมัครสมาชิก</a>
+      <button onclick="toggleFullscreen(true)" class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center">⛶</button>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav bg-slate-900/95 text-white sticky top-0 z-30 shadow">
+  <div class="max-w-7xl mx-auto px-2 py-2 flex items-center gap-1">
+    <button class="tab-btn active px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium" data-tab="about">ℹ️ เกี่ยวกับหน่วยงาน</button>
+    <button class="tab-btn px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10" data-tab="results">📈 ผลลัพธ์การทำงาน</button>
+    <div class="relative ml-auto">
+      <button id="idx-menu-btn" onclick="toggleIdxMenu()"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/20 text-sm font-medium">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect y="2" width="16" height="2" rx="1" fill="white"/><rect y="7" width="16" height="2" rx="1" fill="white"/><rect y="12" width="16" height="2" rx="1" fill="white"/></svg>
+      </button>
+      <div id="idx-dropdown" class="hidden absolute right-0 top-full mt-1 bg-slate-800 rounded-xl shadow-2xl py-2 min-w-[220px] z-50 border border-white/10">
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="daily">📋 ยอดบริการรายวัน</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="prepost">📋 Pre/Post op</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="inspect">🔧 สรุปตรวจเครื่อง</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="equipment">📦 ทะเบียนเครื่องมือ</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi">📊 KPI 15 ตัว</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="reports">📑 รายงาน & Export</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="news">📣 ประกาศ</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-6">
+
+  <section data-page="kpi" class="hidden">
+    <div class="card p-4 sm:p-6 mb-5">
+      <div class="grid md:grid-cols-3 gap-5 items-center">
+        <div class="md:col-span-1 text-center">
+          <div class="text-sm text-slate-500 mb-1">⭐ KPI หลัก</div>
+          <div class="text-lg font-bold text-slate-700">ร้อยละความพึงพอใจของผู้รับบริการ</div>
+          <div class="text-xs text-slate-500 mt-1">ปีงบฯ <span id="sat-year">2568</span> · เป้า ≥90%</div>
+          <div class="gauge-shell mt-3">
+            <canvas id="gaugeSat"></canvas>
+            <div class="absolute inset-0 flex items-end justify-center pb-3 pointer-events-none">
+              <div class="text-center">
+                <div class="text-3xl sm:text-4xl font-bold text-emerald-600" id="sat-value">--%</div>
+                <div class="text-xs text-emerald-700">บรรลุเป้าหมาย</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="md:col-span-2">
+          <div class="text-sm font-semibold text-slate-700 mb-2">แนวโน้มความพึงพอใจ 5 ปี</div>
+          <div class="chart-box"><canvas id="satTrend"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- สรุป KPI: แสดงเฉพาะคนที่ login (admin/staff) -->
+    <div class="flex items-center justify-end gap-2 mb-3">
+      <button onclick="openKpiEditLink()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg hidden" id="kpi-edit-btn">✏️ ลงข้อมูล KPI</button>
+    </div>
+    <div id="kpi-summary-box" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5 hidden">
+      <div class="card p-3 text-center">
+        <div class="text-xs text-slate-500">KPI ทั้งหมด</div>
+        <div class="text-2xl font-bold text-slate-800" id="kc-total">15</div>
+        <div class="text-[10px] text-slate-400">ตัว</div>
+      </div>
+      <div class="card p-3 text-center border-t-4 border-emerald-500">
+        <div class="text-xs text-emerald-700 font-semibold">✓ บรรลุเป้า</div>
+        <div class="text-2xl font-bold text-emerald-600"><span id="kc-pass">--</span></div>
+        <div class="text-xs text-emerald-700 font-semibold" id="kc-pass-pct">--%</div>
+      </div>
+      <div class="card p-3 text-center border-t-4 border-rose-500">
+        <div class="text-xs text-rose-700 font-semibold">✗ ไม่บรรลุ</div>
+        <div class="text-2xl font-bold text-rose-500"><span id="kc-fail">--</span></div>
+        <div class="text-xs text-rose-700 font-semibold" id="kc-fail-pct">--%</div>
+      </div>
+      <div class="card p-3 text-center border-t-4 border-blue-500">
+        <div class="text-xs text-blue-700 font-semibold">% บรรลุเฉลี่ย</div>
+        <div class="text-2xl font-bold text-blue-600" id="kc-avg">--%</div>
+        <div class="text-[10px] text-slate-400">เฉลี่ย 15 ตัว</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3" id="kpiGrid"></div>
+  </section>
+
+  <section data-page="results" class="hidden space-y-5">
+    <div class="card p-3 sm:p-4 flex items-center justify-between flex-wrap gap-2">
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="font-bold text-lg">📈 ผลลัพธ์การทำงาน — ปีงบฯ</div>
+        <select id="results-year-picker" class="px-3 py-1.5 border border-slate-200 rounded-lg text-sm" onchange="renderResults()"></select>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="openOpsEditor()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg">✏️ เพิ่ม/แก้ข้อมูลปีนี้</button>
+        <button onclick="openOpsEditor(true)" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3 py-1.5 rounded-lg">➕ ปีงบฯ ใหม่</button>
+      </div>
+    </div>
+    <input type="hidden" id="results-year" value="2568">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div class="card p-4">
+        <div class="text-xs text-slate-500">จำนวนผู้ป่วยปีงบฯ <span id="stat-year">2568</span></div>
+        <div class="text-3xl font-bold text-blue-600 mt-1" id="stat-patients">--</div>
+        <div class="text-xs text-slate-500 mt-1">ราย</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs text-slate-500">พยาบาลวิสัญญี</div>
+        <div class="text-3xl font-bold text-emerald-600 mt-1" id="stat-nurse-count">--</div>
+        <div class="text-xs text-slate-500 mt-1">คน</div>
+      </div>
+      <div class="card p-4 col-span-2 md:col-span-1">
+        <div class="text-xs text-slate-500">ความพึงพอใจ</div>
+        <div class="text-3xl font-bold text-amber-500 mt-1" id="stat-sat">--%</div>
+        <div class="text-xs text-slate-500 mt-1">เป้า ≥90%</div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="card p-4">
+        <div class="font-semibold text-slate-700 mb-2">ASA Classification</div>
+        <div class="chart-box"><canvas id="chartAsa"></canvas></div>
+      </div>
+      <div class="card p-4">
+        <div class="font-semibold text-slate-700 mb-2">ผู้ป่วยรวมตามปีงบฯ</div>
+        <div class="chart-box"><canvas id="chartPatients"></canvas></div>
+      </div>
+      <div class="card p-4">
+        <div class="font-semibold text-slate-700 mb-2">Choice of Anesthesia</div>
+        <div class="scroll-x">
+          <table class="min-w-full text-sm">
+            <thead class="text-slate-500 border-b">
+              <tr><th class="text-left py-1.5">ประเภท</th><th class="text-right">2565</th><th class="text-right">2566</th><th class="text-right">2567</th><th class="text-right">2568</th></tr>
+            </thead>
+            <tbody id="tblChoice"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="font-semibold text-slate-700 mb-2">บริการ CVT</div>
+        <div class="chart-box"><canvas id="chartCVT"></canvas></div>
+      </div>
+      <div class="card p-4 lg:col-span-2">
+        <div class="font-semibold text-slate-700 mb-2">5 อันดับโรคร่วม</div>
+        <div class="chart-box-lg"><canvas id="chartComorb"></canvas></div>
+      </div>
+      <div class="card p-4 lg:col-span-2">
+        <div class="font-semibold text-slate-700 mb-2">สาเหตุการเสียชีวิตหลังผ่าตัด</div>
+        <div class="chart-box-lg"><canvas id="chartDeath"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== TAB: ABOUT ====================== -->
+  <section data-page="about" class="space-y-5">
+
+    <!-- Hero banner -->
+    <div class="grad-hero rounded-2xl text-white p-5 sm:p-7 shadow-lg overflow-hidden relative">
+      <div class="absolute right-0 top-0 w-64 h-64 rounded-full opacity-10" style="background:radial-gradient(circle,#fff,transparent);transform:translate(30%,-30%)"></div>
+      <div class="relative">
+        <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-2">Department Overview</div>
+        <div class="text-2xl sm:text-3xl font-bold leading-tight mb-2">หน่วยงานวิสัญญีพยาบาล<br>โรงพยาบาลสกลนคร</div>
+        <div class="text-white/75 text-sm">วิสัยทัศน์ · พันธกิจ · บทบาทหน้าที่ · บุคลากร</div>
+      </div>
+    </div>
+
+    <!-- Vision + Mission grid -->
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="card p-6" style="border-top:3px solid #9333ea">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="about-icon" style="background:#faf5ff;border:1.5px solid #e9d5ff">👁️</div>
+          <div>
+            <div class="font-bold text-lg text-slate-800">วิสัยทัศน์</div>
+            <div class="text-xs text-purple-600 font-medium">Vision</div>
+          </div>
+        </div>
+        <div class="text-slate-700 leading-relaxed text-sm bg-purple-50 rounded-xl p-4 border border-purple-100">
+          การพยาบาลวิสัญญีมีคุณภาพเป็นเลิศ บุคลากรวิสัญญีมีความสุข
+          มีการพัฒนาอย่างยั่งยืน <span class="text-purple-700 font-semibold">เพื่อผู้ป่วยปลอดภัย</span>
+        </div>
+      </div>
+
+      <div class="card p-6" style="border-top:3px solid #c026d3">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="about-icon" style="background:#fdf4ff;border:1.5px solid #f5d0fe">🧭</div>
+          <div>
+            <div class="font-bold text-lg text-slate-800">พันธกิจ</div>
+            <div class="text-xs text-fuchsia-600 font-medium">Mission</div>
+          </div>
+        </div>
+        <ol class="text-slate-700 text-sm leading-relaxed space-y-2">
+          <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">1</span><span>พัฒนาระบบบริหารจัดการโดยยึดหลักธรรมาภิบาล</span></li>
+          <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">2</span><span>พัฒนาระบบบริการการพยาบาลแบบไร้รอยต่อ</span></li>
+          <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">3</span><span>พัฒนาบุคลากรให้มีสมรรถนะสูงและมีความสุข ด้วยแนวทาง <b>MOPH-4T</b></span></li>
+          <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">4</span><span>ส่งเสริมการศึกษาวิจัย นวัตกรรม และเทคโนโลยีทางการแพทย์</span></li>
+          <li class="flex gap-2"><span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">5</span><span>พัฒนาศูนย์การเรียนรู้ทางการพยาบาล</span></li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- บทบาทหน้าที่ -->
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="card p-5 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 rounded-full opacity-5" style="background:#7c3aed;transform:translate(30%,-30%)"></div>
+        <div class="about-icon mb-3" style="background:#faf5ff;border:1.5px solid #e9d5ff">👥</div>
+        <div class="font-bold text-slate-800 mb-1">ด้านบริหาร</div>
+        <div class="text-xs text-purple-600 font-medium mb-3">Management</div>
+        <div class="text-sm text-slate-600 leading-relaxed">วางแผนและกำหนดเป้าหมาย บริหารกำลังคน ทรัพยากร งบประมาณ และอุปกรณ์ให้เพียงพอ พร้อมเสริมสร้างขวัญกำลังใจ</div>
+      </div>
+      <div class="card p-5 relative overflow-hidden" style="border-top:3px solid #9333ea">
+        <div class="absolute top-0 right-0 w-20 h-20 rounded-full opacity-5" style="background:#9333ea;transform:translate(30%,-30%)"></div>
+        <div class="about-icon mb-3" style="background:#fdf4ff;border:1.5px solid #f5d0fe">💗</div>
+        <div class="font-bold text-slate-800 mb-1">ด้านบริการ</div>
+        <div class="text-xs text-fuchsia-600 font-medium mb-3">Clinical Service</div>
+        <div class="text-sm text-slate-600 leading-relaxed">พัฒนาคุณภาพบริการพยาบาลให้ได้มาตรฐาน ดูแลความเสี่ยง ความปลอดภัยผู้ป่วย และควบคุมการติดเชื้ออย่างมีประสิทธิภาพ</div>
+      </div>
+      <div class="card p-5 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 rounded-full opacity-5" style="background:#c026d3;transform:translate(30%,-30%)"></div>
+        <div class="about-icon mb-3" style="background:#fdf2f8;border:1.5px solid #fbcfe8">📚</div>
+        <div class="font-bold text-slate-800 mb-1">ด้านวิชาการ</div>
+        <div class="text-xs text-pink-600 font-medium mb-3">Academic</div>
+        <div class="text-sm text-slate-600 leading-relaxed">พัฒนาสารสนเทศและองค์ความรู้ จัดทำแนวปฏิบัติ/คู่มือ พัฒนาศักยภาพบุคลากร และส่งเสริม <b>CQI, R2R</b> และงานวิจัย</div>
+      </div>
+    </div>
+
+    <!-- สถิติบุคลากร -->
+    <div class="grad-hero rounded-2xl p-5 text-white shadow-lg">
+      <div class="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
+        <span>👥</span> สถิติบุคลากร
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div class="bg-white/15 rounded-xl p-3 text-center backdrop-blur-sm border border-white/10">
+          <div class="text-2xl mb-1">👥</div>
+          <div class="text-3xl font-bold" id="staff-count-all">--</div>
+          <div class="text-xs text-white/70 mt-1">ทั้งหมด</div>
+        </div>
+        <div class="bg-white/15 rounded-xl p-3 text-center backdrop-blur-sm border border-white/10">
+          <div class="text-2xl mb-1">⚕️</div>
+          <div class="text-3xl font-bold" id="staff-count-nurse">--</div>
+          <div class="text-xs text-white/70 mt-1">พยาบาลวิสัญญี</div>
+        </div>
+        <div class="bg-white/15 rounded-xl p-3 text-center backdrop-blur-sm border border-white/10">
+          <div class="text-2xl mb-1">🩺</div>
+          <div class="text-3xl font-bold" id="staff-count-asst-nurse">--</div>
+          <div class="text-xs text-white/70 mt-1">ผู้ช่วยพยาบาล</div>
+        </div>
+        <div class="bg-white/15 rounded-xl p-3 text-center backdrop-blur-sm border border-white/10">
+          <div class="text-2xl mb-1">🤝</div>
+          <div class="text-3xl font-bold" id="staff-count-asst-pt">--</div>
+          <div class="text-xs text-white/70 mt-1">ผู้ช่วยเหลือคนไข้</div>
+        </div>
+        <div class="bg-white/15 rounded-xl p-3 text-center backdrop-blur-sm border border-white/10 col-span-2 sm:col-span-1">
+          <div class="text-2xl mb-1">🏢</div>
+          <div class="text-3xl font-bold" id="staff-count-other">--</div>
+          <div class="text-xs text-white/70 mt-1">พนักงาน/อื่นๆ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ที่ตั้ง -->
+    <div class="card p-4 sm:p-5 flex items-start gap-3 sm:gap-4" style="background:linear-gradient(135deg,#1e1b4b,#312e81)">
+      <div class="about-icon flex-shrink-0" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15)">📍</div>
+      <div class="text-white">
+        <div class="font-bold text-lg mb-2">ที่ตั้งและการติดต่อ</div>
+        <div class="font-medium text-indigo-200 text-sm mb-1">กลุ่มงานการพยาบาลวิสัญญี กลุ่มการพยาบาล โรงพยาบาลสกลนคร</div>
+        <div class="text-sm text-indigo-300 space-y-0.5">
+          <div>📌 ชั้น 2, 3 อาคารศัลยกรรม / ตึกหัวใจชั้น 4, 5</div>
+          <div>☎️ โทรภายใน: 5932, 5943, 5933 / 6740, 6741</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== TAB: DAILY SERVICE ====================== -->
+  <section data-page="daily" class="hidden space-y-4">
+    <div class="card p-4 sm:p-5">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-3">
+        <div>
+          <div class="font-bold text-lg flex items-center gap-2"><span>📊</span> ยอดการให้บริการ (ในเวลา / นอกเวลา)</div>
+          <div class="text-xs text-slate-500 mt-1">เลือกช่วงเวลาเพื่อดูข้อมูล</div>
+        </div>
+        <div class="flex gap-2 items-center flex-wrap">
+          <input id="ds-date" type="date" class="text-sm border border-slate-200 rounded-lg px-3 py-1.5" onchange="onDateChange()">
+          <select id="ds-rangeSel" class="text-sm border border-slate-200 rounded-lg px-3 py-1.5" onchange="renderDaily()">
+            <option value="day">วันที่เลือก</option>
+            <option value="week">7 วันล่าสุด</option>
+            <option value="month">เดือนนี้</option>
+            <option value="year">ปีนี้</option>
+            <option value="all">ทั้งหมด</option>
+          </select>
+          <button onclick="exportDailyExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3 py-1.5 rounded-lg">📥 Export</button>
+          <a href="service-log.html" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg">+ ลงยอดใหม่</a>
+        </div>
+      </div>
+      <div class="text-xs text-slate-500 mb-3">รายงานช่วง: <b id="ds-period">วันนี้</b></div>
+
+      <!-- รวม + Progress bar -->
+      <div class="flex items-center justify-between text-sm mb-2">
+        <div>รวมทั้งสิ้น: <b id="ds-totalAll" class="text-xl">--</b> ราย</div>
+        <div class="text-xs text-slate-500">
+          ☀️ ในเวลา <span id="ds-inPct">0%</span> (<span id="ds-inN">0</span>)
+          &nbsp; · &nbsp;
+          🌙 นอกเวลา <span id="ds-outPct">0%</span> (<span id="ds-outN">0</span>)
+        </div>
+      </div>
+      <div class="h-3 rounded-full bg-slate-100 overflow-hidden flex mb-4">
+        <div id="ds-barIn"  class="bg-amber-400  h-full" style="width:0%"></div>
+        <div id="ds-barOut" class="bg-purple-500 h-full" style="width:0%"></div>
+      </div>
+
+      <!-- การ์ดในเวลา (รวม pre/post-op) -->
+      <div class="border border-amber-200 rounded-xl p-4 bg-amber-50/40 mb-4">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center text-xl">☀️</div>
+            <div>
+              <div class="font-bold">ในเวลาราชการ (รวม Pre-op / Post-op)</div>
+              <div class="text-xs text-slate-500" id="ds-in-meta">--</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-3xl font-bold text-amber-600" id="ds-in-total">0</div>
+            <div class="text-xs text-slate-500">ผู้ป่วยทั้งหมด</div>
+          </div>
+        </div>
+        <!-- Pre/Post-op summary -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="bg-blue-50 rounded-lg p-3">
+            <div class="text-xs text-blue-700 font-semibold">📋 Pre-op Visit</div>
+            <div class="flex items-baseline gap-2">
+              <div class="text-2xl font-bold text-blue-700" id="ds-in-preop">0</div>
+              <div class="text-sm text-blue-600">(<span id="ds-in-preop-pct">--</span>%)</div>
+            </div>
+          </div>
+          <div class="bg-emerald-50 rounded-lg p-3">
+            <div class="text-xs text-emerald-700 font-semibold">📋 Post-op Visit</div>
+            <div class="flex items-baseline gap-2">
+              <div class="text-2xl font-bold text-emerald-700" id="ds-in-postop">0</div>
+              <div class="text-sm text-emerald-600">(<span id="ds-in-postop-pct">--</span>%)</div>
+            </div>
+          </div>
+        </div>
+        <div id="ds-in-body"></div>
+      </div>
+
+      <!-- การ์ดนอกเวลาราชการ — แยกเวร -->
+      <div class="border border-purple-200 rounded-xl p-4 bg-purple-50/40">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center text-xl">🌙</div>
+            <div>
+              <div class="font-bold">นอกเวลาราชการ (แยกเวร)</div>
+              <div class="text-xs text-slate-500" id="ds-out-meta">--</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-3xl font-bold text-purple-600" id="ds-out-total">0</div>
+            <div class="text-xs text-slate-500">ผู้ป่วยทั้งหมด</div>
+          </div>
+        </div>
+        <!-- Shift breakdown -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+          <div class="bg-orange-50 rounded p-2 text-center">
+            <div class="text-[11px] text-orange-700">☀️ เช้า (วันหยุด)</div>
+            <div class="text-xl font-bold text-orange-700" id="ds-shift-morning">0</div>
+          </div>
+          <div class="bg-blue-50 rounded p-2 text-center">
+            <div class="text-[11px] text-blue-700">🌤️ บ่าย</div>
+            <div class="text-xl font-bold text-blue-700" id="ds-shift-afternoon">0</div>
+          </div>
+          <div class="bg-indigo-50 rounded p-2 text-center">
+            <div class="text-[11px] text-indigo-700">🌙 ดึก</div>
+            <div class="text-xl font-bold text-indigo-700" id="ds-shift-night">0</div>
+          </div>
+          <div class="bg-slate-50 rounded p-2 text-center">
+            <div class="text-[11px] text-slate-700">ไม่ระบุเวร</div>
+            <div class="text-xl font-bold text-slate-700" id="ds-shift-other">0</div>
+          </div>
+        </div>
+        <div id="ds-out-body"></div>
+      </div>
+    </div>
+
+    <!-- สรุปแยกตามจุดบริการ -->
+    <div class="card p-4 sm:p-5">
+      <div class="font-bold text-lg flex items-center gap-2 mb-3"><span>📍</span> สรุปแยกตามจุดบริการ</div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3" id="ds-byPoint"></div>
+    </div>
+
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold text-slate-700">📊 ยอดบริการ 30 วันล่าสุด</div>
+      </div>
+      <div class="chart-box-lg"><canvas id="chartDaily30"></canvas></div>
+    </div>
+
+    <div class="card p-4">
+      <div class="font-semibold text-slate-700 mb-3">📋 บันทึกล่าสุด</div>
+      <div class="scroll-x">
+        <table class="min-w-full text-sm">
+          <thead class="text-slate-500 border-b">
+            <tr>
+              <th class="text-left py-2">วันที่</th>
+              <th class="text-left">ประเภท</th>
+              <th class="text-left">จุดบริการ</th>
+              <th class="text-left">เวร</th>
+              <th class="text-right">Pt รวม</th>
+              <th class="text-right">GA</th>
+              <th class="text-right">RA</th>
+              <th class="text-right">MAC</th>
+              <th class="text-right">ผ่าน RR</th>
+              <th>รูป</th>
+            </tr>
+          </thead>
+          <tbody id="dailyTBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== TAB: PRE/POST OP DASHBOARD ====================== -->
+  <section data-page="prepost" class="hidden space-y-4">
+    <div class="card p-4">
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+        <div>
+          <div class="font-bold text-lg flex items-center gap-2"><span>📋</span> สรุปยอดเยี่ยม Pre-op / Post-op</div>
+          <div class="text-xs text-slate-500 mt-1">รายงานช่วง: <b id="pp-period">วันนี้</b></div>
+        </div>
+        <div class="flex gap-2 items-center flex-wrap">
+          <input id="pp-date-pick" type="date" class="text-sm border border-slate-200 rounded-lg px-3 py-1.5" onchange="renderPrePost()">
+          <select id="pp-range" class="text-sm border border-slate-200 rounded-lg px-3 py-1.5" onchange="renderPrePost()">
+            <option value="day">วันที่เลือก</option>
+            <option value="week">7 วันล่าสุด</option>
+            <option value="month" selected>เดือนนี้</option>
+            <option value="year">ปีนี้</option>
+            <option value="all">ทั้งหมด</option>
+          </select>
+          <button onclick="exportPrePostExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3 py-1.5 rounded-lg">📥 Export</button>
+          <a href="service-log.html#preop" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg">+ ส่งยอดใหม่</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- การ์ดสรุปใหญ่ -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="card p-4 text-center border-t-4 border-blue-500">
+        <div class="text-3xl">📋</div>
+        <div class="text-3xl font-bold text-blue-600 mt-1" id="pp-preop-total">0</div>
+        <div class="text-xs text-slate-500 mt-1">Pre-op รวม</div>
+      </div>
+      <div class="card p-4 text-center border-t-4 border-emerald-500">
+        <div class="text-3xl">📋</div>
+        <div class="text-3xl font-bold text-emerald-600 mt-1" id="pp-postop-total">0</div>
+        <div class="text-xs text-slate-500 mt-1">Post-op รวม</div>
+      </div>
+      <div class="card p-4 text-center border-t-4 border-amber-500">
+        <div class="text-3xl">🩺</div>
+        <div class="text-3xl font-bold text-amber-600 mt-1" id="pp-asa3-total">0</div>
+        <div class="text-xs text-slate-500 mt-1">ASA ≥ 3</div>
+      </div>
+      <div class="card p-4 text-center border-t-4 border-rose-500">
+        <div class="text-3xl">⚠️</div>
+        <div class="text-3xl font-bold text-rose-600 mt-1" id="pp-cx-total">0</div>
+        <div class="text-xs text-slate-500 mt-1">ภาวะแทรกซ้อนรวม</div>
+      </div>
+    </div>
+
+    <!-- แยกตามสาย -->
+    <div class="card p-4">
+      <div class="font-semibold text-slate-700 mb-3">📊 แยกตามสาย</div>
+      <div id="pp-by-team" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+    </div>
+
+    <!-- ภาวะแทรกซ้อน -->
+    <div class="card p-4">
+      <div class="font-semibold text-slate-700 mb-3">⚠️ ภาวะแทรกซ้อนหลังผ่าตัด</div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-rose-50 rounded p-3 text-center"><div class="text-xs text-rose-700">Re-intubation</div><div class="text-2xl font-bold text-rose-600" id="pp-cx-reint">0</div></div>
+        <div class="bg-amber-50 rounded p-3 text-center"><div class="text-xs text-amber-700">N/V</div><div class="text-2xl font-bold text-amber-600" id="pp-cx-nv">0</div></div>
+        <div class="bg-blue-50 rounded p-3 text-center"><div class="text-xs text-blue-700">เจ็บคอ</div><div class="text-2xl font-bold text-blue-600" id="pp-cx-sore">0</div></div>
+        <div class="bg-slate-50 rounded p-3 text-center"><div class="text-xs text-slate-700">Dead 24hr</div><div class="text-2xl font-bold text-slate-700" id="pp-dead">0</div></div>
+      </div>
+    </div>
+
+    <!-- กราฟ trend -->
+    <div class="card p-4">
+      <div class="font-semibold text-slate-700 mb-3">📈 แนวโน้มรายวัน (30 วันล่าสุด)</div>
+      <div class="chart-box-lg"><canvas id="chartPrePost"></canvas></div>
+    </div>
+
+    <!-- ตารางบันทึก -->
+    <div class="card p-4">
+      <div class="font-semibold text-slate-700 mb-3">📋 บันทึกล่าสุด</div>
+      <div class="scroll-x">
+        <table class="min-w-full text-sm">
+          <thead class="text-slate-500 border-b">
+            <tr>
+              <th class="text-left py-2">วันที่</th>
+              <th>สาย</th>
+              <th class="text-right">Pre-op</th>
+              <th class="text-right">Post-op</th>
+              <th class="text-right">ASA≥3</th>
+              <th class="text-right">พึงพอใจ</th>
+              <th class="text-right">ไม่บันทึก</th>
+              <th class="text-right">Dead</th>
+              <th class="text-right">Reint</th>
+              <th class="text-right">N/V</th>
+              <th class="text-right">เจ็บคอ</th>
+            </tr>
+          </thead>
+          <tbody id="pp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== TAB: INSPECTION SUMMARY ====================== -->
+  <section data-page="inspect" class="hidden space-y-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="card p-4">
+        <div class="text-xs text-slate-500">ตรวจวันนี้</div>
+        <div class="text-3xl font-bold text-blue-600 mt-1" id="ins-today">--</div>
+        <div class="text-xs text-slate-500">ครั้ง</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs text-slate-500">Machine ผ่าน</div>
+        <div class="text-3xl font-bold text-emerald-600 mt-1" id="ins-mach-ok">--</div>
+        <div class="text-xs text-slate-500">รายการ</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs text-slate-500">Monitor ครบ</div>
+        <div class="text-3xl font-bold text-blue-600 mt-1" id="ins-mon-ok">--</div>
+        <div class="text-xs text-slate-500">รายการ</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs text-slate-500">⚠ พบปัญหา</div>
+        <div class="text-3xl font-bold text-rose-500 mt-1" id="ins-issue">--</div>
+        <div class="text-xs text-slate-500">รายการ</div>
+      </div>
+    </div>
+
+    <!-- ⚠ ห้องที่พบปัญหา (เด่นบนสุด) -->
+    <div class="card p-4 border-l-4 border-rose-500">
+      <div class="font-semibold text-rose-700 mb-3 flex items-center gap-2">
+        <span class="text-xl">⚠️</span> ห้องที่พบปัญหา / หมายเหตุล่าสุด
+      </div>
+      <div id="insIssues" class="space-y-2"></div>
+    </div>
+
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold text-slate-700">🔧 บันทึกการตรวจเครื่องมือล่าสุด (ทุกห้อง)</div>
+        <a href="inspection.html" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg">+ ตรวจเครื่อง</a>
+      </div>
+      <div id="insList" class="space-y-2"></div>
+    </div>
+
+    <div class="card p-4">
+      <div class="font-semibold text-slate-700 mb-3">📈 ห้องที่ตรวจ (7 วันล่าสุด)</div>
+      <div class="chart-box"><canvas id="chartInsByRoom"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ====================== TAB: EQUIPMENT REGISTRY (BY ROOM) ====================== -->
+  <section data-page="equipment" class="hidden space-y-4">
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <div class="font-semibold text-slate-700">📦 ทะเบียนเครื่องมือ — แยกตามห้อง</div>
+        <div class="text-xs text-slate-500 mt-1">คลิกห้องเพื่อดูเครื่อง Machine และ Monitor พร้อม Spec รูป</div>
+      </div>
+      <a href="staff.html#equipment" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg">✏️ เพิ่ม/แก้เครื่องมือ</a>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="card p-3 text-center border-t-4 border-slate-500">
+        <div class="text-xs text-slate-500">ทั้งหมด</div>
+        <div class="text-2xl font-bold text-slate-800" id="eq-total">--</div>
+      </div>
+      <div class="card p-3 text-center border-t-4 border-emerald-500">
+        <div class="text-xs text-emerald-600">⚙️ Machine</div>
+        <div class="text-2xl font-bold text-emerald-600" id="eq-machine">--</div>
+      </div>
+      <div class="card p-3 text-center border-t-4 border-blue-500">
+        <div class="text-xs text-blue-600">📊 Monitor</div>
+        <div class="text-2xl font-bold text-blue-600" id="eq-monitor">--</div>
+      </div>
+      <div class="card p-3 text-center border-t-4 border-rose-500">
+        <div class="text-xs text-rose-500">รอซ่อม</div>
+        <div class="text-2xl font-bold text-rose-500" id="eq-bad">--</div>
+      </div>
+      <div class="card p-3 text-center border-t-4 border-emerald-400">
+        <div class="text-xs text-emerald-600">ใช้งานได้</div>
+        <div class="text-2xl font-bold text-emerald-600" id="eq-ok">--</div>
+      </div>
+      <div class="card p-3 text-center border-t-4 border-purple-500">
+        <div class="text-xs text-purple-600">ห้องผ่าตัด</div>
+        <div class="text-2xl font-bold text-purple-600" id="eq-rooms">--</div>
+      </div>
+    </div>
+
+    <!-- รายการห้อง -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="roomGrid"></div>
+  </section>
+
+  <!-- Modal: แก้ผลลัพธ์ ops_stats -->
+<div id="opsModal" class="fixed inset-0 bg-black/60 z-40 hidden items-center justify-center p-3">
+  <div class="card max-w-3xl w-full max-h-[92vh] overflow-y-auto p-5">
+    <div class="flex items-center justify-between mb-4">
+      <div class="font-bold text-xl" id="ops-modal-title">📈 แก้ข้อมูลผลลัพธ์การทำงาน</div>
+      <button onclick="closeOpsEditor()" class="text-slate-500 hover:text-slate-800 text-3xl leading-none">×</button>
+    </div>
+    <div id="opsAuthMsg" class="hidden mb-3 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+      ⚠ กรุณา <a href="staff.html" class="text-blue-600 font-semibold underline">เข้าสู่ระบบ</a> เพื่อแก้ไขข้อมูล
+    </div>
+    <div id="opsFormWrap" class="space-y-3">
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">ปีงบประมาณ</label>
+          <input id="ops-fy" type="number" class="w-full px-3 py-2 border rounded-lg" placeholder="2568">
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">จำนวนผู้ป่วยรวม</label>
+          <input id="ops-total" type="number" class="w-full px-3 py-2 border rounded-lg" placeholder="10933">
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">ความพึงพอใจ (%)</label>
+          <input id="ops-sat" type="number" step="0.01" class="w-full px-3 py-2 border rounded-lg" placeholder="95.70">
+        </div>
+        <div></div>
+      </div>
+
+      <div class="font-semibold text-slate-700 border-t pt-2">ASA Classification</div>
+      <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        <div><label class="text-xs text-slate-500">ASA1</label><input id="ops-asa-1" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">ASA2</label><input id="ops-asa-2" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">ASA3</label><input id="ops-asa-3" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">ASA4</label><input id="ops-asa-4" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">ASA5</label><input id="ops-asa-5" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">ASA6</label><input id="ops-asa-6" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+      </div>
+
+      <div class="font-semibold text-slate-700 border-t pt-2">Choice of Anesthesia</div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div><label class="text-xs text-slate-500">GA</label><input id="ops-c-GA" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">RA</label><input id="ops-c-RA" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">MAC</label><input id="ops-c-MAC" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Combined</label><input id="ops-c-Combined" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+      </div>
+
+      <div class="font-semibold text-slate-700 border-t pt-2">CVT Services</div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div><label class="text-xs text-slate-500">Thymectomy</label><input id="ops-v-Thymectomy" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Open Heart</label><input id="ops-v-OpenHeart" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Pericardial</label><input id="ops-v-Pericardial" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">TEVAR</label><input id="ops-v-TEVAR" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">AAA</label><input id="ops-v-AAA" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">EVAR</label><input id="ops-v-EVAR" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+      </div>
+
+      <div class="font-semibold text-slate-700 border-t pt-2">โรคร่วม</div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div><label class="text-xs text-slate-500">HT</label><input id="ops-m-HT" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">DM</label><input id="ops-m-DM" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Pregnant</label><input id="ops-m-Pregnant" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Renal insuff.</label><input id="ops-m-RenalInsuff" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Heart Disease</label><input id="ops-m-HeartDisease" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Asthma/COPD</label><input id="ops-m-Asthma_COPD" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+      </div>
+
+      <div class="font-semibold text-slate-700 border-t pt-2">สาเหตุการเสียชีวิตหลังผ่าตัด</div>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div><label class="text-xs text-slate-500">Cardiac</label><input id="ops-d-Cardiac" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Bleeding</label><input id="ops-d-Bleeding" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Sepsis</label><input id="ops-d-Sepsis" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Respiratory</label><input id="ops-d-Respiratory" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs text-slate-500">Other</label><input id="ops-d-Other" type="number" class="w-full px-2 py-1.5 border rounded text-sm"></div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t">
+        <button onclick="closeOpsEditor()" class="px-4 py-2 bg-slate-100 rounded-lg text-sm">ยกเลิก</button>
+        <button onclick="saveOpsStats()" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-semibold">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: แสดงเครื่องในห้อง -->
+  <div id="roomModal" class="fixed inset-0 bg-black/60 z-40 hidden items-center justify-center p-3">
+    <div class="card max-w-4xl w-full max-h-[92vh] overflow-y-auto p-5">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div>
+          <div class="text-xs text-slate-500">ห้อง</div>
+          <div class="font-bold text-2xl" id="rm-name">--</div>
+        </div>
+        <button onclick="closeRoom()" class="text-slate-500 hover:text-slate-800 text-3xl leading-none">×</button>
+      </div>
+
+      <div id="rm-groups" class="space-y-5"></div>
+    </div>
+  </div>
+
+  <section data-page="reports" class="hidden">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <button onclick="exportKPIExcel()" class="card p-5 text-left hover:shadow-lg transition">
+        <div class="text-3xl mb-2">📊</div>
+        <div class="font-semibold">KPI ย้อนหลัง 5 ปี</div>
+        <div class="text-xs text-slate-500 mt-1">Excel + กราฟ</div>
+      </button>
+      <button onclick="exportOpsExcel()" class="card p-5 text-left hover:shadow-lg transition">
+        <div class="text-3xl mb-2">📈</div>
+        <div class="font-semibold">ยอดบริการเปรียบเทียบ</div>
+        <div class="text-xs text-slate-500 mt-1">Excel + chart</div>
+      </button>
+      <button onclick="exportEquipExcel()" class="card p-5 text-left hover:shadow-lg transition">
+        <div class="text-3xl mb-2">🔧</div>
+        <div class="font-semibold">ตรวจสอบเครื่องมือ</div>
+        <div class="text-xs text-slate-500 mt-1">Excel</div>
+      </button>
+      <button onclick="exportSchedulePDF()" class="card p-5 text-left hover:shadow-lg transition">
+        <div class="text-3xl mb-2">📅</div>
+        <div class="font-semibold">ตารางเวรรายเดือน</div>
+        <div class="text-xs text-slate-500 mt-1">PDF</div>
+      </button>
+      <button onclick="exportStaffPDF()" class="card p-5 text-left hover:shadow-lg transition">
+        <div class="text-3xl mb-2">👥</div>
+        <div class="font-semibold">รายงานบุคลากร</div>
+        <div class="text-xs text-slate-500 mt-1">PDF</div>
+      </button>
+      <button onclick="exportDashboardPDF()" class="card p-5 text-left hover:shadow-lg transition">
+        <div class="text-3xl mb-2">🖨️</div>
+        <div class="font-semibold">Dashboard สรุปประจำเดือน</div>
+        <div class="text-xs text-slate-500 mt-1">PDF</div>
+      </button>
+    </div>
+  </section>
+
+  <section data-page="news" class="hidden space-y-3" id="newsList"></section>
+
+</main>
+
+<div id="kpiModal" class="fixed inset-0 bg-black/50 z-40 hidden items-center justify-center p-3">
+  <div class="card max-w-2xl w-full max-h-[92vh] overflow-y-auto p-5">
+    <div class="flex items-start justify-between gap-3 mb-3">
+      <div>
+        <div class="text-xs text-slate-500" id="km-code"></div>
+        <div class="font-bold text-lg" id="km-name"></div>
+        <div class="text-xs text-slate-500 mt-1" id="km-desc"></div>
+      </div>
+      <button onclick="closeKpiModal()" class="text-slate-500 hover:text-slate-800 text-2xl leading-none">×</button>
+    </div>
+    <div class="grid sm:grid-cols-3 gap-3 mb-4">
+      <div class="bg-slate-50 rounded-lg p-3 text-center">
+        <div class="text-xs text-slate-500">เป้าหมาย</div>
+        <div class="text-xl font-bold" id="km-target">--</div>
+      </div>
+      <div class="bg-emerald-50 rounded-lg p-3 text-center">
+        <div class="text-xs text-emerald-700">ค่าจริงล่าสุด</div>
+        <div class="text-xl font-bold text-emerald-700" id="km-latest">--</div>
+      </div>
+      <div class="bg-blue-50 rounded-lg p-3 text-center">
+        <div class="text-xs text-blue-700">% บรรลุเฉลี่ย 5 ปี</div>
+        <div class="text-xl font-bold text-blue-700" id="km-avg">--</div>
+      </div>
+    </div>
+    <div class="chart-box mb-4"><canvas id="km-trend"></canvas></div>
+    <div class="scroll-x">
+      <table class="min-w-full text-sm">
+        <thead class="text-slate-500 border-b">
+          <tr><th class="text-left py-1.5">ปีงบฯ</th><th class="text-right">ค่าจริง</th><th class="text-right">เป้า</th><th class="text-right">% บรรลุ</th><th class="text-left pl-3">หมายเหตุ</th></tr>
+        </thead>
+        <tbody id="km-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer class="text-center py-6 text-xs text-slate-500">
+  © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · ระบบ V2 — Supabase Realtime
+</footer>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+const state = { kpis: [], history: [], ops: [], announcements: [], currentFY: 2568,
+  serviceLogs: [], inspections: [], equipment: [], nurses: [] };
+
+function toggleIdxMenu() {
+  document.getElementById('idx-dropdown').classList.toggle('hidden');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#idx-menu-btn') && !e.target.closest('#idx-dropdown')) {
+    document.getElementById('idx-dropdown')?.classList.add('hidden');
+  }
+});
+
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    const tab = b.dataset.tab;
+    document.querySelectorAll('section[data-page]').forEach(s => {
+      s.classList.toggle('hidden', s.dataset.page !== tab);
+    });
+    document.getElementById('idx-dropdown')?.classList.add('hidden');
+    if (tab === 'results') renderResults();
+    if (tab === 'news') renderNews();
+    if (tab === 'daily') renderDaily();
+    if (tab === 'prepost') renderPrePost();
+    if (tab === 'inspect') renderInspect();
+    if (tab === 'equipment') renderEquipment();
+  });
+});
+
+function toggleFullscreen(on) {
+  if (on === undefined) on = !document.body.classList.contains('fs-mode');
+  document.body.classList.toggle('fs-mode', !!on);
+  try { localStorage.setItem('anes_fs', on ? '1' : '0'); } catch(e){}
+}
+try { if (localStorage.getItem('anes_fs') === '1') toggleFullscreen(true); } catch(e){}
+
+async function loadAll() {
+  try {
+    const [kpis, hist, ops, ann, cfg, logs, inspections, equipment, nurses] = await Promise.all([
+      sbDB.list('kpis', { order:'sort_order', asc:true }),
+      sbDB.list('kpi_history'),
+      sbDB.list('operation_stats', { order:'fiscal_year', asc:true }),
+      sbDB.list('announcements', { order:'date', asc:false }),
+      sbDB.list('config'),
+      sbDB.list('service_logs', { order:'date', asc:false, limit:100 }),
+      sbDB.list('daily_inspections', { order:'created_at', asc:false, limit:50 }),
+      sbDB.list('equipment', { order:'name', asc:true }),
+      sbDB.list('nurses', { eq:{active:true} }).catch(() => [])
+    ]);
+    state.kpis = kpis; state.history = hist; state.ops = ops; state.announcements = ann;
+    state.serviceLogs = logs; state.inspections = inspections; state.equipment = equipment;
+    state.nurses = nurses;
+    // อัปเดตสถิติบุคลากร — แยกผู้ช่วยพยาบาล / ผู้ช่วยเหลือคนไข้
+    const nurseCount     = nurses.filter(n => n.role === 'พยาบาลวิสัญญี').length;
+    const asstNurseCount = nurses.filter(n => n.role === 'ผู้ช่วยพยาบาล').length;
+    const asstPtCount    = nurses.filter(n => n.role === 'ผู้ช่วยเหลือคนไข้').length;
+    const otherCount     = nurses.filter(n => !['พยาบาลวิสัญญี','ผู้ช่วยพยาบาล','ผู้ช่วยเหลือคนไข้'].includes(n.role)).length;
+    if (document.getElementById('header-staff-count')) document.getElementById('header-staff-count').textContent = nurses.length + ' บุคลากร';
+    if (document.getElementById('staff-count-all')) {
+      document.getElementById('staff-count-all').textContent       = nurses.length;
+      document.getElementById('staff-count-nurse').textContent      = nurseCount;
+      document.getElementById('staff-count-asst-nurse').textContent = asstNurseCount;
+      document.getElementById('staff-count-asst-pt').textContent    = asstPtCount;
+      document.getElementById('staff-count-other').textContent      = otherCount;
+    }
+    const fy = cfg.find(c => c.key === 'current_fy');
+    if (fy?.value) state.currentFY = parseInt(fy.value) || 2568;
+    document.getElementById('sat-year').textContent = state.currentFY;
+    document.getElementById('stat-year').textContent = state.currentFY;
+    renderKPIs(); renderResults(); renderNews();
+    renderDaily(); renderInspect(); renderEquipment();
+    checkUrgent();
+    document.getElementById('live-text').textContent = 'เชื่อมต่อแล้ว · อัปเดตล่าสุด ' + new Date().toLocaleTimeString('th-TH');
+  } catch (err) {
+    console.error(err);
+    sbUtils.toast('โหลดข้อมูลล้มเหลว: ' + err.message, 'error');
+  }
+}
+
+function renderKPIs() {
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = '';
+  let pass = 0, totalAch = 0, count = 0;
+  state.kpis.forEach(k => {
+    const h = state.history.filter(x => x.kpi_id === k.id).sort((a,b) => b.fiscal_year - a.fiscal_year);
+    const latest = h[0];
+    const val = latest?.value;
+    const tgt = k.target;
+    const isLow = k.direction === 'lower';
+    const ok = val != null && tgt != null
+      ? (isLow ? Number(val) <= Number(tgt) : Number(val) >= Number(tgt))
+      : null;
+    if (ok === true) pass++;
+    let ach = null;
+    if (val != null && tgt != null && tgt !== 0) {
+      ach = isLow ? Math.max(0, 100 - ((val - tgt) / tgt * 100)) : (val / tgt * 100);
+      ach = Math.min(120, ach); totalAch += ach; count++;
+    } else if (tgt === 0 && val != null) {
+      ach = Number(val) === 0 ? 100 : 0; totalAch += ach; count++;
+    }
+    const accent = ok === null ? 'slate' : ok ? 'emerald' : 'rose';
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="card kpi-card p-3 border-l-4 border-${accent}-500" onclick="openKpiDetail('${k.id}')">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="text-[11px] text-slate-500">${k.code}</div>
+            <div class="font-semibold text-sm text-slate-800 line-clamp-2">${k.name}</div>
+          </div>
+          ${ok === null ? '' : `<span class="badge bg-${accent}-100 text-${accent}-700">${ok ? 'ผ่าน' : 'ไม่ผ่าน'}</span>`}
+        </div>
+        <div class="mt-3 flex items-end justify-between">
+          <div>
+            <div class="text-[11px] text-slate-500">ค่าจริง (${latest?.fiscal_year ?? '-'})</div>
+            <div class="text-2xl font-bold text-${accent}-600">${val != null ? sbUtils.fmtNum(val, val % 1 === 0 ? 0 : 2) : '-'}<span class="text-sm font-normal text-slate-500"> ${k.unit||''}</span></div>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] text-slate-500">เป้า</div>
+            <div class="text-sm font-semibold text-slate-700">${tgt != null ? sbUtils.fmtNum(tgt, tgt % 1 === 0 ? 0 : 2) : '-'}${k.unit||''}</div>
+          </div>
+        </div>
+      </div>
+    `);
+  });
+  const total = state.kpis.length;
+  document.getElementById('kc-pass').textContent = pass;
+  document.getElementById('kc-fail').textContent = total - pass;
+  document.getElementById('kc-pass-pct').textContent = total ? sbUtils.fmtNum(pass/total*100, 1)+'%' : '--%';
+  document.getElementById('kc-fail-pct').textContent = total ? sbUtils.fmtNum((total-pass)/total*100, 1)+'%' : '--%';
+  document.getElementById('kc-avg').textContent = count ? sbUtils.fmtNum(totalAch / count, 1) + '%' : '--%';
+  document.getElementById('kc-total').textContent = total;
+
+  const k15 = state.kpis.find(k => k.code === 'KPI-15');
+  if (k15) {
+    const h15 = state.history.filter(x => x.kpi_id === k15.id).sort((a,b) => a.fiscal_year - b.fiscal_year);
+    const latest = h15[h15.length - 1];
+    if (latest) {
+      document.getElementById('sat-value').textContent = sbUtils.fmtNum(latest.value,2) + '%';
+      document.getElementById('stat-sat').textContent = sbUtils.fmtNum(latest.value,2) + '%';
+      drawGauge('gaugeSat', latest.value);
+    }
+    drawSatTrend(h15);
+  }
+}
+
+let gaugeChart, trendChart, asaChart, patientsChart, cvtChart, comorbChart, deathChart, kmTrendChart;
+function drawGauge(id, value) {
+  const ctx = document.getElementById(id);
+  if (gaugeChart) gaugeChart.destroy();
+  const v = Math.min(100, Math.max(0, value || 0));
+  gaugeChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: ['ความพึงพอใจ', 'คงเหลือ'],
+      datasets: [{ data: [v, 100 - v], backgroundColor: ['#10b981', '#e2e8f0'],
+        borderWidth: 0, circumference: 180, rotation: 270 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+  });
+}
+function drawSatTrend(history) {
+  const ctx = document.getElementById('satTrend');
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: history.map(h => h.fiscal_year),
+      datasets: [
+        { label: 'ค่าจริง', data: history.map(h => h.value), borderColor:'#10b981',
+          backgroundColor:'rgba(16,185,129,.15)', tension:.35, fill:true, pointRadius:4, pointHoverRadius:6 },
+        { label: 'เป้า', data: history.map(h => h.target), borderColor:'#f59e0b',
+          borderDash:[6,4], pointRadius:0, fill:false }
+      ] },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{ position:'bottom' } },
+      scales: { y: { suggestedMin:80, suggestedMax:100 } } }
+  });
+}
+
+function openKpiDetail(id) {
+  const k = state.kpis.find(x => x.id === id);
+  const h = state.history.filter(x => x.kpi_id === id).sort((a,b) => a.fiscal_year - b.fiscal_year);
+  document.getElementById('km-code').textContent = k.code;
+  document.getElementById('km-name').textContent = k.name;
+  document.getElementById('km-desc').textContent = k.description || '';
+  document.getElementById('km-target').textContent = (k.target ?? '-') + (k.unit||'');
+  const isLow = k.direction === 'lower';
+  let totalAch = 0, cnt = 0;
+  h.forEach(r => {
+    if (r.value != null && r.target != null && r.target !== 0) {
+      const a = isLow ? Math.max(0, 100 - ((r.value - r.target) / r.target * 100)) : (r.value / r.target * 100);
+      totalAch += Math.min(120, a); cnt++;
+    }
+  });
+  const last = h[h.length - 1];
+  document.getElementById('km-latest').textContent = last ? sbUtils.fmtNum(last.value,2) + (k.unit||'') : '-';
+  document.getElementById('km-avg').textContent = cnt ? sbUtils.fmtNum(totalAch/cnt,1) + '%' : '-';
+  const tbody = document.getElementById('km-tbody');
+  tbody.innerHTML = h.map(r => {
+    const ach = r.target && r.target !== 0
+      ? (isLow ? Math.max(0, 100 - ((r.value - r.target) / r.target * 100)) : (r.value / r.target * 100))
+      : null;
+    return `<tr class="border-b last:border-0">
+      <td class="py-1.5">${r.fiscal_year}</td>
+      <td class="text-right font-semibold">${sbUtils.fmtNum(r.value, 2)}</td>
+      <td class="text-right">${sbUtils.fmtNum(r.target, 2)}</td>
+      <td class="text-right ${ach >= 100 ? 'text-emerald-600' : 'text-rose-500'}">${ach !== null ? sbUtils.fmtNum(ach,1) + '%' : '-'}</td>
+      <td class="pl-3 text-xs text-slate-500">${r.notes || ''}</td>
+    </tr>`;
+  }).join('');
+
+  const ctx = document.getElementById('km-trend');
+  if (kmTrendChart) kmTrendChart.destroy();
+  kmTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: h.map(r => r.fiscal_year),
+      datasets: [
+        { label:'ค่าจริง', data:h.map(r => r.value), borderColor:'#2563eb',
+          backgroundColor:'rgba(37,99,235,.15)', tension:.3, fill:true },
+        { label:'เป้า', data:h.map(r => r.target), borderColor:'#f59e0b',
+          borderDash:[6,4], pointRadius:0, fill:false }
+      ] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  const m = document.getElementById('kpiModal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeKpiModal() {
+  const m = document.getElementById('kpiModal');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+
+function renderResults() {
+  // populate year dropdown
+  const picker = document.getElementById('results-year-picker');
+  if (picker) {
+    const yrs = state.ops.map(o => o.fiscal_year).sort((a,b)=>b-a);
+    const selected = parseInt(picker.value) || state.currentFY;
+    picker.innerHTML = yrs.map(y => `<option ${y===selected?'selected':''}>${y}</option>`).join('')
+      || `<option>${state.currentFY}</option>`;
+    state.currentFY = parseInt(picker.value);
+  }
+  const cur = state.ops.find(o => o.fiscal_year === state.currentFY) || state.ops[state.ops.length-1];
+  if (!cur) return;
+  document.getElementById('stat-patients').textContent = sbUtils.fmtNum(cur.total_patients, 0);
+  if (cur.satisfaction) document.getElementById('stat-sat').textContent = sbUtils.fmtNum(cur.satisfaction, 2) + '%';
+  if (document.getElementById('results-year')) document.getElementById('results-year').textContent = cur.fiscal_year;
+  // นับพยาบาลจริงจาก nurses table
+  const nurseN = state.nurses.filter(n => n.role === 'พยาบาลวิสัญญี' && n.active !== false).length;
+  if (document.getElementById('stat-nurse-count')) document.getElementById('stat-nurse-count').textContent = nurseN;
+
+  if (asaChart) asaChart.destroy();
+  asaChart = new Chart(document.getElementById('chartAsa'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(cur.asa || {}),
+      datasets: [{ data: Object.values(cur.asa || {}),
+        backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#64748b'] }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } }
+  });
+
+  if (patientsChart) patientsChart.destroy();
+  patientsChart = new Chart(document.getElementById('chartPatients'), {
+    type:'bar',
+    data: { labels: state.ops.map(o => o.fiscal_year),
+      datasets: [{ label:'ผู้ป่วยรวม', data: state.ops.map(o => o.total_patients),
+        backgroundColor:'#2563eb', borderRadius:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } }
+  });
+
+  const types = ['GA','RA','MAC','Combined'];
+  document.getElementById('tblChoice').innerHTML = types.map(t => {
+    const cells = state.ops.map(o => `<td class="text-right py-1">${sbUtils.fmtNum(o.choice?.[t]||0,0)}</td>`).join('');
+    return `<tr class="border-b last:border-0"><td class="py-1">${t}</td>${cells}</tr>`;
+  }).join('');
+
+  if (cvtChart) cvtChart.destroy();
+  const cvtKeys = ['Thymectomy','OpenHeart','Pericardial','TEVAR','AAA','EVAR'];
+  cvtChart = new Chart(document.getElementById('chartCVT'), {
+    type:'line',
+    data:{ labels: state.ops.map(o => o.fiscal_year),
+      datasets: cvtKeys.map((k,i) => ({ label: k, data: state.ops.map(o => o.cvt?.[k] || 0),
+        borderColor: ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#06b6d4'][i],
+        backgroundColor: 'transparent', tension:.3 })) },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  if (comorbChart) comorbChart.destroy();
+  const cmKeys = ['HT','DM','Pregnant','RenalInsuff','HeartDisease','Asthma_COPD'];
+  comorbChart = new Chart(document.getElementById('chartComorb'), {
+    type:'line',
+    data:{ labels: state.ops.map(o => o.fiscal_year),
+      datasets: cmKeys.map((k,i) => ({ label: k, data: state.ops.map(o => o.comorbidities?.[k] || 0),
+        borderColor: ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#06b6d4'][i],
+        backgroundColor:'transparent', tension:.3 })) },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  if (deathChart) deathChart.destroy();
+  const dcKeys = ['Cardiac','Bleeding','Sepsis','Respiratory','Other'];
+  deathChart = new Chart(document.getElementById('chartDeath'), {
+    type:'bar',
+    data:{ labels: state.ops.map(o => o.fiscal_year),
+      datasets: dcKeys.map((k,i) => ({ label: k, data: state.ops.map(o => o.death_causes?.[k] || 0),
+        backgroundColor: ['#ef4444','#f59e0b','#8b5cf6','#06b6d4','#64748b'][i] })) },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } },
+      scales:{ x:{ stacked:true }, y:{ stacked:true } } }
+  });
+}
+
+// ===== URGENT BANNER + BROWSER NOTIFICATION =====
+function getReadIds() {
+  try { return JSON.parse(localStorage.getItem('anes_read_ann') || '[]'); } catch(e) { return []; }
+}
+function setReadIds(arr) {
+  try { localStorage.setItem('anes_read_ann', JSON.stringify(arr.slice(-100))); } catch(e){}
+}
+let currentUrgent = null;
+function checkUrgent() {
+  // หา urgent ที่อายุ ≤ 7 วัน + ยังไม่อ่าน
+  const read = getReadIds();
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+  const urgent = state.announcements.find(a =>
+    a.level === 'urgent' &&
+    new Date(a.date || a.created_at) >= cutoff &&
+    !read.includes(a.id)
+  );
+  const banner = document.getElementById('urgentBanner');
+  if (urgent) {
+    currentUrgent = urgent;
+    document.getElementById('urg-title').textContent = '🚨 ' + (urgent.title || 'ประกาศสำคัญ');
+    document.getElementById('urg-content').textContent = urgent.content || '';
+    banner.classList.remove('hidden');
+    // Browser notification (ถ้าได้รับอนุญาต)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const seenKey = 'anes_notif_' + urgent.id;
+      if (!sessionStorage.getItem(seenKey)) {
+        new Notification('🚨 ประกาศสำคัญ — วิสัญญี รพ.สกลนคร', {
+          body: (urgent.title || '') + '\n' + (urgent.content || '').substring(0, 100),
+          icon: 'data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text x=\'10\' y=\'80\' font-size=\'80\'>🚨</text></svg>',
+          tag: 'anes-urgent-' + urgent.id
+        });
+        sessionStorage.setItem(seenKey, '1');
+      }
+    } else if ('Notification' in window && Notification.permission === 'default') {
+      // ขออนุญาตครั้งแรก
+      Notification.requestPermission();
+    }
+  } else {
+    banner.classList.add('hidden');
+    currentUrgent = null;
+  }
+}
+function readUrgent() {
+  if (!currentUrgent) return dismissUrgent();
+  const read = getReadIds(); read.push(currentUrgent.id);
+  setReadIds(read);
+  document.getElementById('urgentBanner').classList.add('hidden');
+}
+function dismissUrgent() {
+  document.getElementById('urgentBanner').classList.add('hidden');
+  // ไม่บันทึก read — จะกลับมาขึ้นวันรุ่งขึ้น
+}
+
+function renderNews() {
+  const list = document.getElementById('newsList');
+  const ic = { urgent:'🚨', warn:'⚠️', info:'📌' };
+  list.innerHTML = state.announcements.length === 0
+    ? '<div class="card p-6 text-center text-slate-500">ยังไม่มีประกาศ</div>'
+    : state.announcements.map(a => `
+      <div class="card p-4 border-l-4 border-${a.level==='urgent'?'rose':a.level==='warn'?'amber':'blue'}-500 ${a.level==='urgent'?'bg-rose-50':a.level==='warn'?'bg-amber-50':''}">
+        <div class="flex justify-between items-start gap-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xl">${ic[a.level]||'📌'}</span>
+              <span class="font-semibold text-slate-800">${a.title}</span>
+              ${a.level==='urgent'?'<span class="text-xs bg-rose-500 text-white px-2 py-0.5 rounded-full">สำคัญ</span>':''}
+              ${a.level==='warn'?'<span class="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full">ข้อควรระวัง</span>':''}
+            </div>
+            <div class="text-sm text-slate-600 mt-1 whitespace-pre-wrap">${a.content||''}</div>
+          </div>
+          <div class="text-xs text-slate-500 whitespace-nowrap">${sbUtils.fmtDate(a.date)}</div>
+        </div>
+      </div>
+    `).join('');
+}
+
+function exportDailyExcel() {
+  const range = document.getElementById('ds-rangeSel')?.value || 'day';
+  const { logs, label } = getRangeLogs(range);
+  if (logs.length === 0) { sbUtils.toast('ไม่มีข้อมูลในช่วงนี้','error'); return; }
+  const headers = ['วันที่','ประเภท','เวร','จุดบริการ','Pt รวม','GA','RA','MAC','ผ่าน RR','ไม่ผ่าน',
+    'Pre-op','Post-op','ETT กลับ','ส่งต่อเวร','เกิน 1 ชม.',
+    'ASA1','ASA2','ASA3','ASA4','ASA5','ASA6','หมายเหตุ'];
+  const rows = [headers];
+  logs.forEach(l => {
+    const m = l.metrics || {};
+    rows.push([
+      l.date, l.type, l.shift||'', l.service_point||'',
+      m.total||0, m.ga||0, m.ra||0, m.mac||0, m.pass_rr||0, m.fail_rr||0,
+      m.pre_op||0, m.post_op||0, m.ett_return||0, m.handover_pm||0, m.pacu_over_1h||0,
+      l.asa?.ASA1||0, l.asa?.ASA2||0, l.asa?.ASA3||0, l.asa?.ASA4||0, l.asa?.ASA5||0, l.asa?.ASA6||0,
+      (l.notes||'').replace(/\n/g,' · ')
+    ]);
+  });
+  // สรุปท้ายตาราง
+  const s = sumLogs(logs);
+  rows.push([]);
+  rows.push(['สรุป', '', '', '', s.total, s.ga, s.ra, s.mac, s.pass, s.fail, s.pre_op, s.post_op, s.ett, s.handover, s.pacu1h,
+             s.asa.ASA1, s.asa.ASA2, s.asa.ASA3, s.asa.ASA4, s.asa.ASA5, s.asa.ASA6, '']);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'ยอดบริการ');
+  XLSX.writeFile(wb, `ยอดบริการ-${label.replace(/\s/g,'-')}.xlsx`);
+}
+
+function exportKPIExcel() {
+  const wb = XLSX.utils.book_new();
+  const fys = [...new Set(state.history.map(h => h.fiscal_year))].sort();
+  const rows = [['Code','KPI','Unit','Direction','Target', ...fys.map(y => `ค่าจริง ${y}`)]];
+  state.kpis.forEach(k => {
+    const r = [k.code, k.name, k.unit, k.direction, k.target];
+    fys.forEach(y => {
+      const h = state.history.find(x => x.kpi_id === k.id && x.fiscal_year === y);
+      r.push(h?.value ?? '');
+    });
+    rows.push(r);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'KPI 5 ปี');
+  XLSX.writeFile(wb, `KPI-5ปี-${Date.now()}.xlsx`);
+}
+function exportOpsExcel() {
+  const wb = XLSX.utils.book_new();
+  const rows = [['ปีงบฯ','ผู้ป่วยรวม','ความพึงพอใจ',
+    'ASA1','ASA2','ASA3','ASA4','ASA5','ASA6',
+    'GA','RA','MAC','Combined']];
+  state.ops.forEach(o => {
+    rows.push([o.fiscal_year, o.total_patients, o.satisfaction,
+      o.asa?.ASA1||0, o.asa?.ASA2||0, o.asa?.ASA3||0, o.asa?.ASA4||0, o.asa?.ASA5||0, o.asa?.ASA6||0,
+      o.choice?.GA||0, o.choice?.RA||0, o.choice?.MAC||0, o.choice?.Combined||0]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Operation Stats');
+  XLSX.writeFile(wb, `ops-stats-${Date.now()}.xlsx`);
+}
+async function exportEquipExcel() {
+  const eq = await sbDB.list('equipment', { order:'name', asc:true });
+  const rows = [['ชื่อเครื่อง','ยี่ห้อ','รุ่น','Serial','ที่ตั้ง','สถานะ','รับเข้า','ซ่อมล่าสุด','ผู้ดูแล','หมายเหตุ']];
+  eq.forEach(e => rows.push([e.name,e.brand,e.model,e.serial,e.location,e.status,e.received_date,e.repair_date,e.owner,e.notes]));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Equipment');
+  XLSX.writeFile(wb, `equipment-${Date.now()}.xlsx`);
+}
+async function exportSchedulePDF() {
+  const ym = prompt('ระบุปี-เดือน (เช่น 2569-01):', '2569-01');
+  if (!ym) return;
+  const sc = await sbDB.list('schedule_entries', { eq:{year_month:ym}, order:'day', asc:true });
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14); doc.text('Schedule ' + ym, 14, 18);
+  doc.setFontSize(10);
+  let y = 28;
+  sc.forEach(r => {
+    doc.text(`Day ${r.day}  Team ${r.team||'-'}  ${r.position||''}  ${r.nickname||''}`, 14, y);
+    y += 6; if (y > 280) { doc.addPage(); y = 18; }
+  });
+  doc.save(`schedule-${ym}.pdf`);
+}
+async function exportStaffPDF() {
+  const staff = await sbDB.list('profiles', { order:'full_name', asc:true });
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14); doc.text('Staff Report', 14, 18);
+  doc.setFontSize(10);
+  let y = 28;
+  staff.forEach(s => {
+    doc.text(`${s.full_name||''}  (${s.nickname||''})  ${s.position||''}  ${s.phone||''}`, 14, y);
+    y += 6; if (y > 280) { doc.addPage(); y = 18; }
+  });
+  doc.save(`staff-${Date.now()}.pdf`);
+}
+function exportDashboardPDF() {
+  const target = document.querySelector('main');
+  sbUtils.toast('กำลังสร้าง PDF ...', 'info');
+  html2canvas(target, { scale:1.5, backgroundColor:'#f1f5f9' }).then(canvas => {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p','mm','a4');
+    const w = 210, h = canvas.height * w / canvas.width;
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, w, h);
+    pdf.save(`dashboard-${Date.now()}.pdf`);
+  });
+}
+
+// ===================== AUTH-AWARE UI =====================
+let currentEditUser = null;
+async function checkAuth() {
+  try { currentEditUser = await sbAuth.getUser(); return !!currentEditUser; }
+  catch(e) { return false; }
+}
+async function applyAuthUI() {
+  const ok = await checkAuth();
+  document.getElementById('kpi-summary-box')?.classList.toggle('hidden', !ok);
+  document.getElementById('kpi-edit-btn')?.classList.toggle('hidden', !ok);
+}
+function openKpiEditLink() {
+  window.location.href = 'staff.html#kpi-edit';
+}
+async function openOpsEditor(newYear) {
+  const m = document.getElementById('opsModal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+  const ok = await checkAuth();
+  document.getElementById('opsAuthMsg').classList.toggle('hidden', ok);
+  document.getElementById('opsFormWrap').style.opacity = ok ? '1' : '.5';
+  document.getElementById('opsFormWrap').style.pointerEvents = ok ? 'auto' : 'none';
+
+  const fy = newYear ? '' : (parseInt(document.getElementById('results-year-picker')?.value) || state.currentFY);
+  const o = newYear ? {} : (state.ops.find(x => x.fiscal_year === fy) || {});
+  document.getElementById('ops-modal-title').textContent = newYear ? '➕ เพิ่มปีงบประมาณใหม่' : `✏️ แก้ข้อมูลปีงบฯ ${fy}`;
+
+  document.getElementById('ops-fy').value    = newYear ? '' : (o.fiscal_year || fy);
+  document.getElementById('ops-fy').readOnly = !newYear && !!o.fiscal_year;
+  document.getElementById('ops-total').value = o.total_patients || '';
+  document.getElementById('ops-sat').value   = o.satisfaction || '';
+  ['1','2','3','4','5','6'].forEach(k => document.getElementById('ops-asa-'+k).value = o.asa?.['ASA'+k] || '');
+  ['GA','RA','MAC','Combined'].forEach(k => document.getElementById('ops-c-'+k).value = o.choice?.[k] || '');
+  ['Thymectomy','OpenHeart','Pericardial','TEVAR','AAA','EVAR'].forEach(k => document.getElementById('ops-v-'+k).value = o.cvt?.[k] || '');
+  ['HT','DM','Pregnant','RenalInsuff','HeartDisease','Asthma_COPD'].forEach(k => document.getElementById('ops-m-'+k).value = o.comorbidities?.[k] || '');
+  ['Cardiac','Bleeding','Sepsis','Respiratory','Other'].forEach(k => document.getElementById('ops-d-'+k).value = o.death_causes?.[k] || '');
+}
+function closeOpsEditor() {
+  const m = document.getElementById('opsModal');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+async function saveOpsStats() {
+  if (!currentEditUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const v = id => parseInt(document.getElementById(id).value) || 0;
+  const f = id => parseFloat(document.getElementById(id).value) || null;
+  const fy = parseInt(document.getElementById('ops-fy').value);
+  if (!fy) { sbUtils.toast('กรอกปีงบประมาณ','error'); return; }
+  const row = {
+    fiscal_year: fy,
+    total_patients: v('ops-total'),
+    satisfaction: f('ops-sat'),
+    asa: { ASA1:v('ops-asa-1'), ASA2:v('ops-asa-2'), ASA3:v('ops-asa-3'),
+           ASA4:v('ops-asa-4'), ASA5:v('ops-asa-5'), ASA6:v('ops-asa-6') },
+    choice: { GA:v('ops-c-GA'), RA:v('ops-c-RA'), MAC:v('ops-c-MAC'), Combined:v('ops-c-Combined') },
+    cvt: { Thymectomy:v('ops-v-Thymectomy'), OpenHeart:v('ops-v-OpenHeart'),
+           Pericardial:v('ops-v-Pericardial'), TEVAR:v('ops-v-TEVAR'),
+           AAA:v('ops-v-AAA'), EVAR:v('ops-v-EVAR') },
+    comorbidities: { HT:v('ops-m-HT'), DM:v('ops-m-DM'), Pregnant:v('ops-m-Pregnant'),
+                     RenalInsuff:v('ops-m-RenalInsuff'), HeartDisease:v('ops-m-HeartDisease'),
+                     Asthma_COPD:v('ops-m-Asthma_COPD') },
+    death_causes: { Cardiac:v('ops-d-Cardiac'), Bleeding:v('ops-d-Bleeding'),
+                    Sepsis:v('ops-d-Sepsis'), Respiratory:v('ops-d-Respiratory'),
+                    Other:v('ops-d-Other') }
+  };
+  try {
+    await sbDB.upsert('operation_stats', row, { onConflict: 'fiscal_year' });
+    sbUtils.toast('บันทึกแล้ว ✓','success');
+    closeOpsEditor();
+    state.currentFY = fy;
+    await loadAll();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+function subscribeAll() {
+  ['kpis','kpi_history','operation_stats','announcements','config',
+   'service_logs','daily_inspections','equipment'].forEach(t => {
+    sbRT.subscribe(t, () => { console.log('[rt]', t); loadAll(); });
+  });
+}
+
+// ===================== DAILY SERVICE TAB =====================
+let chartDaily30Inst, chartInsRoomInst;
+
+function sumLogs(logs) {
+  const r = { total:0, ga:0, ra:0, mac:0, pass:0, fail:0, ett:0, handover:0, pacu1h:0,
+              pre_op:0, post_op:0,
+              asa:{ASA1:0,ASA2:0,ASA3:0,ASA4:0,ASA5:0,ASA6:0} };
+  logs.forEach(l => {
+    r.total += l.metrics?.total||0;
+    r.ga += l.metrics?.ga||0; r.ra += l.metrics?.ra||0; r.mac += l.metrics?.mac||0;
+    r.pass += l.metrics?.pass_rr||0; r.fail += l.metrics?.fail_rr||0;
+    r.ett += l.metrics?.ett_return||0; r.handover += l.metrics?.handover_pm||0;
+    r.pacu1h += l.metrics?.pacu_over_1h||0;
+    r.pre_op  += l.metrics?.pre_op||0;
+    r.post_op += l.metrics?.post_op||0;
+    Object.keys(r.asa).forEach(k => { r.asa[k] += (l.asa?.[k]||0); });
+  });
+  return r;
+}
+
+function cardBody(s, color) {
+  const maxAsa = Math.max(1, ...Object.values(s.asa));
+  return `
+    <div class="grid grid-cols-3 gap-2 mb-3">
+      <div class="bg-white rounded-lg p-2 text-center"><div class="text-xs text-slate-500">GA</div><div class="text-xl font-bold text-${color}-600">${s.ga}</div></div>
+      <div class="bg-white rounded-lg p-2 text-center"><div class="text-xs text-slate-500">RA</div><div class="text-xl font-bold text-${color}-600">${s.ra}</div></div>
+      <div class="bg-white rounded-lg p-2 text-center"><div class="text-xs text-slate-500">MAC</div><div class="text-xl font-bold text-${color}-600">${s.mac}</div></div>
+    </div>
+    <div class="bg-white rounded-lg p-3 mb-3">
+      <div class="flex justify-between text-xs mb-1.5">
+        <span class="font-semibold">RR Throughput</span>
+        <span><span class="text-emerald-600 font-semibold">ผ่าน ${s.pass}</span> / <span class="text-rose-500 font-semibold">ไม่ผ่าน ${s.fail}</span></span>
+      </div>
+      <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden flex">
+        <div class="bg-emerald-500 h-full" style="width:${s.pass+s.fail?Math.round(s.pass/(s.pass+s.fail)*100):0}%"></div>
+        <div class="bg-rose-400 h-full" style="width:${s.pass+s.fail?Math.round(s.fail/(s.pass+s.fail)*100):0}%"></div>
+      </div>
+    </div>
+    <div class="bg-white rounded-lg p-3 mb-3">
+      <div class="text-xs font-semibold mb-2">ASA Classification</div>
+      ${['ASA1','ASA2','ASA3','ASA4','ASA5'].map((k,i) => `
+        <div class="flex items-center gap-2 text-xs mb-1">
+          <span class="w-12 text-slate-600">${k.replace('ASA','ASA ')}</span>
+          <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div class="bg-${color}-500 h-full" style="width:${s.asa[k]/maxAsa*100}%"></div>
+          </div>
+          <span class="w-6 text-right font-semibold">${s.asa[k]}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="bg-white rounded-lg py-2"><div class="text-xs text-slate-500">ETT กลับ</div><div class="font-bold text-${color}-700">${s.ett}</div></div>
+      <div class="bg-white rounded-lg py-2"><div class="text-xs text-slate-500">ส่งต่อเวรถัดไป</div><div class="font-bold text-${color}-700">${s.handover}</div></div>
+      <div class="bg-white rounded-lg py-2"><div class="text-xs text-slate-500">เกิน 1 ชม.</div><div class="font-bold text-${color}-700">${s.pacu1h}</div></div>
+    </div>
+  `;
+}
+
+function getRangeLogs(range) {
+  const dateSel = document.getElementById('ds-date')?.value || new Date().toISOString().slice(0,10);
+  if (range === 'day') return { logs: state.serviceLogs.filter(l => l.date === dateSel), label: sbUtils.fmtDate(dateSel) };
+  if (range === 'month') {
+    const month = dateSel.slice(0,7);
+    const thMonth = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    const d = new Date(dateSel);
+    return { logs: state.serviceLogs.filter(l => (l.date||'').startsWith(month)),
+             label: 'เดือน ' + thMonth[d.getMonth()] + ' ' + (d.getFullYear()+543) };
+  }
+  if (range === 'year') {
+    const year = dateSel.slice(0,4);
+    return { logs: state.serviceLogs.filter(l => (l.date||'').startsWith(year)),
+             label: 'ปี ' + (parseInt(year)+543) };
+  }
+  if (range === 'week') {
+    const cutoff = new Date(dateSel); cutoff.setDate(cutoff.getDate() - 7);
+    const cs = cutoff.toISOString().slice(0,10);
+    return { logs: state.serviceLogs.filter(l => (l.date||'') >= cs && (l.date||'') <= dateSel), label: '7 วันก่อน '+sbUtils.fmtDate(dateSel) };
+  }
+  return { logs: state.serviceLogs, label: 'ทั้งหมด' };
+}
+
+function onDateChange() {
+  const sel = document.getElementById('ds-rangeSel');
+  if (sel.value === 'all') sel.value = 'day';
+  renderDaily();
+}
+
+function renderDaily() {
+  // ตั้งค่าวันที่ default = วันนี้
+  if (document.getElementById('ds-date') && !document.getElementById('ds-date').value) {
+    document.getElementById('ds-date').value = new Date().toISOString().slice(0,10);
+  }
+  const range = document.getElementById('ds-rangeSel')?.value || 'day';
+  const { logs, label } = getRangeLogs(range);
+  document.getElementById('ds-period').textContent = label;
+
+  const inLogs  = logs.filter(l => l.type === 'ในเวลา');
+  const outLogs = logs.filter(l => l.type === 'นอกเวลา');
+  const sIn = sumLogs(inLogs), sOut = sumLogs(outLogs);
+  const tot = sIn.total + sOut.total;
+  document.getElementById('ds-totalAll').textContent = sbUtils.fmtNum(tot,0);
+  document.getElementById('ds-inN').textContent  = sbUtils.fmtNum(sIn.total,0);
+  document.getElementById('ds-outN').textContent = sbUtils.fmtNum(sOut.total,0);
+  const inPct  = tot ? Math.round(sIn.total/tot*100) : 0;
+  const outPct = tot ? 100 - inPct : 0;
+  document.getElementById('ds-inPct').textContent  = inPct + '%';
+  document.getElementById('ds-outPct').textContent = outPct + '%';
+  document.getElementById('ds-barIn').style.width  = inPct + '%';
+  document.getElementById('ds-barOut').style.width = outPct + '%';
+
+  const inPts  = [...new Set(inLogs.map(l => l.service_point).filter(Boolean))].join(', ') || '-';
+  const outPts = [...new Set(outLogs.map(l => l.service_point).filter(Boolean))].join(', ') || '-';
+  document.getElementById('ds-in-meta').textContent  = `จุด: ${inPts}`;
+  document.getElementById('ds-out-meta').textContent = `จุด: ${outPts}`;
+  document.getElementById('ds-in-total').textContent  = sIn.total;
+  document.getElementById('ds-out-total').textContent = sOut.total;
+  document.getElementById('ds-in-body').innerHTML  = cardBody(sIn,  'amber');
+  document.getElementById('ds-out-body').innerHTML = cardBody(sOut, 'purple');
+
+  // Pre/Post-op ในเวลา
+  document.getElementById('ds-in-preop').textContent  = sIn.pre_op;
+  document.getElementById('ds-in-postop').textContent = sIn.post_op;
+  document.getElementById('ds-in-preop-pct').textContent  = sIn.total ? Math.round(sIn.pre_op/sIn.total*100)  : '--';
+  document.getElementById('ds-in-postop-pct').textContent = sIn.total ? Math.round(sIn.post_op/sIn.total*100) : '--';
+
+  // Shift breakdown นอกเวลา
+  const shifts = { 'เช้า':0, 'บ่าย':0, 'ดึก':0, '':0 };
+  outLogs.forEach(l => {
+    const s = l.shift || '';
+    shifts[s] = (shifts[s] || 0) + (l.metrics?.total || 0);
+  });
+  document.getElementById('ds-shift-morning').textContent   = shifts['เช้า'];
+  document.getElementById('ds-shift-afternoon').textContent = shifts['บ่าย'];
+  document.getElementById('ds-shift-night').textContent     = shifts['ดึก'];
+  document.getElementById('ds-shift-other').textContent     = shifts[''];
+
+  // สรุปแยกจุดบริการ
+  const byPoint = {};
+  logs.forEach(l => {
+    const p = l.service_point || l.location || 'ไม่ระบุ';
+    byPoint[p] = byPoint[p] || { logs:[], type:l.type };
+    byPoint[p].logs.push(l);
+  });
+  document.getElementById('ds-byPoint').innerHTML = Object.entries(byPoint)
+    .sort((a,b) => sumLogs(b[1].logs).total - sumLogs(a[1].logs).total)
+    .map(([pt, info]) => {
+      const s = sumLogs(info.logs);
+      const isOut = info.logs.some(l => l.type === 'นอกเวลา');
+      const color = isOut ? 'purple' : 'amber';
+      return `<div class="border border-${color}-200 rounded-xl p-3 bg-${color}-50/30">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <div class="font-semibold text-${color}-700 truncate">${pt}</div>
+          <div class="text-xs px-2 py-0.5 rounded-full bg-${color}-100 text-${color}-700">${info.logs.length} ครั้ง</div>
+        </div>
+        <div class="text-3xl font-bold text-${color}-600">${s.total}</div>
+        <div class="text-xs text-slate-500 mb-2">ผู้ป่วยทั้งหมด</div>
+        <div class="flex gap-1 text-xs">
+          <span class="px-2 py-0.5 bg-white rounded">GA ${s.ga}</span>
+          <span class="px-2 py-0.5 bg-white rounded">RA ${s.ra}</span>
+          <span class="px-2 py-0.5 bg-white rounded">MAC ${s.mac}</span>
+        </div>
+      </div>`;
+    }).join('') || '<div class="col-span-full text-center text-slate-500 py-6">ยังไม่มีข้อมูล</div>';
+
+  // 30-day chart
+  const days = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0,10));
+  }
+  const inData  = days.map(d => state.serviceLogs.filter(l => l.date === d && l.type === 'ในเวลา').reduce((s,l) => s + (l.metrics?.total||0), 0));
+  const outData = days.map(d => state.serviceLogs.filter(l => l.date === d && l.type === 'นอกเวลา').reduce((s,l) => s + (l.metrics?.total||0), 0));
+  if (chartDaily30Inst) chartDaily30Inst.destroy();
+  chartDaily30Inst = new Chart(document.getElementById('chartDaily30'), {
+    type:'bar',
+    data:{ labels: days.map(d => d.slice(5)),
+      datasets: [
+        { label:'ในเวลา', data: inData, backgroundColor:'#f59e0b', borderRadius:4 },
+        { label:'นอกเวลา', data: outData, backgroundColor:'#8b5cf6', borderRadius:4 }
+      ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom' } },
+      scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true } } }
+  });
+
+  // Recent table
+  document.getElementById('dailyTBody').innerHTML = state.serviceLogs.slice(0,20).map(l => `
+    <tr class="border-b last:border-0">
+      <td class="py-2">${sbUtils.fmtDate(l.date)}</td>
+      <td><span class="text-xs px-2 py-0.5 rounded-full ${l.type==='ในเวลา'?'bg-amber-100 text-amber-700':'bg-purple-100 text-purple-700'}">${l.type||'-'}</span></td>
+      <td class="text-xs">${l.service_point||l.location||'-'}</td>
+      <td class="text-xs">${l.shift||'-'}</td>
+      <td class="text-right font-semibold">${l.metrics?.total||0}</td>
+      <td class="text-right">${l.metrics?.ga||0}</td>
+      <td class="text-right">${l.metrics?.ra||0}</td>
+      <td class="text-right">${l.metrics?.mac||0}</td>
+      <td class="text-right">${l.metrics?.pass_rr||0}</td>
+      <td>${l.photo_url?`<a href="${l.photo_url}" target="_blank" class="text-blue-600">📷</a>`:'-'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="10" class="text-center text-slate-500 py-4">ยังไม่มีบันทึก</td></tr>';
+}
+
+// ===================== PRE/POST OP DASHBOARD =====================
+let chartPrePostInst = null;
+function getPrePostLogs() {
+  const all = state.serviceLogs.filter(l => l.type === 'preop_postop');
+  const range = document.getElementById('pp-range')?.value || 'month';
+  const d = document.getElementById('pp-date-pick')?.value || new Date().toISOString().slice(0,10);
+  if (range === 'day')   return { logs: all.filter(l => l.date === d), label: sbUtils.fmtDate(d) };
+  if (range === 'month') return { logs: all.filter(l => (l.date||'').startsWith(d.slice(0,7))), label: 'เดือน ' + d.slice(0,7) };
+  if (range === 'year')  return { logs: all.filter(l => (l.date||'').startsWith(d.slice(0,4))), label: 'ปี ' + (parseInt(d.slice(0,4))+543) };
+  if (range === 'week') {
+    const cutoff = new Date(d); cutoff.setDate(cutoff.getDate() - 7);
+    const cs = cutoff.toISOString().slice(0,10);
+    return { logs: all.filter(l => (l.date||'') >= cs && (l.date||'') <= d), label: '7 วันก่อน '+sbUtils.fmtDate(d) };
+  }
+  return { logs: all, label: 'ทั้งหมด' };
+}
+function renderPrePost() {
+  if (document.getElementById('pp-date-pick') && !document.getElementById('pp-date-pick').value) {
+    document.getElementById('pp-date-pick').value = new Date().toISOString().slice(0,10);
+  }
+  const { logs, label } = getPrePostLogs();
+  document.getElementById('pp-period').textContent = label;
+  const sum = (k) => logs.reduce((s,l) => s + (l.metrics?.[k]||0), 0);
+  const sumCx = (k) => logs.reduce((s,l) => s + (l.complications?.[k]||0), 0);
+  const pre  = sum('pre_op'); const post = sum('post_op');
+  const asa3 = sum('asa_ge_3'); const dead = sum('dead_24hr');
+  const reint = sumCx('reintubation'); const nv = sumCx('nausea_vomiting'); const sore = sumCx('sore_throat');
+  document.getElementById('pp-preop-total').textContent  = pre;
+  document.getElementById('pp-postop-total').textContent = post;
+  document.getElementById('pp-asa3-total').textContent  = asa3;
+  document.getElementById('pp-cx-total').textContent    = reint + nv + sore;
+  document.getElementById('pp-cx-reint').textContent    = reint;
+  document.getElementById('pp-cx-nv').textContent       = nv;
+  document.getElementById('pp-cx-sore').textContent     = sore;
+  document.getElementById('pp-dead').textContent        = dead;
+
+  // แยกตามสาย
+  const teams = {};
+  logs.forEach(l => {
+    const t = l.metrics?.team || '?';
+    teams[t] = teams[t] || { pre:0, post:0, count:0 };
+    teams[t].pre  += l.metrics?.pre_op||0;
+    teams[t].post += l.metrics?.post_op||0;
+    teams[t].count++;
+  });
+  document.getElementById('pp-by-team').innerHTML = Object.keys(teams).length === 0
+    ? '<div class="col-span-full text-center text-slate-500 py-4">ไม่มีข้อมูล</div>'
+    : Object.entries(teams).sort().map(([t, s]) => `
+        <div class="border border-indigo-200 rounded-xl p-3 bg-indigo-50/30">
+          <div class="font-semibold text-indigo-700 mb-1">🏥 สาย ${t}</div>
+          <div class="text-xs text-slate-500 mb-2">${s.count} บันทึก</div>
+          <div class="grid grid-cols-2 gap-1">
+            <div class="bg-blue-50 rounded p-2 text-center">
+              <div class="text-xs text-blue-700">Pre-op</div>
+              <div class="text-xl font-bold text-blue-700">${s.pre}</div>
+            </div>
+            <div class="bg-emerald-50 rounded p-2 text-center">
+              <div class="text-xs text-emerald-700">Post-op</div>
+              <div class="text-xl font-bold text-emerald-700">${s.post}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+  // กราฟ 30 วัน
+  const days = [];
+  for (let i = 29; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(d.toISOString().slice(0,10)); }
+  const allPP = state.serviceLogs.filter(l => l.type === 'preop_postop');
+  const preData  = days.map(d => allPP.filter(l => l.date === d).reduce((s,l) => s + (l.metrics?.pre_op||0), 0));
+  const postData = days.map(d => allPP.filter(l => l.date === d).reduce((s,l) => s + (l.metrics?.post_op||0), 0));
+  if (chartPrePostInst) chartPrePostInst.destroy();
+  chartPrePostInst = new Chart(document.getElementById('chartPrePost'), {
+    type: 'line',
+    data: { labels: days.map(d => d.slice(5)), datasets: [
+      { label:'Pre-op',  data: preData,  borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.1)', tension:.3, fill:true },
+      { label:'Post-op', data: postData, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,.1)', tension:.3, fill:true }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  // ตาราง
+  document.getElementById('pp-tbody').innerHTML = logs.slice(0,30).map(l => `
+    <tr class="border-b last:border-0">
+      <td class="py-1.5">${sbUtils.fmtDate(l.date)}</td>
+      <td><span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${l.metrics?.team||'-'}</span></td>
+      <td class="text-right font-semibold text-blue-700">${l.metrics?.pre_op||0}</td>
+      <td class="text-right font-semibold text-emerald-700">${l.metrics?.post_op||0}</td>
+      <td class="text-right">${l.metrics?.asa_ge_3||0}</td>
+      <td class="text-right">${l.metrics?.satisfaction_asked||0}</td>
+      <td class="text-right">${l.metrics?.not_recorded||0}</td>
+      <td class="text-right text-rose-600">${l.metrics?.dead_24hr||0}</td>
+      <td class="text-right text-rose-600">${l.complications?.reintubation||0}</td>
+      <td class="text-right">${l.complications?.nausea_vomiting||0}</td>
+      <td class="text-right">${l.complications?.sore_throat||0}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="11" class="text-center text-slate-500 py-4">ไม่มีบันทึกในช่วงนี้</td></tr>';
+}
+
+function exportPrePostExcel() {
+  const { logs, label } = getPrePostLogs();
+  if (logs.length === 0) { sbUtils.toast('ไม่มีข้อมูล','error'); return; }
+  const headers = ['วันที่','สาย','Pre-op','Post-op','ASA≥3','พึงพอใจ','ไม่บันทึก','Dead 24hr','Reintubation','N/V','เจ็บคอ','อื่นๆ','ผู้บันทึก/หมายเหตุ'];
+  const rows = [headers];
+  logs.forEach(l => {
+    rows.push([
+      l.date, l.metrics?.team||'',
+      l.metrics?.pre_op||0, l.metrics?.post_op||0,
+      l.metrics?.asa_ge_3||0, l.metrics?.satisfaction_asked||0,
+      l.metrics?.not_recorded||0, l.metrics?.dead_24hr||0,
+      l.complications?.reintubation||0, l.complications?.nausea_vomiting||0,
+      l.complications?.sore_throat||0, l.complications?.other||'',
+      (l.notes||'').replace(/\n/g,' · ')
+    ]);
+  });
+  // สรุปท้าย
+  const total = logs.reduce((acc, l) => ({
+    pre: acc.pre + (l.metrics?.pre_op||0),
+    post: acc.post + (l.metrics?.post_op||0),
+    asa3: acc.asa3 + (l.metrics?.asa_ge_3||0),
+    sat: acc.sat + (l.metrics?.satisfaction_asked||0),
+    notrec: acc.notrec + (l.metrics?.not_recorded||0),
+    dead: acc.dead + (l.metrics?.dead_24hr||0),
+    reint: acc.reint + (l.complications?.reintubation||0),
+    nv: acc.nv + (l.complications?.nausea_vomiting||0),
+    sore: acc.sore + (l.complications?.sore_throat||0),
+  }), { pre:0, post:0, asa3:0, sat:0, notrec:0, dead:0, reint:0, nv:0, sore:0 });
+  rows.push([]);
+  rows.push(['สรุปรวม','', total.pre, total.post, total.asa3, total.sat, total.notrec, total.dead, total.reint, total.nv, total.sore,'','']);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Pre-Post-op');
+  XLSX.writeFile(wb, `Pre-Post-op-${label.replace(/\s/g,'-')}.xlsx`);
+}
+
+// ===================== INSPECTION SUMMARY TAB =====================
+function renderInspect() {
+  const today = new Date().toISOString().slice(0,10);
+  const todayInsp = state.inspections.filter(i => i.date === today);
+  let machOk = 0, monOk = 0, issues = 0;
+  todayInsp.forEach(i => {
+    (i.items?.machine || []).forEach(x => { if (x.state === 'yes') machOk++; if (x.state === 'no') issues++; });
+    (i.items?.monitor || []).forEach(x => { if (x.state === 'yes') monOk++; if (x.state === 'no') issues++; });
+  });
+  document.getElementById('ins-today').textContent   = todayInsp.length;
+  document.getElementById('ins-mach-ok').textContent = machOk;
+  document.getElementById('ins-mon-ok').textContent  = monOk;
+  document.getElementById('ins-issue').textContent   = issues;
+
+  // ⚠ ห้องที่พบปัญหา — รวบรวม inspections ที่มี state=no หรือ notes ไม่ว่าง
+  const issueRows = state.inspections.filter(i => {
+    const hasBadM = (i.items?.machine || []).some(x => x.state === 'no');
+    const hasBadV = (i.items?.monitor || []).some(x => x.state === 'no');
+    const hasNotes = i.notes && i.notes.replace(/Machine:|Monitor:/g,'').trim().length > 5;
+    return hasBadM || hasBadV || hasNotes;
+  }).slice(0, 15);
+  document.getElementById('insIssues').innerHTML = issueRows.length === 0
+    ? '<div class="text-center text-emerald-600 py-4">✅ ไม่พบปัญหา — ทุกห้องเครื่องมือพร้อมใช้</div>'
+    : issueRows.map(i => {
+        const badM = (i.items?.machine || []).filter(x => x.state === 'no');
+        const badV = (i.items?.monitor || []).filter(x => x.state === 'no');
+        return `<div class="bg-rose-50 border border-rose-200 rounded-lg p-3">
+          <div class="flex justify-between items-start gap-2 mb-1">
+            <div class="font-semibold text-rose-700">📍 ${i.room||'-'} · ${i.items?.nurse||'ไม่ระบุ'}</div>
+            <div class="text-xs text-slate-500 whitespace-nowrap">${sbUtils.fmtDate(i.date)} ${new Date(i.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+          ${badM.length ? `<div class="text-xs mb-1"><b class="text-rose-600">เครื่อง Machine ไม่พร้อม ${badM.length} รายการ:</b> ${badM.map(x => x.name).join(', ')}</div>` : ''}
+          ${badV.length ? `<div class="text-xs mb-1"><b class="text-rose-600">Monitor ไม่มี ${badV.length} รายการ:</b> ${badV.map(x => x.name).join(', ')}</div>` : ''}
+          ${i.notes ? `<div class="text-xs bg-white rounded p-2 mt-1 text-slate-700">📝 <b>หมายเหตุ:</b> ${(i.notes||'').replace(/\n/g,' · ')}</div>` : ''}
+        </div>`;
+      }).join('');
+
+  // Recent inspections
+  document.getElementById('insList').innerHTML = state.inspections.slice(0,10).map(i => {
+    const mOk = (i.items?.machine || []).filter(x => x.state === 'yes').length;
+    const mBad = (i.items?.machine || []).filter(x => x.state === 'no').length;
+    const vOk = (i.items?.monitor || []).filter(x => x.state === 'yes').length;
+    const vBad = (i.items?.monitor || []).filter(x => x.state === 'no').length;
+    const hasBad = mBad + vBad > 0;
+    return `<div class="border-l-4 ${hasBad?'border-rose-500 bg-rose-50':'border-emerald-500 bg-emerald-50'} p-3 rounded">
+      <div class="flex justify-between items-start gap-2">
+        <div>
+          <div class="font-medium">${i.room||'-'} · ${i.items?.nurse||'ไม่ระบุ'}</div>
+          <div class="text-xs text-slate-600 mt-1">
+            ${mOk||mBad ? `Machine: <b class="text-emerald-700">${mOk} พร้อม</b> / <b class="text-rose-600">${mBad} ไม่พร้อม</b>` : ''}
+            ${vOk||vBad ? `<br>Monitor: <b class="text-emerald-700">${vOk} มี</b> / <b class="text-rose-600">${vBad} ไม่มี</b>` : ''}
+          </div>
+          ${i.notes ? `<div class="text-xs text-slate-500 mt-1 italic">${i.notes.replace(/\n/g,' · ').substring(0,120)}</div>` : ''}
+        </div>
+        <div class="text-xs text-slate-500 whitespace-nowrap">${sbUtils.fmtDate(i.date)}<br>${new Date(i.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="text-center text-slate-500 py-6">ยังไม่มีบันทึก</div>';
+
+  // Chart by room (7 days)
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+  const cutoffStr = cutoff.toISOString().slice(0,10);
+  const recent = state.inspections.filter(i => (i.date||'') >= cutoffStr);
+  const roomCount = {};
+  recent.forEach(i => { roomCount[i.room||'ไม่ระบุ'] = (roomCount[i.room||'ไม่ระบุ']||0) + 1; });
+  if (chartInsRoomInst) chartInsRoomInst.destroy();
+  chartInsRoomInst = new Chart(document.getElementById('chartInsByRoom'), {
+    type:'bar',
+    data:{ labels: Object.keys(roomCount), datasets:[{
+      label:'ครั้งที่ตรวจ', data: Object.values(roomCount),
+      backgroundColor:'#2563eb', borderRadius:6 }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } }, indexAxis:'y' }
+  });
+}
+
+// ===================== EQUIPMENT TAB (BY ROOM) =====================
+// รายชื่อห้องมาตรฐาน — ถ้ามี equipment.location เพิ่มจะรวมเข้าไปอัตโนมัติ
+const STANDARD_ROOMS = [
+  'OR1','OR2','OR3','OR4','OR5','OR6','OR7','OR8','OR9','OR10','OR11','OR12',
+  'OR41','OR42','OR43','OR44','OR45',
+  'OR CVT1','OR CVT2','ESWL','Cath Lab',
+  'RR2','RR3','RR ตึกหัวใจ'
+];
+function renderEquipment() {
+  // สรุปสถิติ
+  document.getElementById('eq-total').textContent   = state.equipment.length;
+  document.getElementById('eq-machine').textContent = state.equipment.filter(e => (e.kind||'Machine').toLowerCase() === 'machine').length;
+  document.getElementById('eq-monitor').textContent = state.equipment.filter(e => (e.kind||'').toLowerCase() === 'monitor').length;
+  document.getElementById('eq-ok').textContent      = state.equipment.filter(e => e.status === 'ใช้งานได้').length;
+  document.getElementById('eq-bad').textContent     = state.equipment.filter(e => e.status === 'รอซ่อม').length;
+
+  // รวมห้องจาก standard + equipment.location ที่มี
+  const roomsSet = new Set(STANDARD_ROOMS);
+  state.equipment.forEach(e => { if (e.location) roomsSet.add(e.location); });
+  const rooms = [...roomsSet];
+  document.getElementById('eq-rooms').textContent = rooms.length;
+
+  document.getElementById('roomGrid').innerHTML = rooms.map(room => {
+    const inRoom = state.equipment.filter(e => e.location === room);
+    const bad = inRoom.filter(e => e.status !== 'ใช้งานได้').length;
+    // จัดกลุ่มตาม kind ที่มีจริง
+    const kindGroups = {};
+    inRoom.forEach(e => {
+      const k = e.kind || 'อื่นๆ';
+      kindGroups[k] = (kindGroups[k] || 0) + 1;
+    });
+    const kindColors = { 'Machine':'emerald','Monitor':'blue','Defibrillator':'rose',
+                         'Ventilator':'amber','Infusion Pump':'purple','Suction':'cyan' };
+    return `<div class="card p-4 hover:shadow-lg cursor-pointer transition" onclick="openRoom('${room.replace(/'/g,"\\'")}')">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div>
+          <div class="font-bold text-lg text-slate-800">🏥 ${room}</div>
+          <div class="text-xs text-slate-500">${inRoom.length} เครื่อง ${bad ? `· <b class="text-rose-500">${bad} ต้องดูแล</b>` : ''}</div>
+        </div>
+        ${inRoom.length===0?'<span class="text-xs text-slate-400">ว่าง</span>':''}
+      </div>
+      ${inRoom.length > 0 ? `<div class="flex gap-1.5 mt-3 flex-wrap">
+        ${Object.entries(kindGroups).map(([k, n]) => {
+          const c = kindColors[k] || 'slate';
+          return `<div class="px-2 py-1 rounded bg-${c}-50 text-${c}-700 text-xs font-semibold border border-${c}-200">${k}: ${n}</div>`;
+        }).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function eqCard(e) {
+  const badge = e.status === 'ใช้งานได้' ? 'bg-emerald-100 text-emerald-700' :
+                e.status === 'รอซ่อม'    ? 'bg-rose-100 text-rose-700' :
+                e.status === 'ซ่อมแล้ว'   ? 'bg-amber-100 text-amber-700' :
+                                            'bg-slate-100 text-slate-700';
+  const icoMap = { 'Machine':'⚙️','Monitor':'📊','Defibrillator':'⚡','Ventilator':'🫁','Infusion Pump':'💧','Suction':'🌀','Warmer':'🔥' };
+  const ico = icoMap[e.kind] || '🔧';
+  return `<div class="border rounded-xl p-3 bg-slate-50">
+    <div class="text-xs text-blue-700 font-semibold mb-1">${e.kind||'-'}</div>
+    ${e.image_url ? `<img src="${e.image_url}" class="w-full h-36 object-cover rounded-lg mb-2 bg-white">`
+                  : `<div class="w-full h-36 rounded-lg mb-2 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center text-5xl">${ico}</div>`}
+    <div class="flex items-start justify-between gap-2 mb-1">
+      <div class="font-semibold text-slate-800 leading-tight">${e.name||'-'}</div>
+      <span class="text-xs px-2 py-0.5 rounded-full ${badge} whitespace-nowrap">${e.status||'-'}</span>
+    </div>
+    <div class="space-y-0.5 text-xs text-slate-600">
+      ${e.brand ? `<div>🏷️ ${e.brand}</div>` : ''}
+      ${e.model ? `<div>📦 ${e.model}</div>` : ''}
+      ${e.serial ? `<div>🔢 <span class="font-mono">${e.serial}</span></div>` : ''}
+      ${e.received_date ? `<div>📅 รับ ${sbUtils.fmtDate(e.received_date)}</div>` : ''}
+      ${e.repair_date ? `<div>🔧 ซ่อม ${sbUtils.fmtDate(e.repair_date)}</div>` : ''}
+      ${e.notes ? `<div class="text-slate-500 italic mt-1">📝 ${e.notes}</div>` : ''}
+    </div>
+  </div>`;
+}
+function openRoom(room) {
+  const inRoom = state.equipment.filter(e => e.location === room);
+  document.getElementById('rm-name').textContent = '🏥 ' + room;
+  // จัดกลุ่มตาม kind ตามที่มีจริง — ไม่ hardcode
+  const groups = {};
+  inRoom.forEach(e => {
+    const k = e.kind || 'อื่นๆ';
+    groups[k] = groups[k] || [];
+    groups[k].push(e);
+  });
+  const colorMap = { 'Machine':'emerald','Monitor':'blue','Defibrillator':'rose',
+                     'Ventilator':'amber','Infusion Pump':'purple' };
+  const icoMap = { 'Machine':'⚙️','Monitor':'📊','Defibrillator':'⚡','Ventilator':'🫁','Infusion Pump':'💧' };
+  document.getElementById('rm-groups').innerHTML = Object.keys(groups).length === 0
+    ? `<div class="text-center text-slate-400 py-12">
+        <div class="text-5xl mb-2">📦</div>
+        <div>ยังไม่มีเครื่องในห้องนี้</div>
+        <a href="staff.html#equipment" class="text-blue-600 text-sm mt-2 inline-block">+ เพิ่มเครื่อง</a>
+      </div>`
+    : Object.entries(groups).map(([k, items]) => {
+        const c = colorMap[k] || 'slate';
+        const ico = icoMap[k] || '🔧';
+        return `<div>
+          <div class="font-bold text-${c}-700 text-lg mb-2 flex items-center gap-2">
+            <span>${ico}</span> ${k} <span class="text-sm text-slate-500 font-normal">(${items.length})</span>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-3">${items.map(eqCard).join('')}</div>
+        </div>`;
+      }).join('');
+  const m = document.getElementById('roomModal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeRoom() {
+  const m = document.getElementById('roomModal');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+
+loadAll().then(() => {
+  subscribeAll();
+  applyAuthUI();
+  // auth state change → re-apply
+  if (window.sbAuth?.onAuth) sbAuth.onAuth(() => applyAuthUI());
+});
+</script>
+</body>
+</html>

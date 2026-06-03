@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Google Sheets Dashboard — วิสัญญี รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family:'Sarabun', system-ui, sans-serif; background:#f1f5f9; }
+  .grad-hero { background: linear-gradient(135deg, #0ea5e9, #2563eb 60%, #7c3aed); }
+  .card { background:#fff; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .input { width:100%; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; }
+  .btn { padding:8px 14px; border-radius:8px; font-weight:500; font-size:14px; cursor:pointer; }
+  .btn-primary { background:#2563eb; color:#fff; }
+  .scroll-x { overflow-x:auto; }
+  .chart-box { position:relative; width:100%; height:300px; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<header class="grad-hero text-white">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-2">
+    <div>
+      <div class="text-lg sm:text-xl font-bold">📊 Google Sheets Dashboard</div>
+      <div class="text-white/80 text-xs sm:text-sm">ดึงข้อมูลจาก Google Sheets มาแสดงผลเป็นกราฟ</div>
+    </div>
+    <a href="index.html" class="bg-white/15 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-3 sm:px-4 py-5 space-y-4">
+
+  <div class="card p-4">
+    <div class="font-semibold mb-3">⚙️ ตั้งค่า Google Sheet</div>
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 text-sm text-amber-900">
+      <div class="font-semibold mb-1">📋 วิธีเตรียม Google Sheet:</div>
+      <ol class="list-decimal pl-5 space-y-1">
+        <li>เปิด Google Sheet → File → <b>Share</b> → "Anyone with the link" → <b>Viewer</b></li>
+        <li>คัดลอก URL — เช่น <code class="bg-white px-1">https://docs.google.com/spreadsheets/d/<b>SHEET_ID</b>/edit</code></li>
+        <li>วาง URL ในช่องด้านล่าง → กด "โหลด"</li>
+        <li>แถวแรกของชีต = หัวคอลัมน์ · แถวต่อมา = ข้อมูล</li>
+      </ol>
+    </div>
+    <div class="grid sm:grid-cols-3 gap-2 mb-2">
+      <input id="sheetUrl" class="input sm:col-span-2" placeholder="วาง URL Google Sheet ที่นี่...">
+      <input id="sheetTab" class="input" placeholder="ชื่อ Tab (เว้นว่าง = sheet แรก)">
+    </div>
+    <div class="flex gap-2">
+      <button class="btn btn-primary" onclick="loadSheet()">โหลดข้อมูล</button>
+      <button class="btn bg-emerald-500 text-white" onclick="saveAsConfig()">บันทึกเป็น Config (ทุกคนเห็น)</button>
+    </div>
+  </div>
+
+  <div id="resultArea" class="space-y-4 hidden">
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold">📊 สรุปข้อมูล</div>
+        <div class="text-sm text-slate-500"><span id="rowCount">0</span> แถว · <span id="colCount">0</span> คอลัมน์</div>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">แกน X (Label)</label>
+          <select id="xCol" class="input" onchange="renderChart()"></select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">แกน Y (Value) — เลือกได้หลายตัว</label>
+          <select id="yCols" class="input" multiple size="4" onchange="renderChart()"></select>
+        </div>
+      </div>
+      <div class="flex gap-2 mb-3">
+        <button class="btn bg-slate-100" onclick="setChartType('bar')">📊 Bar</button>
+        <button class="btn bg-slate-100" onclick="setChartType('line')">📈 Line</button>
+        <button class="btn bg-slate-100" onclick="setChartType('pie')">🥧 Pie</button>
+        <button class="btn bg-slate-100" onclick="setChartType('doughnut')">🍩 Donut</button>
+      </div>
+      <div class="chart-box"><canvas id="sheetChart"></canvas></div>
+    </div>
+
+    <div class="card p-4">
+      <div class="font-semibold mb-3">📋 ตารางข้อมูล (ดูดิบ)</div>
+      <div class="scroll-x">
+        <table class="min-w-full text-sm">
+          <thead class="border-b bg-slate-50" id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorBox" class="hidden card p-4 border-l-4 border-rose-500 bg-rose-50 text-rose-800"></div>
+
+</main>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+let sheetData = { headers: [], rows: [] };
+let chartType = 'bar';
+let chartInst = null;
+
+function parseSheetId(url) {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : null;
+}
+
+async function loadSheet() {
+  const url = document.getElementById('sheetUrl').value.trim();
+  const tab = document.getElementById('sheetTab').value.trim();
+  const errEl = document.getElementById('errorBox');
+  errEl.classList.add('hidden');
+
+  const id = parseSheetId(url);
+  if (!id) { showErr('URL ไม่ถูกต้อง — ต้องมีรูปแบบ /spreadsheets/d/SHEET_ID/'); return; }
+
+  const tqUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json${tab?`&sheet=${encodeURIComponent(tab)}`:''}`;
+  try {
+    const r = await fetch(tqUrl);
+    const text = await r.text();
+    // gviz return: google.visualization.Query.setResponse({...});
+    const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+    if (json.status === 'error') { showErr(json.errors[0].detailed_message || 'โหลดล้มเหลว — ตรวจสอบว่าตั้ง Share Public แล้ว'); return; }
+    const cols = json.table.cols.map((c,i) => c.label || c.id || `Col${i+1}`);
+    const rows = json.table.rows.map(r => r.c.map(c => c?.f || c?.v || ''));
+    sheetData = { headers: cols, rows };
+    renderTable();
+    renderControls();
+    renderChart();
+    document.getElementById('resultArea').classList.remove('hidden');
+  } catch(e) { showErr('โหลดล้มเหลว: ' + e.message); }
+}
+
+function showErr(msg) {
+  const e = document.getElementById('errorBox');
+  e.textContent = msg;
+  e.classList.remove('hidden');
+}
+
+function renderTable() {
+  document.getElementById('rowCount').textContent = sheetData.rows.length;
+  document.getElementById('colCount').textContent = sheetData.headers.length;
+  document.getElementById('thead').innerHTML = '<tr>' + sheetData.headers.map(h => `<th class="text-left py-2 px-3 font-semibold">${h}</th>`).join('') + '</tr>';
+  document.getElementById('tbody').innerHTML = sheetData.rows.slice(0,50).map(r =>
+    '<tr class="border-b last:border-0">' + r.map(c => `<td class="py-1.5 px-3">${c||''}</td>`).join('') + '</tr>'
+  ).join('');
+}
+function renderControls() {
+  const x = document.getElementById('xCol');
+  const y = document.getElementById('yCols');
+  x.innerHTML = sheetData.headers.map((h,i) => `<option value="${i}" ${i===0?'selected':''}>${h}</option>`).join('');
+  y.innerHTML = sheetData.headers.map((h,i) =>
+    `<option value="${i}" ${i===1?'selected':''}>${h}</option>`).join('');
+}
+function setChartType(t) { chartType = t; renderChart(); }
+
+function renderChart() {
+  if (!sheetData.rows.length) return;
+  const xIdx = parseInt(document.getElementById('xCol').value);
+  const yIdxs = Array.from(document.getElementById('yCols').selectedOptions).map(o => parseInt(o.value));
+  if (yIdxs.length === 0) return;
+
+  const labels = sheetData.rows.map(r => r[xIdx]);
+  const palette = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899'];
+  const datasets = yIdxs.map((idx, i) => ({
+    label: sheetData.headers[idx],
+    data: sheetData.rows.map(r => parseFloat(r[idx]) || 0),
+    backgroundColor: chartType === 'pie' || chartType === 'doughnut'
+      ? palette : palette[i % palette.length],
+    borderColor: palette[i % palette.length],
+    tension: 0.3
+  }));
+
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById('sheetChart'), {
+    type: chartType,
+    data: { labels, datasets: chartType==='pie'||chartType==='doughnut'?[datasets[0]]:datasets },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom' } } }
+  });
+}
+
+async function saveAsConfig() {
+  const url = document.getElementById('sheetUrl').value.trim();
+  const tab = document.getElementById('sheetTab').value.trim();
+  if (!url) { showErr('ยังไม่ได้ใส่ URL'); return; }
+  try {
+    await sbDB.upsert('config', { key: 'sheet_dashboard', value: { url, tab } }, { onConflict:'key' });
+    sbUtils.toast('บันทึกแล้ว — ทุกคนจะเห็น sheet นี้ที่หน้าแรก','success');
+  } catch(e) { showErr(e.message); }
+}
+
+// Auto-load saved config
+(async () => {
+  try {
+    const cfg = await sbDB.list('config');
+    const saved = cfg.find(c => c.key === 'sheet_dashboard');
+    if (saved?.value?.url) {
+      document.getElementById('sheetUrl').value = saved.value.url;
+      document.getElementById('sheetTab').value = saved.value.tab || '';
+      loadSheet();
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

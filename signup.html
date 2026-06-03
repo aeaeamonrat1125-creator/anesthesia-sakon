@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>สมัครสมาชิก — วิสัญญี รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family:'Sarabun', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 50%, #7c3aed 100%);
+    min-height: 100vh; }
+  .card { background:#fff; border-radius:18px; box-shadow:0 25px 50px rgba(0,0,0,.25); }
+  .input { width:100%; padding:11px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:15px; transition:all .15s; }
+  .input:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 4px rgba(37,99,235,.12); }
+  .btn { padding:12px 16px; border-radius:10px; font-weight:600; font-size:15px; cursor:pointer; transition:all .15s; width:100%; }
+  .btn-primary { background:linear-gradient(135deg, #2563eb, #7c3aed); color:#fff; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow:0 8px 16px rgba(37,99,235,.3); }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+  .lbl { display:block; font-size:12px; color:#475569; margin-bottom:5px; font-weight:500; }
+  .step-num { width:28px; height:28px; border-radius:50%; background:#3b82f6; color:#fff;
+    display:inline-flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; }
+</style>
+</head>
+<body class="text-slate-800 p-4">
+
+<div class="max-w-2xl mx-auto py-6 sm:py-10">
+
+  <div class="text-center text-white mb-6">
+    <div class="text-3xl sm:text-4xl font-bold mb-1">📋 สมัครสมาชิก</div>
+    <div class="text-white/85">หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</div>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="card p-3 mb-4">
+    <div class="flex items-center justify-around text-xs text-slate-600">
+      <div class="flex items-center gap-2"><span class="step-num">1</span>กรอกข้อมูล</div>
+      <div class="w-8 h-px bg-slate-300"></div>
+      <div class="flex items-center gap-2 opacity-50"><span class="step-num bg-slate-300">2</span>รออนุมัติ</div>
+      <div class="w-8 h-px bg-slate-300"></div>
+      <div class="flex items-center gap-2 opacity-50"><span class="step-num bg-slate-300">3</span>เข้าใช้งาน</div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="card p-6 sm:p-8" id="formCard">
+    <div class="font-bold text-xl mb-1">กรอกข้อมูลสมัครใช้งาน</div>
+    <div class="text-sm text-slate-500 mb-5">ใช้เวลาประมาณ 1 นาที</div>
+
+    <div class="space-y-3 mb-4">
+      <div>
+        <label class="lbl">📧 อีเมล <span class="text-rose-500">*</span></label>
+        <input id="email" type="email" class="input" placeholder="you@gmail.com" autocomplete="email">
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">🔒 รหัสผ่าน <span class="text-rose-500">*</span> <span class="text-slate-400 font-normal">(≥6 ตัว)</span></label>
+          <input id="password" type="password" class="input" placeholder="ตั้งของคุณเอง" autocomplete="new-password">
+        </div>
+        <div>
+          <label class="lbl">🔒 ยืนยันรหัสผ่าน <span class="text-rose-500">*</span></label>
+          <input id="password2" type="password" class="input" placeholder="พิมพ์อีกครั้ง" autocomplete="new-password">
+        </div>
+      </div>
+
+      <div>
+        <label class="lbl">👤 ชื่อ-นามสกุล (เต็ม) <span class="text-rose-500">*</span></label>
+        <input id="fullName" class="input" placeholder="เช่น นางสาวอมรรัตน์ นาทองไชย">
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">😊 ชื่อเล่น</label>
+          <input id="nickname" class="input" placeholder="เช่น เอ">
+        </div>
+        <div>
+          <label class="lbl">💼 ตำแหน่ง</label>
+          <select id="position" class="input">
+            <option>พยาบาลวิสัญญี</option>
+            <option>หัวหน้าวิสัญญี</option>
+            <option>วิสัญญีพยาบาลชำนาญการ</option>
+            <option>วิสัญญีพยาบาลชำนาญการพิเศษ</option>
+            <option>ผู้ช่วยพยาบาล</option>
+            <option>ผู้ช่วยเหลือคนไข้</option>
+            <option>พนักงานประจำตึก</option>
+            <option>อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="lbl">📱 เบอร์โทร (เผื่อ Admin ติดต่อกลับ)</label>
+        <input id="phone" class="input" placeholder="081-xxx-xxxx">
+      </div>
+    </div>
+
+    <div id="errBox" class="hidden text-sm bg-rose-50 border border-rose-200 text-rose-700 rounded-lg p-3 mb-3"></div>
+    <div id="okBox"  class="hidden text-sm bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-3 mb-3"></div>
+
+    <button id="submitBtn" class="btn btn-primary" onclick="doSignup()">
+      ✨ สมัครสมาชิก
+    </button>
+
+    <div class="text-center text-xs text-slate-500 mt-4">
+      มีบัญชีแล้ว? <a href="staff.html" class="text-blue-600 font-semibold">เข้าสู่ระบบที่นี่</a>
+      &nbsp;·&nbsp; <a href="index.html" class="text-blue-600">🏠 กลับหน้าหลัก</a>
+    </div>
+  </div>
+
+  <!-- Success card (hidden initially) -->
+  <div class="card p-6 sm:p-8 hidden" id="successCard">
+    <div class="text-center">
+      <div class="w-20 h-20 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-5xl mb-4">✅</div>
+      <div class="font-bold text-2xl mb-2 text-emerald-700">สมัครสำเร็จ!</div>
+      <div class="text-slate-600 mb-6">บัญชีของคุณถูกสร้างเรียบร้อยแล้ว</div>
+    </div>
+
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+      <div class="font-semibold text-amber-900 mb-2">📌 ขั้นตอนต่อไป (รอ Admin อนุมัติ)</div>
+      <ol class="text-sm text-amber-900 space-y-1.5 pl-5 list-decimal">
+        <li>แจ้งหัวหน้าหน่วยทาง LINE — ระบุ <b>email + ชื่อ-สกุล</b> ที่สมัคร</li>
+        <li>Admin จะอนุมัติสิทธิ์ภายใน 1-2 วันทำการ</li>
+        <li>หลังอนุมัติ → กด "เข้าสู่ระบบ" ด้วย email + รหัสที่ตั้ง</li>
+      </ol>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-3">
+      <a href="staff.html" class="btn btn-primary text-center">🔑 เข้าสู่ระบบเลย</a>
+      <a href="index.html" class="btn bg-slate-100 text-slate-700 text-center font-semibold py-3 rounded-xl hover:bg-slate-200">🏠 กลับหน้าหลัก</a>
+    </div>
+  </div>
+
+  <div class="text-center text-white/70 text-xs mt-6">
+    © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร
+  </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+function showErr(msg) {
+  const e = document.getElementById('errBox');
+  e.textContent = msg; e.classList.remove('hidden');
+  document.getElementById('okBox').classList.add('hidden');
+}
+function showOk(msg) {
+  const o = document.getElementById('okBox');
+  o.textContent = msg; o.classList.remove('hidden');
+  document.getElementById('errBox').classList.add('hidden');
+}
+
+async function doSignup() {
+  const email     = document.getElementById('email').value.trim();
+  const password  = document.getElementById('password').value;
+  const password2 = document.getElementById('password2').value;
+  const fullName  = document.getElementById('fullName').value.trim();
+  const nickname  = document.getElementById('nickname').value.trim();
+  const position  = document.getElementById('position').value;
+  const phone     = document.getElementById('phone').value.trim();
+  const btn = document.getElementById('submitBtn');
+
+  // Validation
+  if (!email || !password || !fullName) { showErr('กรุณากรอก email, รหัสผ่าน และชื่อ-นามสกุล'); return; }
+  if (password.length < 6) { showErr('รหัสผ่านต้องอย่างน้อย 6 ตัว'); return; }
+  if (password !== password2) { showErr('รหัสผ่านไม่ตรงกัน — กรอกใหม่'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('รูปแบบ email ไม่ถูกต้อง'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ กำลังสมัคร...';
+
+  try {
+    // 1. สมัคร auth user
+    const data = await sbAuth.signUp(email, password, fullName);
+
+    // 2. อัปเดต profile (มาจาก trigger handle_new_user)
+    if (data?.user?.id) {
+      await new Promise(r => setTimeout(r, 500)); // รอ trigger รัน
+      await sb.from('profiles').update({
+        full_name: fullName, nickname, position, phone
+      }).eq('id', data.user.id);
+    }
+
+    // 3. แสดงหน้าสำเร็จ
+    document.getElementById('formCard').classList.add('hidden');
+    document.getElementById('successCard').classList.remove('hidden');
+    document.querySelectorAll('.step-num').forEach((el, i) => {
+      if (i < 2) { el.classList.remove('bg-slate-300'); el.classList.add('bg-emerald-500'); }
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    if (/already|registered|exists/i.test(e.message)) {
+      showErr('Email นี้สมัครไว้แล้ว — กด "เข้าสู่ระบบ" ด้านล่างแทน');
+    } else if (/domain/i.test(e.message)) {
+      showErr(e.message);
+    } else {
+      showErr('สมัครไม่สำเร็จ: ' + e.message);
+    }
+    btn.disabled = false;
+    btn.innerHTML = '✨ สมัครสมาชิก';
+  }
+}
+
+// Enter เพื่อ submit
+['email','password','password2','fullName','nickname','phone'].forEach(id => {
+  document.getElementById(id)?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSignup();
+  });
+});
+</script>
+</body>
+</html>

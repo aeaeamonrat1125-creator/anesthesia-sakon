@@ -1,0 +1,1441 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ระบบบุคลากร — วิสัญญี รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  body { font-family:'Sarabun', system-ui, sans-serif; background:#f1f5f9; }
+  .grad-hero { background: linear-gradient(135deg, #0ea5e9, #2563eb 60%, #7c3aed); }
+  .card { background:#fff; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06); }
+  .scroll-x { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+  .input { width:100%; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; background:#fff; }
+  .input:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+  .btn { padding:8px 14px; border-radius:8px; font-weight:500; font-size:14px; cursor:pointer; transition:all .15s; }
+  .btn-primary { background:#2563eb; color:#fff; } .btn-primary:hover { background:#1d4ed8; }
+  .btn-ghost { background:#f1f5f9; color:#334155; } .btn-ghost:hover { background:#e2e8f0; }
+  .btn-danger { background:#ef4444; color:#fff; } .btn-danger:hover { background:#dc2626; }
+  body.fs-mode header, body.fs-mode nav.main-nav { display:none !important; }
+  .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:50;
+    background:#2563eb; color:#fff; padding:8px 12px; border-radius:999px;
+    box-shadow:0 6px 16px rgba(0,0,0,.18); font-size:13px; }
+  body.fs-mode .show-menu-btn { display:inline-flex; gap:6px; align-items:center; }
+  .tab-btn.active { background: rgba(255,255,255,.18); }
+  .status-ok { background:#dcfce7; color:#15803d; }
+  .status-warn { background:#fef3c7; color:#a16207; }
+  .status-bad { background:#fee2e2; color:#b91c1c; }
+  .grad-purple { background: linear-gradient(135deg, #6d28d9 0%, #9333ea 55%, #c026d3 100%); }
+  .role-pill { display:flex; align-items:center; gap:7px; padding:7px 16px; border-radius:999px; font-size:13px; font-weight:500; background:#fff; border:1.5px solid #e2e8f0; color:#64748b; cursor:pointer; transition:all .15s; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+  .role-pill:hover { border-color:#a855f7; color:#7c3aed; background:#faf5ff; }
+  .role-pill.active { background:linear-gradient(135deg,#7c3aed,#9333ea); border-color:#7c3aed; color:#fff; box-shadow:0 4px 14px rgba(124,58,237,.35); }
+  .role-pill-count { min-width:20px; text-align:center; padding:1px 7px; border-radius:999px; font-size:11px; font-weight:700; }
+  .role-pill.active .role-pill-count { background:rgba(255,255,255,.25); color:#fff; }
+  .role-pill:not(.active) .role-pill-count { background:#f1f5f9; color:#334155; }
+  .nurse-card { display:flex; align-items:center; gap:12px; padding:11px 14px; background:#fff; border:1.5px solid #f3e8ff; border-radius:12px; transition:all .15s; }
+  .nurse-card:hover { border-color:#c084fc; background:#faf5ff; box-shadow:0 4px 16px rgba(139,92,246,.1); transform:translateY(-1px); }
+  .nurse-avatar { width:42px; height:42px; border-radius:999px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,.2); }
+  .pills-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .pills-row::-webkit-scrollbar { display:none; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<button class="show-menu-btn" onclick="toggleFullscreen(false)">▼ แสดงเมนู</button>
+
+<header class="grad-hero text-white">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div>
+      <div class="text-lg sm:text-xl font-bold">👥 ระบบบุคลากร — วิสัญญี รพ.สกลนคร</div>
+      <div class="text-white/80 text-xs sm:text-sm" id="user-info">กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="flex gap-2 items-center flex-wrap">
+      <a href="index.html" class="flex items-center gap-1 bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 <span class="hidden sm:inline">หน้าหลัก</span></a>
+      <button onclick="toggleFullscreen(true)" class="hidden sm:flex items-center bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">⛶</button>
+      <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออกจากระบบ</button>
+    </div>
+  </div>
+</header>
+
+<nav class="main-nav bg-slate-900/95 text-white sticky top-0 z-30 shadow">
+  <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
+    <span id="nav-current-label" class="text-sm font-semibold truncate">📣 ประกาศ</span>
+    <div class="relative">
+      <button id="nav-menu-btn" onclick="toggleNavMenu()"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/20 text-sm font-medium">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect y="2" width="16" height="2" rx="1" fill="white"/><rect y="7" width="16" height="2" rx="1" fill="white"/><rect y="12" width="16" height="2" rx="1" fill="white"/></svg>
+        เมนู
+      </button>
+      <div id="nav-dropdown" class="hidden absolute right-0 top-full mt-1 bg-slate-800 rounded-xl shadow-2xl py-2 min-w-[220px] z-50 border border-white/10">
+        <button class="tab-btn active w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="announce">📣 ประกาศ</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi-edit">📝 ลงข้อมูล KPI</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="equipment">🔧 เครื่องมือ</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="schedule">📅 ตารางเวร</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="meetings">📚 ประชุมวิชาการ</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="activities">🎯 กิจกรรม</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="refers">↪ Refer</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="docs">📄 เอกสารวิชาการ</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="ops">📊 สถิติบริการ</button>
+        <div class="border-t border-white/10 my-1"></div>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="nurses">📒 รายชื่อทั้งหมด</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="staff">👤 บัญชี Login</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ===================== LOGIN OVERLAY ===================== -->
+<div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/60 z-40 items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-6">
+    <div class="text-xl font-bold mb-1">เข้าสู่ระบบ</div>
+    <div class="text-sm text-slate-500 mb-4">เฉพาะผู้มีสิทธิ์แก้ไขข้อมูล (อ่านอย่างเดียวไม่ต้อง login)</div>
+    <div class="space-y-2 mb-3">
+      <label class="text-xs text-slate-600">อีเมล</label>
+      <input id="loginEmail" type="email" class="input" placeholder="you@example.com" autocomplete="username">
+      <label class="text-xs text-slate-600">รหัสผ่าน</label>
+      <input id="loginPassword" type="password" class="input" autocomplete="current-password">
+    </div>
+    <div id="loginError" class="text-xs text-rose-500 mb-2 hidden"></div>
+    <button onclick="signIn()" class="btn btn-primary w-full mb-2">เข้าสู่ระบบ</button>
+    <div class="text-center text-xs text-slate-500">
+      ยังไม่มีบัญชี? <a href="signup.html" class="text-blue-600 font-semibold">สมัครสมาชิกใหม่</a> ·
+      <a href="index.html" class="text-blue-600">กลับหน้าหลัก</a>
+    </div>
+  </div>
+</div>
+
+<main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+
+  <!-- STAFF -->
+  <section data-page="staff" class="space-y-4 hidden">
+    <div class="card p-4 space-y-2">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div class="font-semibold">รายชื่อบุคลากร (<span id="staff-count">0</span> คน)</div>
+        <button class="btn btn-primary flex-shrink-0" onclick="openStaffForm()">+ เพิ่มบุคลากร</button>
+      </div>
+      <input id="staff-search" placeholder="ค้นหาชื่อ/ตำแหน่ง..." class="input">
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" id="staffGrid"></div>
+  </section>
+
+  <!-- NURSES LIST (ทะเบียนบุคลากรทั้งหมด) -->
+  <section data-page="nurses" class="space-y-5 hidden">
+
+    <!-- Hero -->
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
+        <div>
+          <div class="text-xl sm:text-2xl font-bold tracking-tight">👥 รายชื่อบุคลากร</div>
+          <div class="text-white/75 text-sm mt-1">แสดง <span id="nurses-count" class="font-bold text-white">0</span> คน · ทะเบียนหลักทั้งระบบ</div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="hidden sm:flex items-center px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-sm border border-white/20 transition" onclick="openImportNurses()">📥 Import</button>
+          <button class="hidden sm:flex items-center px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-sm border border-white/20 transition" onclick="openPasteNurses()">📋 จาก Excel</button>
+          <button class="flex items-center px-4 py-1.5 rounded-lg bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition" onclick="openNurseForm()">+ เพิ่มบุคลากร</button>
+        </div>
+      </div>
+      <div class="relative">
+        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/50 text-base">🔍</span>
+        <input id="nurse-search" placeholder="ค้นหาชื่อหรือชื่อเล่น..."
+          class="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white placeholder-white/50 text-sm focus:outline-none focus:bg-white/25 focus:border-white/50 transition"
+          oninput="renderNursesList()">
+      </div>
+    </div>
+
+    <!-- Position filter pills — horizontal scroll on mobile -->
+    <div class="pills-row">
+      <button class="role-pill active" data-role="" onclick="setRoleFilter(this)">
+        <span class="role-pill-count" id="rp-all">0</span>ทั้งหมด
+      </button>
+      <button class="role-pill" data-role="พยาบาลวิสัญญี" onclick="setRoleFilter(this)">
+        <span class="role-pill-count" id="rp-nurse">0</span>⚕️ พยาบาลวิสัญญี
+      </button>
+      <button class="role-pill" data-role="ผู้ช่วยพยาบาล" onclick="setRoleFilter(this)">
+        <span class="role-pill-count" id="rp-asst-n">0</span>🩺 ผู้ช่วยพยาบาล
+      </button>
+      <button class="role-pill" data-role="ผู้ช่วยเหลือคนไข้" onclick="setRoleFilter(this)">
+        <span class="role-pill-count" id="rp-asst-pt">0</span>🤝 ผู้ช่วยเหลือคนไข้
+      </button>
+      <button class="role-pill" data-role="พนักงานประจำตึก" onclick="setRoleFilter(this)">
+        <span class="role-pill-count" id="rp-emp">0</span>🏢 พนักงานประจำตึก
+      </button>
+    </div>
+
+    <div id="nursesGroups" class="space-y-5"></div>
+  </section>
+
+  <!-- KPI MONTHLY EDIT -->
+  <section data-page="kpi-edit" class="space-y-4 hidden">
+    <div class="card p-4">
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+        <div>
+          <div class="font-semibold">📝 ลงข้อมูล KPI รายเดือน</div>
+          <div class="text-xs text-slate-500 mt-1">เลือก KPI → ดูทุกปีงบ → กรอกค่ารายเดือน (ต.ค.-ก.ย.) → คำนวณเฉลี่ยอัตโนมัติ</div>
+        </div>
+        <div class="flex gap-2">
+          <select id="kpiPicker" class="input w-72" onchange="loadKpiMonthly()"></select>
+          <button class="btn btn-ghost" onclick="openEditKpiInfo()">✏️ แก้ชื่อ/เป้า KPI</button>
+        </div>
+      </div>
+    </div>
+    <div class="card p-4" id="kpiEditorWrap">
+      <div class="text-center text-slate-500 py-6">เลือก KPI ด้านบนเพื่อเริ่มแก้ไข</div>
+    </div>
+  </section>
+
+  <!-- EQUIPMENT -->
+  <section data-page="equipment" class="space-y-4 hidden">
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div class="font-semibold">เครื่องมือทั้งหมด (<span id="eq-count">0</span>)</div>
+      <button class="btn btn-primary" onclick="openEqForm()">+ เพิ่มเครื่องมือ</button>
+    </div>
+    <div class="card p-4 scroll-x">
+      <table class="min-w-full text-sm">
+        <thead class="text-slate-500 border-b text-left">
+          <tr><th class="py-2">ชื่อ</th><th>ยี่ห้อ/รุ่น</th><th>Serial</th><th>ที่ตั้ง</th><th>สถานะ</th><th>รับเข้า</th><th></th></tr>
+        </thead>
+        <tbody id="eqBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section data-page="schedule" class="space-y-4 hidden">
+    <div class="card p-4 flex items-center gap-3 flex-wrap">
+      <label class="text-sm">ปี-เดือน:</label>
+      <input id="schYM" type="text" placeholder="2569-01" class="input w-32" value="2569-01">
+      <label class="text-sm">ทีม:</label>
+      <select id="schTeam" class="input w-40">
+        <option value="ทีม 1">ทีม 1</option>
+        <option value="ทีม 2">ทีม 2</option>
+        <option value="ทีม 3">ทีม 3</option>
+        <option value="CVT">CVT</option>
+        <option value="Vascular">Vascular</option>
+        <option value="ERCP">ERCP</option>
+      </select>
+      <button class="btn btn-primary" onclick="loadSchedule()">โหลด</button>
+      <button class="btn btn-ghost" onclick="addSchEntry()">+ เพิ่ม</button>
+    </div>
+    <div class="card p-4 scroll-x">
+      <table class="min-w-full text-sm">
+        <thead class="text-slate-500 border-b text-left">
+          <tr><th class="py-2">วันที่</th><th>ตำแหน่ง/หน้าที่</th><th>ชื่อเล่น</th><th></th></tr>
+        </thead>
+        <tbody id="schBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- MEETINGS -->
+  <section data-page="meetings" class="space-y-4 hidden">
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div class="font-semibold">📚 คิวประชุมวิชาการ</div>
+      <button class="btn btn-primary" onclick="openMeetingForm()">+ เพิ่มคิว</button>
+    </div>
+    <div class="space-y-2" id="meetingList"></div>
+  </section>
+
+  <!-- ACTIVITIES -->
+  <section data-page="activities" class="space-y-4 hidden">
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div class="font-semibold">🎯 คิวกิจกรรม</div>
+      <button class="btn btn-primary" onclick="openActivityForm()">+ เพิ่มกิจกรรม</button>
+    </div>
+    <div class="space-y-2" id="activityList"></div>
+  </section>
+
+  <!-- REFERS -->
+  <section data-page="refers" class="space-y-4 hidden">
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div class="font-semibold">↪ คิว Refer ผู้ป่วย</div>
+      <button class="btn btn-primary" onclick="openReferForm()">+ เพิ่ม Refer</button>
+    </div>
+    <div class="card p-4 scroll-x">
+      <table class="min-w-full text-sm">
+        <thead class="text-slate-500 border-b text-left">
+          <tr><th class="py-2">วันที่</th><th>รหัสผู้ป่วย</th><th>จาก</th><th>ไป</th><th>เหตุผล</th><th>สถานะ</th><th></th></tr>
+        </thead>
+        <tbody id="referBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DOCS -->
+  <section data-page="docs" class="space-y-4 hidden">
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div class="font-semibold">📄 เอกสารวิชาการ</div>
+      <div class="flex gap-2">
+        <button class="btn btn-ghost" onclick="openDocTypeForm()">+ เพิ่มประเภท</button>
+        <button class="btn btn-primary" onclick="openDocForm()">+ เพิ่มเอกสาร</button>
+      </div>
+    </div>
+    <div class="card p-4">
+      <div class="text-xs text-slate-500 mb-2">ประเภทเอกสาร:</div>
+      <div class="flex gap-2 flex-wrap" id="docTypeBadges"></div>
+    </div>
+    <div class="card p-4 scroll-x">
+      <table class="min-w-full text-sm">
+        <thead class="text-slate-500 border-b text-left">
+          <tr><th class="py-2">หัวเรื่อง</th><th>ประเภท</th><th>วันที่</th><th>ลิงก์</th><th></th></tr>
+        </thead>
+        <tbody id="docsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ANNOUNCEMENTS -->
+  <section data-page="announce" class="space-y-4">
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <div class="font-semibold">📣 จัดการประกาศ</div>
+        <div class="text-xs text-slate-500 mt-1">ประกาศ "สำคัญ" จะแจ้งเตือนแบบเด่นกับผู้ใช้ทุกคน</div>
+      </div>
+      <button class="btn btn-primary" onclick="openAnnouncementForm()">+ เพิ่มประกาศ</button>
+    </div>
+
+    <div class="card p-4">
+      <div class="grid sm:grid-cols-3 gap-3 mb-4">
+        <div class="bg-blue-50 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">📌</div>
+          <div class="font-semibold text-blue-700">ข้อมูลทั่วไป</div>
+          <div class="text-xs text-slate-500">แสดงปกติในหน้าประกาศ</div>
+        </div>
+        <div class="bg-amber-50 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">⚠️</div>
+          <div class="font-semibold text-amber-700">ข้อควรระวัง</div>
+          <div class="text-xs text-slate-500">มี badge สีเหลืองเด่น</div>
+        </div>
+        <div class="bg-rose-50 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">🚨</div>
+          <div class="font-semibold text-rose-700">สำคัญ / เร่งด่วน</div>
+          <div class="text-xs text-slate-500">แจ้งเตือนเด่นทุกหน้า + browser notification</div>
+        </div>
+      </div>
+      <div class="space-y-2" id="announceList"></div>
+    </div>
+  </section>
+
+  <!-- OPS STATS -->
+  <section data-page="ops" class="space-y-4 hidden">
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div class="font-semibold">📊 สถิติบริการรายปีงบฯ</div>
+      <button class="btn btn-primary" onclick="openOpsForm()">+ เพิ่ม/แก้ปีงบฯ</button>
+    </div>
+    <div class="card p-4 scroll-x">
+      <table class="min-w-full text-sm">
+        <thead class="text-slate-500 border-b text-left">
+          <tr><th class="py-2">ปีงบฯ</th><th>ผู้ป่วยรวม</th><th>ความพึงพอใจ</th><th>หมายเหตุ</th><th></th></tr>
+        </thead>
+        <tbody id="opsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== GENERIC MODAL ===================== -->
+<div id="modal" class="fixed inset-0 bg-black/50 z-40 hidden items-center justify-center p-3">
+  <div class="card max-w-lg w-full max-h-[92vh] overflow-y-auto p-5">
+    <div class="flex items-start justify-between gap-3 mb-3">
+      <div class="font-bold text-lg" id="modalTitle">รายละเอียด</div>
+      <button onclick="closeModal()" class="text-slate-500 hover:text-slate-800 text-2xl leading-none">×</button>
+    </div>
+    <div id="modalBody"></div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" id="modalSaveBtn">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<footer class="text-center py-6 text-xs text-slate-500">
+  © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · V2 Supabase
+</footer>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+let currentUser = null, currentProfile = null;
+const cache = { staff:[], equipment:[], schedule:[], meetings:[], activities:[], refers:[], documents:[], docTypes:[], ops:[], kpis:[], kpiHistory:[], announcements:[], nurses:[] };
+
+// ===== FULLSCREEN =====
+function toggleFullscreen(on) {
+  if (on === undefined) on = !document.body.classList.contains('fs-mode');
+  document.body.classList.toggle('fs-mode', !!on);
+  try { localStorage.setItem('anes_fs_staff', on ? '1' : '0'); } catch(e){}
+}
+try { if (localStorage.getItem('anes_fs_staff') === '1') toggleFullscreen(true); } catch(e){}
+
+// ===== NAV DROPDOWN =====
+function toggleNavMenu() {
+  document.getElementById('nav-dropdown').classList.toggle('hidden');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#nav-menu-btn') && !e.target.closest('#nav-dropdown')) {
+    document.getElementById('nav-dropdown')?.classList.add('hidden');
+  }
+});
+
+// ===== TABS =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(x => x.classList.toggle('active', x.dataset.tab === tab));
+  document.querySelectorAll('section[data-page]').forEach(s => s.classList.toggle('hidden', s.dataset.page !== tab));
+  const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+  if (btn) document.getElementById('nav-current-label').textContent = btn.textContent.trim();
+  document.getElementById('nav-dropdown')?.classList.add('hidden');
+  if (tab === 'staff') renderStaff();
+  if (tab === 'kpi-edit') renderKpiPicker();
+  if (tab === 'equipment') renderEquipment();
+  if (tab === 'schedule') loadSchedule();
+  if (tab === 'meetings') renderMeetings();
+  if (tab === 'activities') renderActivities();
+  if (tab === 'refers') renderRefers();
+  if (tab === 'docs') renderDocs();
+  if (tab === 'ops') renderOps();
+  if (tab === 'announce') renderAnnouncements();
+  if (tab === 'nurses') renderNursesList();
+  try { history.replaceState(null, '', '#'+tab); } catch(e){}
+}
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => switchTab(b.dataset.tab));
+});
+// ถ้ามี hash ใน URL ตอนเปิด — เปิด tab ตรงนั้น
+window.addEventListener('hashchange', () => {
+  const h = (location.hash || '').replace('#','');
+  if (h) switchTab(h);
+});
+
+// ===== AUTH =====
+async function ensureAuth() {
+  try {
+    const u = await sbAuth.getUser();
+    if (u) {
+      currentUser = u;
+      currentProfile = await sbAuth.getProfile().catch(() => null);
+      document.getElementById('user-info').textContent =
+        `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
+      document.getElementById('signOutBtn').classList.remove('hidden');
+      document.getElementById('loginOverlay').style.display = 'none';
+      return true;
+    }
+  } catch(e) { console.warn(e); }
+  document.getElementById('loginOverlay').style.display = 'flex';
+  return false;
+}
+async function signIn() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPassword').value;
+  const err   = document.getElementById('loginError');
+  err.classList.add('hidden');
+  try {
+    await sbAuth.signIn(email, pwd);
+    document.getElementById('loginOverlay').style.display = 'none';
+    location.reload();
+  } catch (e) {
+    err.textContent = e.message || 'เข้าสู่ระบบล้มเหลว';
+    err.classList.remove('hidden');
+  }
+}
+async function signUp() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPassword').value;
+  const err   = document.getElementById('loginError');
+  if (!email || !pwd) { err.textContent='กรอก email และ password'; err.classList.remove('hidden'); return; }
+  try {
+    await sbAuth.signUp(email, pwd);
+    sbUtils.toast('สมัครสำเร็จ — เช็คอีเมลยืนยัน (ถ้ามี) แล้วเข้าสู่ระบบ', 'success');
+  } catch (e) {
+    err.textContent = e.message; err.classList.remove('hidden');
+  }
+}
+async function signOut() { await sbAuth.signOut(); location.reload(); }
+
+// ===== LOAD ALL =====
+async function loadAll() {
+  try {
+    const [staff, eq, mt, ac, rf, dc, dt, op, kp, kh, an, nu] = await Promise.all([
+      sbDB.list('profiles', { order:'full_name', asc:true }),
+      sbDB.list('equipment', { order:'name', asc:true }),
+      sbDB.list('meetings', { order:'date', asc:false }),
+      sbDB.list('activities', { order:'date', asc:false }),
+      sbDB.list('refers', { order:'date', asc:false }),
+      sbDB.list('documents', { order:'date', asc:false }),
+      sbDB.list('document_types', { order:'sort_order', asc:true }),
+      sbDB.list('operation_stats', { order:'fiscal_year', asc:false }),
+      sbDB.list('kpis', { order:'sort_order', asc:true }),
+      sbDB.list('kpi_history'),
+      sbDB.list('announcements', { order:'date', asc:false }).catch(() => []),
+      sbDB.list('nurses', { order:'sort_order', asc:true }).catch(() => [])
+    ]);
+    cache.staff = staff; cache.equipment = eq; cache.meetings = mt; cache.activities = ac;
+    cache.refers = rf; cache.documents = dc; cache.docTypes = dt; cache.ops = op;
+    cache.kpis = kp; cache.kpiHistory = kh; cache.announcements = an; cache.nurses = nu;
+    renderStaff();
+    renderKpiPicker();
+    renderAnnouncements();
+  } catch (err) { sbUtils.toast(err.message, 'error'); }
+}
+
+// ===== STAFF =====
+function renderStaff() {
+  const q = (document.getElementById('staff-search')?.value || '').toLowerCase();
+  const list = cache.staff.filter(s =>
+    !q || (s.full_name||'').toLowerCase().includes(q) || (s.position||'').toLowerCase().includes(q) || (s.nickname||'').toLowerCase().includes(q)
+  );
+  document.getElementById('staff-count').textContent = list.length;
+  document.getElementById('staffGrid').innerHTML = list.map(s => `
+    <div class="card p-4">
+      <div class="flex items-start gap-3">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-white flex items-center justify-center font-bold text-lg">
+          ${(s.nickname || s.full_name || '?')[0]}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold truncate">${s.full_name||'-'} <span class="text-slate-500 text-sm">(${s.nickname||'-'})</span></div>
+          <div class="text-xs text-slate-500">${s.position||'-'}</div>
+          <div class="text-xs text-slate-500 mt-1">${s.phone||''} ${s.line_id?'· LINE: '+s.line_id:''}</div>
+          ${s.role === 'admin' ? '<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Admin</span>' : ''}
+        </div>
+        <button class="text-blue-600 text-sm" onclick="openStaffForm('${s.id}')">แก้</button>
+      </div>
+    </div>
+  `).join('') || '<div class="text-center text-slate-500 py-6 col-span-full">ยังไม่มีบุคลากร</div>';
+}
+document.getElementById('staff-search')?.addEventListener('input', renderStaff);
+
+function openStaffForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const s = id ? cache.staff.find(x => x.id === id) : {};
+  document.getElementById('modalTitle').textContent = id ? 'แก้ไขบุคลากร' : 'เพิ่มบุคลากร';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <input id="f-name" class="input" placeholder="ชื่อ-นามสกุล" value="${s.full_name||''}">
+      <div class="grid grid-cols-2 gap-2">
+        <input id="f-nick" class="input" placeholder="ชื่อเล่น" value="${s.nickname||''}">
+        <input id="f-pos"  class="input" placeholder="ตำแหน่ง" value="${s.position||''}">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="f-phone" class="input" placeholder="เบอร์โทร" value="${s.phone||''}">
+        <input id="f-line"  class="input" placeholder="LINE ID" value="${s.line_id||''}">
+      </div>
+      <input id="f-photo" class="input" placeholder="URL รูป" value="${s.photo_url||''}">
+      <select id="f-role" class="input">
+        <option value="staff" ${s.role==='staff'?'selected':''}>Staff</option>
+        <option value="admin" ${s.role==='admin'?'selected':''}>Admin</option>
+        <option value="viewer" ${s.role==='viewer'?'selected':''}>Viewer</option>
+      </select>
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="deleteStaff('${id}')">🗑 ลบบุคลากรนี้</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = () => saveStaff(id);
+  openModal();
+}
+async function saveStaff(id) {
+  const row = {
+    full_name: val('f-name'), nickname: val('f-nick'), position: val('f-pos'),
+    phone: val('f-phone'), line_id: val('f-line'), photo_url: val('f-photo'),
+    role: val('f-role')
+  };
+  try {
+    if (id) await sbDB.update('profiles', id, row);
+    else sbUtils.toast('การเพิ่มบุคลากรใหม่ต้องสมัครผ่านระบบ Auth ก่อน — ใช้แก้ profile ที่มีอยู่แทน','warn');
+    closeModal(); loadAll();
+  } catch (e) { sbUtils.toast(e.message,'error'); }
+}
+async function deleteStaff(id) {
+  if (!confirm('ลบบุคลากรนี้?')) return;
+  try { await sbDB.remove('profiles', id); closeModal(); loadAll(); } catch (e) { sbUtils.toast(e.message,'error'); }
+}
+
+// ===== EQUIPMENT =====
+function renderEquipment() {
+  document.getElementById('eq-count').textContent = cache.equipment.length;
+  document.getElementById('eqBody').innerHTML = cache.equipment.map(e => {
+    const cls = e.status === 'ใช้งานได้' ? 'status-ok' : e.status === 'รอซ่อม' ? 'status-bad' : 'status-warn';
+    return `<tr class="border-b last:border-0">
+      <td class="py-2 font-medium">${e.name||'-'}</td>
+      <td>${e.brand||''} ${e.model||''}</td>
+      <td class="text-xs">${e.serial||''}</td>
+      <td>${e.location||''}</td>
+      <td><span class="text-xs px-2 py-1 rounded-full ${cls}">${e.status||'-'}</span></td>
+      <td class="text-xs">${e.received_date||''}</td>
+      <td><button class="text-blue-600 text-sm" onclick="openEqForm('${e.id}')">แก้</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="text-center text-slate-500 py-4">ยังไม่มีเครื่องมือ</td></tr>';
+}
+function openEqForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const e = id ? cache.equipment.find(x => x.id === id) : {};
+  document.getElementById('modalTitle').textContent = id ? 'แก้ไขเครื่องมือ' : 'เพิ่มเครื่องมือ';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <input id="f-kind" list="eq-kind-list" class="input" placeholder="ประเภทเครื่อง" value="${e.kind||'Machine'}" autocomplete="off">
+          <datalist id="eq-kind-list">${[...new Set(['Machine','Monitor','Defibrillator','Ventilator','Infusion Pump','Suction','Warmer','อื่นๆ', ...cache.equipment.map(x => x.kind).filter(Boolean)])].map(k => `<option value="${k}">`).join('')}</datalist>
+        </div>
+        <select id="f-loc" class="input">
+          ${['OR1','OR2','OR3','OR4','OR5','OR6','OR7','OR8','OR9','OR10','OR11','OR12',
+             'OR41','OR42','OR43','OR44','OR45','OR CVT1','OR CVT2','ESWL','Cath Lab',
+             'RR2','RR3','RR ตึกหัวใจ','PACU','ส่วนกลาง'].map(r =>
+            `<option ${e.location===r?'selected':''}>${r}</option>`).join('')}
+        </select>
+      </div>
+      <input id="f-name" class="input" placeholder="ชื่อเครื่อง" value="${e.name||''}">
+      <div class="grid grid-cols-2 gap-2">
+        <input id="f-brand" class="input" placeholder="ยี่ห้อ" value="${e.brand||''}">
+        <input id="f-model" class="input" placeholder="รุ่น" value="${e.model||''}">
+      </div>
+      <input id="f-serial" class="input" placeholder="Serial" value="${e.serial||''}">
+      <select id="f-status" class="input">
+        ${['ใช้งานได้','รอซ่อม','ซ่อมแล้ว','จำหน่าย'].map(s => `<option ${e.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <div>
+        <label class="text-xs text-slate-500">รูปภาพเครื่องมือ</label>
+        <input type="file" id="f-image" accept="image/*" class="input">
+        ${e.image_url ? `<img src="${e.image_url}" class="w-full h-32 object-cover rounded mt-1">` : ''}
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="f-recv" type="date" class="input" value="${e.received_date||''}">
+        <input id="f-rep" type="date" class="input" value="${e.repair_date||''}">
+      </div>
+      <input id="f-owner" class="input" placeholder="ผู้ดูแล" value="${e.owner||''}">
+      <textarea id="f-notes" class="input" rows="2" placeholder="หมายเหตุ">${e.notes||''}</textarea>
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="deleteEq('${id}')">🗑 ลบ</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = () => saveEq(id);
+  openModal();
+}
+async function saveEq(id) {
+  // อัปโหลดรูปก่อน (ถ้ามี)
+  let image_url = null;
+  const fileInput = document.getElementById('f-image');
+  if (fileInput?.files?.[0]) {
+    const f = fileInput.files[0];
+    const name = `eq-${Date.now()}-${f.name.replace(/[^\w.-]/g,'_')}`;
+    try {
+      const { error } = await sb.storage.from('equipment-photos').upload(name, f, { upsert: false });
+      if (!error) {
+        image_url = sb.storage.from('equipment-photos').getPublicUrl(name).data.publicUrl;
+      } else { console.warn(error.message); }
+    } catch(e) { console.warn(e); }
+  }
+  const row = {
+    kind: val('f-kind'),
+    name: val('f-name'), brand: val('f-brand'), model: val('f-model'),
+    serial: val('f-serial'), location: val('f-loc'), status: val('f-status'),
+    received_date: val('f-recv') || null, repair_date: val('f-rep') || null,
+    owner: val('f-owner'), notes: val('f-notes')
+  };
+  if (image_url) row.image_url = image_url;
+  try {
+    if (id) await sbDB.update('equipment', id, row);
+    else await sbDB.insert('equipment', row);
+    closeModal(); loadAll();
+  } catch (e) { sbUtils.toast(e.message,'error'); }
+}
+async function deleteEq(id) {
+  if (!confirm('ลบเครื่องมือนี้?')) return;
+  await sbDB.remove('equipment', id); closeModal(); loadAll();
+}
+
+// ===== SCHEDULE =====
+async function loadSchedule() {
+  const ym = val('schYM'), team = val('schTeam');
+  cache.schedule = await sbDB.list('schedule_entries', { eq:{year_month:ym, team:team}, order:'day', asc:true });
+  document.getElementById('schBody').innerHTML = cache.schedule.map(r => `
+    <tr class="border-b last:border-0">
+      <td class="py-2">วันที่ ${r.day}</td>
+      <td>${r.position||''}</td>
+      <td class="font-medium">${r.nickname||''}</td>
+      <td><button class="text-rose-500 text-xs" onclick="delSch('${r.id}')">ลบ</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" class="text-center text-slate-500 py-4">ยังไม่มีรายการ</td></tr>';
+}
+async function addSchEntry() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const day = parseInt(prompt('วันที่ (1-31):'));
+  const position = prompt('ตำแหน่ง/หน้าที่:');
+  const nickname = prompt('ชื่อเล่น:');
+  if (!day) return;
+  await sbDB.insert('schedule_entries', { year_month: val('schYM'), team: val('schTeam'), day, position, nickname });
+  loadSchedule();
+}
+async function delSch(id) { if (confirm('ลบ?')) { await sbDB.remove('schedule_entries', id); loadSchedule(); } }
+
+// ===== MEETINGS =====
+function renderMeetings() {
+  document.getElementById('meetingList').innerHTML = cache.meetings.map(m => `
+    <div class="card p-4 flex justify-between items-start gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold">${m.topic||'-'}</div>
+        <div class="text-xs text-slate-500 mt-1">${sbUtils.fmtDate(m.date)} ${m.time||''} · ${m.location||''} · ${m.type||''}</div>
+        <div class="text-xs text-slate-600 mt-1">วิทยากร: ${m.speaker||'-'} · ${m.hours||0} ชม.</div>
+        ${m.link ? `<a href="${m.link}" target="_blank" class="text-blue-600 text-xs">🔗 ลิงก์</a>` : ''}
+      </div>
+      <button class="text-blue-600 text-sm" onclick="openMeetingForm('${m.id}')">แก้</button>
+    </div>
+  `).join('') || '<div class="text-center text-slate-500 py-6">ยังไม่มีคิว</div>';
+}
+function openMeetingForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const m = id ? cache.meetings.find(x => x.id === id) : {};
+  document.getElementById('modalTitle').textContent = id ? 'แก้ไขประชุม' : 'เพิ่มประชุมวิชาการ';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <input id="f-topic" class="input" placeholder="หัวข้อ" value="${m.topic||''}">
+      <div class="grid grid-cols-2 gap-2">
+        <input id="f-date" type="date" class="input" value="${m.date||''}">
+        <input id="f-time" class="input" placeholder="เวลา 09:00-12:00" value="${m.time||''}">
+      </div>
+      <input id="f-speaker" class="input" placeholder="วิทยากร" value="${m.speaker||''}">
+      <div class="grid grid-cols-2 gap-2">
+        <input id="f-hours" type="number" step="0.5" class="input" placeholder="ชั่วโมง" value="${m.hours||''}">
+        <select id="f-type" class="input">
+          ${['ใน รพ.','นอก รพ.','Online'].map(t => `<option ${m.type===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <input id="f-loc" class="input" placeholder="สถานที่" value="${m.location||''}">
+      <input id="f-link" class="input" placeholder="ลิงก์" value="${m.link||''}">
+      <textarea id="f-notes" class="input" rows="2" placeholder="หมายเหตุ">${m.notes||''}</textarea>
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="delMeeting('${id}')">🗑 ลบ</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    const row = {
+      topic: val('f-topic'), date: val('f-date')||null, time: val('f-time'),
+      speaker: val('f-speaker'), hours: parseFloat(val('f-hours'))||null,
+      type: val('f-type'), location: val('f-loc'), link: val('f-link'), notes: val('f-notes')
+    };
+    if (id) await sbDB.update('meetings', id, row); else await sbDB.insert('meetings', row);
+    closeModal(); loadAll();
+  };
+  openModal();
+}
+async function delMeeting(id) { if (confirm('ลบ?')) { await sbDB.remove('meetings', id); closeModal(); loadAll(); } }
+
+// ===== ACTIVITIES =====
+function renderActivities() {
+  document.getElementById('activityList').innerHTML = cache.activities.map(a => `
+    <div class="card p-4 flex justify-between items-start gap-3">
+      <div class="flex-1">
+        <div class="font-semibold">${a.name||'-'}</div>
+        <div class="text-xs text-slate-500 mt-1">${sbUtils.fmtDate(a.date)} · ${a.location||''} · ${a.organizer||''}</div>
+        ${a.link ? `<a href="${a.link}" target="_blank" class="text-blue-600 text-xs">🔗 ลิงก์</a>` : ''}
+      </div>
+      <button class="text-blue-600 text-sm" onclick="openActivityForm('${a.id}')">แก้</button>
+    </div>
+  `).join('') || '<div class="text-center text-slate-500 py-6">ยังไม่มีกิจกรรม</div>';
+}
+function openActivityForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const a = id ? cache.activities.find(x => x.id === id) : {};
+  document.getElementById('modalTitle').textContent = id ? 'แก้ไขกิจกรรม' : 'เพิ่มกิจกรรม';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <input id="f-name" class="input" placeholder="ชื่อกิจกรรม" value="${a.name||''}">
+      <input id="f-date" type="date" class="input" value="${a.date||''}">
+      <input id="f-loc" class="input" placeholder="สถานที่" value="${a.location||''}">
+      <input id="f-org" class="input" placeholder="ผู้จัด" value="${a.organizer||''}">
+      <input id="f-link" class="input" placeholder="ลิงก์" value="${a.link||''}">
+      <textarea id="f-notes" class="input" rows="2" placeholder="หมายเหตุ">${a.notes||''}</textarea>
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="delActivity('${id}')">🗑 ลบ</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    const row = { name: val('f-name'), date: val('f-date')||null, location: val('f-loc'),
+      organizer: val('f-org'), link: val('f-link'), notes: val('f-notes') };
+    if (id) await sbDB.update('activities', id, row); else await sbDB.insert('activities', row);
+    closeModal(); loadAll();
+  };
+  openModal();
+}
+async function delActivity(id) { if (confirm('ลบ?')) { await sbDB.remove('activities', id); closeModal(); loadAll(); } }
+
+// ===== REFERS =====
+function renderRefers() {
+  document.getElementById('referBody').innerHTML = cache.refers.map(r => {
+    const cls = r.status === 'completed' ? 'status-ok' : r.status === 'cancelled' ? 'status-bad' : 'status-warn';
+    return `<tr class="border-b last:border-0">
+      <td class="py-2">${sbUtils.fmtDate(r.date)}</td>
+      <td class="font-medium">${r.patient_code||''}</td>
+      <td>${r.from_dept||''}</td>
+      <td>${r.to_dept||''}</td>
+      <td class="text-xs max-w-xs truncate">${r.reason||''}</td>
+      <td><span class="text-xs px-2 py-1 rounded-full ${cls}">${r.status}</span></td>
+      <td><button class="text-blue-600 text-sm" onclick="openReferForm('${r.id}')">แก้</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="text-center text-slate-500 py-4">ยังไม่มีรายการ</td></tr>';
+}
+function openReferForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const r = id ? cache.refers.find(x => x.id === id) : {};
+  document.getElementById('modalTitle').textContent = id ? 'แก้ไข Refer' : 'เพิ่ม Refer';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <input id="f-date" type="date" class="input" value="${r.date||''}">
+      <input id="f-code" class="input" placeholder="รหัสผู้ป่วย" value="${r.patient_code||''}">
+      <div class="grid grid-cols-2 gap-2">
+        <input id="f-from" class="input" placeholder="จาก" value="${r.from_dept||''}">
+        <input id="f-to" class="input" placeholder="ไป" value="${r.to_dept||''}">
+      </div>
+      <textarea id="f-reason" class="input" rows="2" placeholder="เหตุผล">${r.reason||''}</textarea>
+      <select id="f-status" class="input">
+        ${['pending','in_progress','completed','cancelled'].map(s => `<option ${r.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <textarea id="f-notes" class="input" rows="2" placeholder="หมายเหตุ">${r.notes||''}</textarea>
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="delRefer('${id}')">🗑 ลบ</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    const row = { date: val('f-date')||null, patient_code: val('f-code'), from_dept: val('f-from'),
+      to_dept: val('f-to'), reason: val('f-reason'), status: val('f-status'), notes: val('f-notes') };
+    if (id) await sbDB.update('refers', id, row); else await sbDB.insert('refers', row);
+    closeModal(); loadAll();
+  };
+  openModal();
+}
+async function delRefer(id) { if (confirm('ลบ?')) { await sbDB.remove('refers', id); closeModal(); loadAll(); } }
+
+// ===== DOCS =====
+function renderDocs() {
+  document.getElementById('docTypeBadges').innerHTML = cache.docTypes.map(t => `
+    <span class="text-xs bg-slate-100 px-2 py-1 rounded-full">${t.name}
+      <button class="text-rose-400 ml-1" onclick="delDocType('${t.id}')">×</button>
+    </span>
+  `).join('') || '<span class="text-xs text-slate-500">ยังไม่มี — กดเพิ่มประเภทด้านบน</span>';
+  document.getElementById('docsBody').innerHTML = cache.documents.map(d => `
+    <tr class="border-b last:border-0">
+      <td class="py-2 font-medium">${d.title||'-'}</td>
+      <td><span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${d.type||'-'}</span></td>
+      <td class="text-xs">${sbUtils.fmtDate(d.date)}</td>
+      <td>${d.link ? `<a href="${d.link}" target="_blank" class="text-blue-600 text-xs">🔗 เปิด</a>` : '-'}</td>
+      <td><button class="text-blue-600 text-sm" onclick="openDocForm('${d.id}')">แก้</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" class="text-center text-slate-500 py-4">ยังไม่มีเอกสาร</td></tr>';
+}
+function openDocTypeForm() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const name = prompt('ชื่อประเภทเอกสารใหม่ (เช่น แนวปฏิบัติ, R2R, CQI, งานวิจัย):');
+  if (!name) return;
+  sbDB.insert('document_types', { name }).then(() => loadAll()).catch(e => sbUtils.toast(e.message,'error'));
+}
+async function delDocType(id) { if (confirm('ลบประเภทนี้?')) { await sbDB.remove('document_types', id); loadAll(); } }
+
+function openDocForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const d = id ? cache.documents.find(x => x.id === id) : {};
+  document.getElementById('modalTitle').textContent = id ? 'แก้ไขเอกสาร' : 'เพิ่มเอกสาร';
+  const typeOpts = cache.docTypes.map(t => `<option ${d.type===t.name?'selected':''}>${t.name}</option>`).join('');
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <input id="f-title" class="input" placeholder="ชื่อเอกสาร" value="${d.title||''}">
+      <select id="f-type" class="input">${typeOpts}</select>
+      <input id="f-date" type="date" class="input" value="${d.date||''}">
+      <input id="f-link" class="input" placeholder="ลิงก์ Google Drive/OneDrive/..." value="${d.link||''}">
+      <input id="f-cat" class="input" placeholder="หมวด (ถ้ามี)" value="${d.category||''}">
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="delDoc('${id}')">🗑 ลบ</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    const row = { title: val('f-title'), type: val('f-type'), date: val('f-date')||null,
+      link: val('f-link'), category: val('f-cat'), owner_id: currentUser?.id };
+    if (id) await sbDB.update('documents', id, row); else await sbDB.insert('documents', row);
+    closeModal(); loadAll();
+  };
+  openModal();
+}
+async function delDoc(id) { if (confirm('ลบ?')) { await sbDB.remove('documents', id); closeModal(); loadAll(); } }
+
+// ===== OPS STATS =====
+function renderOps() {
+  document.getElementById('opsBody').innerHTML = cache.ops.map(o => `
+    <tr class="border-b last:border-0">
+      <td class="py-2 font-medium">${o.fiscal_year}</td>
+      <td>${sbUtils.fmtNum(o.total_patients,0)}</td>
+      <td>${o.satisfaction ? sbUtils.fmtNum(o.satisfaction,2)+'%' : '-'}</td>
+      <td class="text-xs">${o.notes||''}</td>
+      <td><button class="text-blue-600 text-sm" onclick="openOpsForm('${o.fiscal_year}')">แก้</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" class="text-center text-slate-500 py-4">ยังไม่มี</td></tr>';
+}
+function openOpsForm(fy) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const o = fy ? cache.ops.find(x => x.fiscal_year === parseInt(fy)) : {};
+  document.getElementById('modalTitle').textContent = fy ? `แก้ไขสถิติปีงบฯ ${fy}` : 'เพิ่มปีงบฯ';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <input id="f-fy" type="number" class="input" placeholder="ปีงบฯ (เช่น 2569)" value="${o.fiscal_year||''}" ${fy?'readonly':''}>
+      <input id="f-pat" type="number" class="input" placeholder="ผู้ป่วยรวม" value="${o.total_patients||''}">
+      <input id="f-sat" type="number" step="0.01" class="input" placeholder="ความพึงพอใจ %" value="${o.satisfaction||''}">
+      <div class="text-xs text-slate-500 mt-2">ASA / Choice / CVT / Comorbidities / Death — แก้ผ่าน Supabase Table Editor หรือ JSON ด้านล่าง</div>
+      <textarea id="f-json" class="input font-mono text-xs" rows="6">${JSON.stringify({
+        asa: o.asa||{}, choice: o.choice||{}, cvt: o.cvt||{},
+        comorbidities: o.comorbidities||{}, death_causes: o.death_causes||{}
+      }, null, 2)}</textarea>
+      <textarea id="f-notes" class="input" rows="2" placeholder="หมายเหตุ">${o.notes||''}</textarea>
+    </div>
+  `;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    let extras = {};
+    try { extras = JSON.parse(val('f-json')); } catch(e){ sbUtils.toast('JSON ไม่ถูก','error'); return; }
+    const row = {
+      fiscal_year: parseInt(val('f-fy')),
+      total_patients: parseInt(val('f-pat'))||0,
+      satisfaction: parseFloat(val('f-sat'))||null,
+      asa: extras.asa, choice: extras.choice, cvt: extras.cvt,
+      comorbidities: extras.comorbidities, death_causes: extras.death_causes,
+      notes: val('f-notes')
+    };
+    await sbDB.upsert('operation_stats', row, { onConflict: 'fiscal_year' });
+    closeModal(); loadAll();
+  };
+  openModal();
+}
+
+// ===== Helpers =====
+function val(id) { return document.getElementById(id)?.value || ''; }
+function openModal() { const m = document.getElementById('modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
+function closeModal() { const m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+// ===== NURSES LIST (ทะเบียนบุคลากร) =====
+const ROLE_GROUPS = [
+  { key:'พยาบาลวิสัญญี',    icon:'⚕️' },
+  { key:'ผู้ช่วยพยาบาล',     icon:'🩺' },
+  { key:'ผู้ช่วยเหลือคนไข้', icon:'🤝' },
+  { key:'พนักงานประจำตึก',   icon:'🏢' }
+];
+const ROLE_STYLES = {
+  'พยาบาลวิสัญญี':    { av:'linear-gradient(135deg,#a855f7,#7c3aed)', bg:'#faf5ff', border:'#e9d5ff', badge:'background:#f3e8ff;color:#7c3aed' },
+  'ผู้ช่วยพยาบาล':    { av:'linear-gradient(135deg,#fbbf24,#d97706)', bg:'#fffbeb', border:'#fde68a', badge:'background:#fef3c7;color:#b45309' },
+  'ผู้ช่วยเหลือคนไข้':{ av:'linear-gradient(135deg,#f472b6,#db2777)', bg:'#fdf2f8', border:'#fbcfe8', badge:'background:#fce7f3;color:#be185d' },
+  'พนักงานประจำตึก':  { av:'linear-gradient(135deg,#818cf8,#6d28d9)', bg:'#f5f3ff', border:'#ddd6fe', badge:'background:#ede9fe;color:#5b21b6' },
+  'อื่นๆ':            { av:'linear-gradient(135deg,#94a3b8,#475569)', bg:'#f8fafc', border:'#e2e8f0', badge:'background:#f1f5f9;color:#475569' }
+};
+
+let _roleFilter = '';
+function setRoleFilter(btn) {
+  _roleFilter = btn.dataset.role;
+  document.querySelectorAll('.role-pill').forEach(p => p.classList.toggle('active', p === btn));
+  renderNursesList();
+}
+
+function renderNursesList() {
+  const q = (document.getElementById('nurse-search')?.value || '').toLowerCase();
+  const all = cache.nurses.filter(n =>
+    (!q || (n.name||'').toLowerCase().includes(q) || (n.nickname||'').toLowerCase().includes(q)) &&
+    (!_roleFilter || n.role === _roleFilter)
+  );
+  document.getElementById('nurses-count').textContent = all.length;
+
+  // pill counts
+  const cnt = r => cache.nurses.filter(n => n.role === r).length;
+  document.getElementById('rp-all').textContent     = cache.nurses.length;
+  document.getElementById('rp-nurse').textContent   = cnt('พยาบาลวิสัญญี');
+  document.getElementById('rp-asst-n').textContent  = cnt('ผู้ช่วยพยาบาล');
+  document.getElementById('rp-asst-pt').textContent = cnt('ผู้ช่วยเหลือคนไข้');
+  document.getElementById('rp-emp').textContent     = cnt('พนักงานประจำตึก');
+
+  // group
+  const groups = {};
+  ROLE_GROUPS.forEach(g => { groups[g.key] = []; });
+  groups['อื่นๆ'] = [];
+  all.forEach(n => {
+    const k = ROLE_GROUPS.find(g => g.key === n.role)?.key || 'อื่นๆ';
+    groups[k].push(n);
+  });
+
+  document.getElementById('nursesGroups').innerHTML = Object.entries(groups)
+    .filter(([, arr]) => arr.length > 0)
+    .map(([k, arr]) => {
+      const g = ROLE_GROUPS.find(x => x.key === k) || { icon:'📋' };
+      const s = ROLE_STYLES[k] || ROLE_STYLES['อื่นๆ'];
+      return `
+        <div class="card p-5" style="border-top:3px solid ${s.border}">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                style="background:${s.bg};border:1.5px solid ${s.border}">${g.icon}</div>
+              <div>
+                <div class="font-bold text-slate-800 text-base">${k}</div>
+                <div class="text-xs text-slate-500 mt-0.5">${arr.length} คน</div>
+              </div>
+            </div>
+            <span class="text-xs px-3 py-1 rounded-full font-semibold" style="${s.badge}">${arr.length} คน</span>
+          </div>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            ${arr.map(n => {
+              const init = (n.nickname || n.name || '?').charAt(0).toUpperCase();
+              return `<div class="nurse-card">
+                <div class="nurse-avatar" style="background:${s.av}">${init}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-slate-800 truncate">${n.name || '-'}</div>
+                  ${n.nickname ? `<div class="text-xs text-slate-400">"${n.nickname}"</div>` : `<div class="text-xs text-slate-400">#${n.id}</div>`}
+                </div>
+                <button class="flex-shrink-0 text-xs px-2.5 py-1 rounded-lg font-medium transition"
+                  style="${s.badge}" onclick="openNurseForm(${n.id})">แก้ไข</button>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }).join('') || `<div class="card p-12 text-center text-slate-400">
+      <div class="text-5xl mb-3">👤</div>
+      <div class="text-base font-medium">ไม่พบรายชื่อ</div>
+      <div class="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือคำค้นหา</div>
+    </div>`;
+}
+
+function openNurseForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const n = id ? cache.nurses.find(x => x.id === id) : { active:true };
+  document.getElementById('modalTitle').textContent = id ? `แก้ไข #${id}` : '+ เพิ่มบุคลากรใหม่';
+  // หา next id ใหม่
+  const ids = cache.nurses.map(x => x.id);
+  const nextId = id || (Math.max(0, ...ids.filter(i => i < 100)) + 1);
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label class="text-xs text-slate-500">ID</label>
+          <input id="f-id" type="number" class="input" value="${nextId}" ${id?'readonly':''}>
+        </div>
+        <div class="col-span-2">
+          <label class="text-xs text-slate-500">ตำแหน่ง</label>
+          <select id="f-role" class="input">
+            <option ${n.role==='พยาบาลวิสัญญี'?'selected':''}>พยาบาลวิสัญญี</option>
+            <option ${n.role==='ผู้ช่วยพยาบาล'?'selected':''}>ผู้ช่วยพยาบาล</option>
+            <option ${n.role==='ผู้ช่วยเหลือคนไข้'?'selected':''}>ผู้ช่วยเหลือคนไข้</option>
+            <option ${n.role==='พนักงานประจำตึก'?'selected':''}>พนักงานประจำตึก</option>
+            <option ${n.role==='อื่นๆ'?'selected':''}>อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+      <input id="f-name" class="input" placeholder="ชื่อ-นามสกุล (เต็ม)" value="${n.name||''}">
+      <input id="f-nickname" class="input" placeholder="ชื่อเล่น (ถ้ามี)" value="${n.nickname||''}">
+      <div class="flex items-center gap-2">
+        <input id="f-active" type="checkbox" ${n.active!==false?'checked':''}>
+        <label for="f-active" class="text-sm">ใช้งานอยู่ (active)</label>
+      </div>
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="deleteNurse(${id})">🗑 ลบบุคลากรนี้</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    const row = {
+      id: parseInt(val('f-id')),
+      name: val('f-name'),
+      nickname: val('f-nickname'),
+      role: val('f-role'),
+      active: document.getElementById('f-active').checked,
+      sort_order: parseInt(val('f-id'))
+    };
+    if (!row.name) { sbUtils.toast('กรอกชื่อ-นามสกุล','error'); return; }
+    try {
+      if (id) await sbDB.update('nurses', id, row);
+      else await sb.from('nurses').insert(row).select().single();
+      sbUtils.toast('บันทึกแล้ว ✓','success');
+      closeModal(); loadAll();
+    } catch(e) { sbUtils.toast(e.message,'error'); }
+  };
+  openModal();
+}
+async function deleteNurse(id) {
+  if (!confirm(`ลบบุคลากร ID #${id}?`)) return;
+  try { await sbDB.remove('nurses', id); closeModal(); loadAll(); }
+  catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+// ===== BULK IMPORT NURSES =====
+function openImportNurses() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  document.getElementById('modalTitle').textContent = '📥 Import จากไฟล์ Excel/CSV';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-3">
+      <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs">
+        <div class="font-semibold mb-1">📋 รูปแบบไฟล์ที่รองรับ:</div>
+        <div>Excel (.xlsx, .xls) หรือ CSV — ต้องมีหัวคอลัมน์:</div>
+        <div class="mt-1 font-mono bg-white p-2 rounded">name | role | nickname</div>
+        <div class="mt-1 text-slate-600">เช่น <code>นายA, พยาบาลวิสัญญี, เอ</code></div>
+        <div class="mt-1 text-slate-600">หรือใช้หัวคอลัมน์ภาษาไทย: ชื่อ, ตำแหน่ง, ชื่อเล่น</div>
+      </div>
+      <input id="f-file" type="file" accept=".csv,.xlsx,.xls" class="input">
+      <div id="importPreview" class="text-sm"></div>
+    </div>
+  `;
+  document.getElementById('modalSaveBtn').textContent = 'นำเข้า';
+  document.getElementById('modalSaveBtn').onclick = doImportFile;
+  document.getElementById('f-file').addEventListener('change', previewImportFile);
+  openModal();
+}
+
+let _importRows = [];
+function previewImportFile(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      _importRows = json.map(r => normalizeNurseRow(r)).filter(r => r.name);
+      document.getElementById('importPreview').innerHTML = `
+        <div class="font-semibold mb-2 text-emerald-700">พบ ${_importRows.length} รายการ:</div>
+        <div class="max-h-48 overflow-y-auto border rounded">
+          <table class="min-w-full text-xs">
+            <thead class="bg-slate-50"><tr><th class="text-left p-1.5">ชื่อ</th><th class="text-left p-1.5">ตำแหน่ง</th><th class="text-left p-1.5">เล่น</th></tr></thead>
+            <tbody>${_importRows.slice(0,30).map(r => `<tr class="border-t"><td class="p-1.5">${r.name}</td><td class="p-1.5">${r.role}</td><td class="p-1.5">${r.nickname||''}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        ${_importRows.length > 30 ? `<div class="text-xs text-slate-500 mt-1">...และอีก ${_importRows.length-30} รายการ</div>` : ''}
+      `;
+    } catch(err) {
+      document.getElementById('importPreview').innerHTML = `<div class="text-rose-600 text-sm">อ่านไฟล์ไม่สำเร็จ: ${err.message}</div>`;
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+function normalizeNurseRow(r) {
+  const get = (...keys) => {
+    for (const k of keys) {
+      const v = r[k] ?? r[k.toLowerCase()] ?? r[k.toUpperCase()];
+      if (v && String(v).trim()) return String(v).trim();
+    }
+    return '';
+  };
+  let role = get('role','ตำแหน่ง','position') || 'พยาบาลวิสัญญี';
+  // normalize role
+  if (/พยาบาล.*วิสัญญี|วิสัญญี.*พยาบาล/.test(role)) role = 'พยาบาลวิสัญญี';
+  else if (/ผู้ช่วย.*พยาบาล/.test(role)) role = 'ผู้ช่วยพยาบาล';
+  else if (/ผู้ช่วย.*คนไข้|ผู้ช่วยเหลือ/.test(role)) role = 'ผู้ช่วยเหลือคนไข้';
+  else if (/พนักงาน.*ตึก/.test(role)) role = 'พนักงานประจำตึก';
+  return {
+    name: get('name','Name','ชื่อ','ชื่อ-นามสกุล','full_name'),
+    role,
+    nickname: get('nickname','ชื่อเล่น','nick'),
+  };
+}
+
+async function doImportFile() {
+  if (!_importRows.length) { sbUtils.toast('ยังไม่มีข้อมูลให้นำเข้า','error'); return; }
+  const maxId = Math.max(0, ...cache.nurses.map(n => n.id));
+  let nextId = maxId + 1;
+  // เริ่ม id ตามตำแหน่ง: พยาบาลใช้ 1-99, ผู้ช่วยพยาบาล 101-199, ผู้ช่วยเหลือ 201-299, พนักงาน 301-399
+  function reserveId(role) {
+    const base = role === 'ผู้ช่วยพยาบาล' ? 100 :
+                 role === 'ผู้ช่วยเหลือคนไข้' ? 200 :
+                 role === 'พนักงานประจำตึก' ? 300 : 0;
+    let candidate = base + 1;
+    const used = new Set([...cache.nurses.map(n => n.id), ...rows.map(r => r.id)]);
+    while (used.has(candidate)) candidate++;
+    return candidate;
+  }
+  const rows = [];
+  _importRows.forEach(r => {
+    r.id = reserveId(r.role);
+    r.sort_order = r.id;
+    r.active = true;
+    rows.push(r);
+  });
+  try {
+    const { error } = await sb.from('nurses').upsert(rows, { onConflict: 'id' });
+    if (error) throw error;
+    sbUtils.toast(`นำเข้า ${rows.length} รายการสำเร็จ ✓`,'success');
+    closeModal(); loadAll();
+  } catch(e) { sbUtils.toast('นำเข้าล้มเหลว: '+e.message,'error'); }
+}
+
+// ===== PASTE FROM EXCEL/SPREADSHEET =====
+function openPasteNurses() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  document.getElementById('modalTitle').textContent = '📋 วางจาก Excel/Spreadsheet';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-3">
+      <div class="bg-amber-50 border border-amber-200 rounded p-3 text-xs">
+        <div class="font-semibold mb-1">วิธีใช้:</div>
+        <div>1. เปิด Excel/Google Sheets → คลุมแถวที่ต้องการ (รวมหัวคอลัมน์)</div>
+        <div>2. Copy (Cmd+C) → กลับมาที่นี่ → คลิกในกล่อง → Paste (Cmd+V)</div>
+        <div>3. ระบบจะตรวจจับคอลัมน์: <code>ชื่อ, ตำแหน่ง, ชื่อเล่น</code> (หรือ name/role/nickname)</div>
+      </div>
+      <textarea id="f-paste" class="input font-mono text-xs" rows="8" placeholder="วางข้อมูลที่นี่..."></textarea>
+      <div id="pastePreview" class="text-sm"></div>
+    </div>
+  `;
+  document.getElementById('modalSaveBtn').textContent = 'นำเข้า';
+  document.getElementById('modalSaveBtn').onclick = doImportFile;
+  document.getElementById('f-paste').addEventListener('input', previewPasteText);
+  openModal();
+}
+
+function previewPasteText() {
+  const text = document.getElementById('f-paste').value;
+  if (!text.trim()) return;
+  // ตรวจ separator: tab หรือ comma
+  const lines = text.trim().split(/\r?\n/);
+  const sep = lines[0].includes('\t') ? '\t' : ',';
+  const headers = lines[0].split(sep).map(h => h.trim());
+  const rows = lines.slice(1).map(line => {
+    const cells = line.split(sep).map(c => c.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = cells[i] || '');
+    return obj;
+  });
+  _importRows = rows.map(r => normalizeNurseRow(r)).filter(r => r.name);
+  document.getElementById('pastePreview').innerHTML = `
+    <div class="font-semibold mb-2 text-emerald-700">พบ ${_importRows.length} รายการ:</div>
+    <div class="max-h-48 overflow-y-auto border rounded">
+      <table class="min-w-full text-xs">
+        <thead class="bg-slate-50"><tr><th class="text-left p-1.5">ชื่อ</th><th class="text-left p-1.5">ตำแหน่ง</th><th class="text-left p-1.5">เล่น</th></tr></thead>
+        <tbody>${_importRows.slice(0,20).map(r => `<tr class="border-t"><td class="p-1.5">${r.name}</td><td class="p-1.5">${r.role}</td><td class="p-1.5">${r.nickname||''}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ===== ANNOUNCEMENTS =====
+function renderAnnouncements() {
+  const lvlMap = { info: { icon:'📌', color:'blue', label:'ข้อมูลทั่วไป' },
+                   warn: { icon:'⚠️', color:'amber', label:'ข้อควรระวัง' },
+                   urgent:{ icon:'🚨', color:'rose', label:'สำคัญ/เร่งด่วน' } };
+  document.getElementById('announceList').innerHTML = cache.announcements.length === 0
+    ? '<div class="text-center text-slate-500 py-6">ยังไม่มีประกาศ</div>'
+    : cache.announcements.map(a => {
+        const m = lvlMap[a.level] || lvlMap.info;
+        return `<div class="border-l-4 border-${m.color}-500 bg-${m.color}-50 p-3 rounded-lg flex justify-between items-start gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-lg">${m.icon}</span>
+              <span class="font-semibold text-${m.color}-700">${a.title}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-${m.color}-200 text-${m.color}-800">${m.label}</span>
+            </div>
+            <div class="text-sm text-slate-700 whitespace-pre-wrap">${a.content||''}</div>
+            <div class="text-xs text-slate-500 mt-1">📅 ${sbUtils.fmtDate(a.date)}</div>
+          </div>
+          <div class="flex gap-2">
+            <button class="text-blue-600 text-sm" onclick="openAnnouncementForm('${a.id}')">แก้</button>
+            <button class="text-rose-500 text-sm" onclick="deleteAnnouncement('${a.id}')">ลบ</button>
+          </div>
+        </div>`;
+      }).join('');
+}
+function openAnnouncementForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const a = id ? cache.announcements.find(x => x.id === id) : { level:'info', date: new Date().toISOString().slice(0,10) };
+  document.getElementById('modalTitle').textContent = id ? 'แก้ไขประกาศ' : '+ ประกาศใหม่';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2">
+      <input id="f-title" class="input" placeholder="หัวข้อประกาศ" value="${a.title||''}">
+      <textarea id="f-content" class="input" rows="4" placeholder="เนื้อหา">${a.content||''}</textarea>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="text-xs text-slate-500">ระดับความสำคัญ</label>
+          <select id="f-level" class="input">
+            <option value="info"   ${a.level==='info'?'selected':''}>📌 ข้อมูลทั่วไป</option>
+            <option value="warn"   ${a.level==='warn'?'selected':''}>⚠️ ข้อควรระวัง</option>
+            <option value="urgent" ${a.level==='urgent'?'selected':''}>🚨 สำคัญ/เร่งด่วน (แจ้งเตือนเด่น)</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">วันที่</label>
+          <input id="f-date" type="date" class="input" value="${a.date||new Date().toISOString().slice(0,10)}">
+        </div>
+      </div>
+      <div class="text-xs text-slate-500 bg-blue-50 p-2 rounded">
+        💡 ประกาศ <b>"สำคัญ/เร่งด่วน"</b> จะแสดง <b>banner สีแดง</b> ที่หน้าแรกของผู้ใช้ทุกคน<br>
+        และ <b>Browser Notification</b> สำหรับผู้ที่อนุญาต
+      </div>
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="deleteAnnouncement('${id}')">🗑 ลบประกาศนี้</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    const row = {
+      title: val('f-title'),
+      content: val('f-content'),
+      level: val('f-level'),
+      date: val('f-date') || new Date().toISOString().slice(0,10)
+    };
+    if (!row.title) { sbUtils.toast('กรอกหัวข้อ','error'); return; }
+    try {
+      if (id) await sbDB.update('announcements', id, row);
+      else await sbDB.insert('announcements', row);
+      sbUtils.toast(row.level === 'urgent' ? '🚨 ประกาศสำคัญถูกส่งแล้ว' : 'บันทึกประกาศแล้ว ✓','success');
+      closeModal(); loadAll();
+    } catch(e) { sbUtils.toast(e.message,'error'); }
+  };
+  openModal();
+}
+async function deleteAnnouncement(id) {
+  if (!confirm('ลบประกาศนี้?')) return;
+  try { await sbDB.remove('announcements', id); closeModal(); loadAll(); }
+  catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+// ===== KPI MONTHLY EDITOR =====
+function renderKpiPicker() {
+  const sel = document.getElementById('kpiPicker');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— เลือก KPI —</option>' +
+    cache.kpis.map(k => `<option value="${k.id}">${k.code} · ${k.name}</option>`).join('');
+}
+const TH_MONTHS = [
+  { num:10, name:'ตุลาคม' }, { num:11, name:'พฤศจิกายน' }, { num:12, name:'ธันวาคม' },
+  { num:1,  name:'มกราคม' }, { num:2,  name:'กุมภาพันธ์' }, { num:3,  name:'มีนาคม' },
+  { num:4,  name:'เมษายน' }, { num:5,  name:'พฤษภาคม' },   { num:6,  name:'มิถุนายน' },
+  { num:7,  name:'กรกฎาคม' },{ num:8,  name:'สิงหาคม' },   { num:9,  name:'กันยายน' },
+];
+function loadKpiMonthly() {
+  const kid = document.getElementById('kpiPicker').value;
+  const wrap = document.getElementById('kpiEditorWrap');
+  if (!kid) { wrap.innerHTML = '<div class="text-center text-slate-500 py-6">เลือก KPI ก่อน</div>'; return; }
+  const k = cache.kpis.find(x => x.id === kid);
+  // ปีงบฯที่จะแสดง: 5 ปีย้อนหลัง + ปัจจุบัน
+  const curFy = new Date().getFullYear() + 543 - (new Date().getMonth() < 9 ? 0 : -1);
+  const years = [curFy-4, curFy-3, curFy-2, curFy-1, curFy];
+
+  wrap.innerHTML = `
+    <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+      <div class="font-semibold text-slate-800">${k.code} — ${k.name}</div>
+      <div class="text-xs text-slate-600 mt-1">เป้า: ${k.target}${k.unit||''} · ${k.direction==='higher'?'มากกว่า=ดี ⬆️':'น้อยกว่า=ดี ⬇️'}</div>
+    </div>
+    <div class="mb-3 text-sm text-slate-600">
+      <span class="inline-block w-3 h-3 bg-emerald-500 rounded mr-1"></span>ลงแล้ว
+      <span class="inline-block w-3 h-3 bg-amber-200 rounded mx-1 ml-3"></span>ยังไม่ลง
+      <span class="inline-block w-3 h-3 bg-rose-200 rounded mx-1 ml-3"></span>ไม่บรรลุเป้า
+    </div>
+    ${years.map(fy => kpiYearBlock(k, fy)).join('')}
+  `;
+  // bind input events
+  years.forEach(fy => {
+    document.querySelectorAll(`[data-fy="${fy}"] input`).forEach(inp => {
+      inp.addEventListener('input', () => updateRowAvg(fy));
+    });
+    updateRowAvg(fy);
+  });
+}
+function kpiYearBlock(k, fy) {
+  const h = cache.kpiHistory.find(x => x.kpi_id === k.id && x.fiscal_year === fy);
+  const monthData = (h?.month_data) || {};
+  return `<div class="border rounded-xl p-3 mb-3" data-fy="${fy}">
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-semibold text-slate-700">ปีงบฯ ${fy}</div>
+      <div class="text-xs text-slate-500" id="km-avg-${fy}">เฉลี่ย: --</div>
+    </div>
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2 mb-2">
+      ${TH_MONTHS.map(m => {
+        const v = monthData[m.num];
+        const filled = v != null;
+        const isLow = k.direction === 'lower';
+        const bad = filled && (isLow ? v > k.target : v < k.target);
+        const cls = filled ? (bad ? 'border-rose-300 bg-rose-50' : 'border-emerald-300 bg-emerald-50') : 'border-amber-200 bg-amber-50/30';
+        return `<div>
+          <label class="text-[10px] text-slate-500 block">${m.name.substring(0,3)}</label>
+          <input data-month="${m.num}" type="number" step="0.01"
+            class="input ${cls}" style="padding:6px 8px;font-size:13px" value="${v ?? ''}" placeholder="-">
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="flex justify-between items-center gap-2">
+      <input class="input flex-1 text-xs" placeholder="หมายเหตุปีนี้" value="${h?.notes||''}" data-notes>
+      <button class="btn btn-primary text-sm py-1.5 px-3" onclick="saveKpiYear('${k.id}', ${fy})">💾 บันทึก ${fy}</button>
+    </div>
+  </div>`;
+}
+function updateRowAvg(fy) {
+  const block = document.querySelector(`[data-fy="${fy}"]`);
+  if (!block) return;
+  const vals = Array.from(block.querySelectorAll('input[data-month]')).map(i => parseFloat(i.value)).filter(v => !isNaN(v));
+  const el = document.getElementById('km-avg-'+fy);
+  if (el) el.textContent = `ลง ${vals.length}/12 เดือน · เฉลี่ย ${vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : '--'}`;
+}
+async function saveKpiYear(kid, fy) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const block = document.querySelector(`[data-fy="${fy}"]`);
+  const monthData = {};
+  block.querySelectorAll('input[data-month]').forEach(i => {
+    const v = parseFloat(i.value);
+    if (!isNaN(v)) monthData[i.dataset.month] = v;
+  });
+  const vals = Object.values(monthData);
+  const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  const k = cache.kpis.find(x => x.id === kid);
+  const notes = block.querySelector('[data-notes]').value;
+  try {
+    const existing = cache.kpiHistory.find(x => x.kpi_id === kid && x.fiscal_year === fy);
+    if (existing) {
+      await sbDB.update('kpi_history', existing.id, { month_data: monthData, value: avg, notes });
+    } else {
+      await sbDB.insert('kpi_history', { kpi_id: kid, fiscal_year: fy, month_data: monthData, value: avg, target: k.target, notes });
+    }
+    sbUtils.toast(`บันทึกปี ${fy} แล้ว ✓`,'success');
+    loadAll();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+// แก้ชื่อ/เป้า KPI
+function openEditKpiInfo() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  document.getElementById('modalTitle').textContent = '✏️ แก้ชื่อ/เป้าหมาย KPI ทั้ง 15 ตัว';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+      ${cache.kpis.map(k => `
+        <div class="border rounded-lg p-2.5" data-kpi-id="${k.id}">
+          <div class="text-xs text-slate-500 mb-1">${k.code}</div>
+          <input class="input mb-1 text-sm" data-fld="name" value="${k.name||''}" placeholder="ชื่อ KPI">
+          <div class="grid grid-cols-3 gap-1.5">
+            <input class="input text-sm" data-fld="target" type="number" step="0.01" value="${k.target||''}" placeholder="เป้า">
+            <input class="input text-sm" data-fld="unit" value="${k.unit||''}" placeholder="หน่วย">
+            <select class="input text-sm" data-fld="direction">
+              <option value="higher" ${k.direction==='higher'?'selected':''}>มาก=ดี ⬆️</option>
+              <option value="lower"  ${k.direction==='lower' ?'selected':''}>น้อย=ดี ⬇️</option>
+            </select>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('modalSaveBtn').onclick = saveAllKpiInfo;
+  openModal();
+}
+async function saveAllKpiInfo() {
+  try {
+    const blocks = document.querySelectorAll('[data-kpi-id]');
+    for (const b of blocks) {
+      const patch = {
+        name: b.querySelector('[data-fld="name"]').value,
+        target: parseFloat(b.querySelector('[data-fld="target"]').value) || null,
+        unit: b.querySelector('[data-fld="unit"]').value,
+        direction: b.querySelector('[data-fld="direction"]').value,
+      };
+      await sbDB.update('kpis', b.dataset.kpiId, patch);
+    }
+    sbUtils.toast('บันทึก KPI ทั้ง 15 ตัว ✓', 'success');
+    closeModal();
+    loadAll();
+  } catch(e) { sbUtils.toast(e.message, 'error'); }
+}
+
+// ===== REALTIME =====
+function subscribeAll() {
+  ['profiles','equipment','schedule_entries','meetings','activities','refers',
+   'documents','document_types','operation_stats','kpis','kpi_history'].forEach(t => {
+    sbRT.subscribe(t, () => loadAll());
+  });
+}
+
+// ===== INIT =====
+(async () => {
+  await ensureAuth();
+  await loadAll();
+  subscribeAll();
+  // เปิด tab ตาม hash ถ้ามี
+  const h = (location.hash || '').replace('#','');
+  if (h && document.querySelector(`.tab-btn[data-tab="${h}"]`)) switchTab(h);
+})();
+</script>
+</body>
+</html>

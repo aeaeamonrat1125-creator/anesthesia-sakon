@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>บันทึกยอดบริการ — วิสัญญี รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family:'Sarabun', system-ui, sans-serif; background:#f1f5f9; }
+  .grad-hero { background: linear-gradient(135deg, #0ea5e9, #2563eb 60%, #7c3aed); }
+  .card { background:#fff; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06); }
+  .input { width:100%; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; background:#fff; }
+  .input:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+  .btn { padding:10px 14px; border-radius:8px; font-weight:500; font-size:14px; cursor:pointer; transition:all .15s; }
+  .btn-primary { background:#2563eb; color:#fff; } .btn-primary:hover { background:#1d4ed8; }
+  .btn-ghost { background:#f1f5f9; color:#334155; } .btn-ghost:hover { background:#e2e8f0; }
+  .tab-pill { flex:1; padding:12px; border-radius:10px; font-weight:600; text-align:center;
+    background:#e2e8f0; color:#475569; cursor:pointer; transition:all .12s; }
+  .tab-pill.active { background:#2563eb; color:#fff; }
+  .section-h { font-weight:600; color:#1e293b; font-size:15px; border-left:4px solid #2563eb; padding:2px 0 2px 10px; margin-top:8px; }
+  .lbl { font-size:12px; color:#64748b; margin-bottom:3px; display:block; }
+  .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .grid-3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; }
+  .grid-4 { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; }
+  @media (min-width: 640px) { .grid-4 { grid-template-columns: repeat(4, 1fr); } }
+  .radio-row { display:flex; gap:6px; flex-wrap:wrap; }
+  .radio-pill { padding:6px 14px; border-radius:999px; background:#f1f5f9; color:#475569;
+    border:1px solid #cbd5e1; cursor:pointer; font-size:13px; font-weight:500; user-select:none; }
+  .radio-pill.active { background:#2563eb; color:#fff; border-color:#2563eb; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<header class="grad-hero text-white">
+  <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-2">
+    <div>
+      <div class="text-lg sm:text-xl font-bold">📋 บันทึกยอดบริการประจำวัน</div>
+      <div class="text-white/80 text-xs sm:text-sm" id="user-info">กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="flex gap-2">
+      <a href="index.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
+      <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
+    </div>
+  </div>
+</header>
+
+<div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/60 z-40 items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-6">
+    <div class="text-xl font-bold mb-1">เข้าสู่ระบบ</div>
+    <div class="space-y-2 mb-3">
+      <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
+      <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+    </div>
+    <div id="loginError" class="text-xs text-rose-500 mb-2 hidden"></div>
+    <button onclick="signIn()" class="btn btn-primary w-full mb-2">เข้าสู่ระบบ</button>
+    <a href="index.html" class="block text-center text-xs text-blue-600">กลับหน้าหลัก</a>
+  </div>
+</div>
+
+<main class="max-w-5xl mx-auto px-3 sm:px-4 py-5 space-y-4">
+
+  <div class="card p-3">
+    <div class="flex gap-2 flex-wrap">
+      <button class="tab-pill active" data-type="ในเวลา" onclick="switchType('ในเวลา')">🕐 ในเวลาราชการ</button>
+      <button class="tab-pill" data-type="นอกเวลา" onclick="switchType('นอกเวลา')">🌙 นอกเวลาราชการ</button>
+      <button class="tab-pill" data-type="preop" onclick="switchType('preop')">📋 Pre/Post op</button>
+    </div>
+  </div>
+
+  <!-- COMMON FORM (ในเวลา + นอกเวลา) -->
+  <div id="serviceForm" class="card p-4 space-y-3">
+    <div class="section-h">ข้อมูลทั่วไป</div>
+    <div class="grid-3">
+      <div>
+        <span class="lbl">วัน/เดือน/ปี</span>
+        <input id="f-date" type="date" class="input">
+      </div>
+      <div>
+        <span class="lbl">จุดบริการ</span>
+        <select id="f-point" class="input"></select>
+      </div>
+      <div id="shiftWrap" class="hidden">
+        <span class="lbl">เวร</span>
+        <select id="f-shift" class="input">
+          <option>เช้า</option><option>บ่าย</option><option>ดึก</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-h">จำนวนผู้ป่วย</div>
+    <div class="grid-4">
+      <div><span class="lbl">Pt ทั้งหมด</span><input id="m-total" type="number" class="input"></div>
+      <div><span class="lbl">GA</span><input id="m-ga" type="number" class="input"></div>
+      <div><span class="lbl">RA</span><input id="m-ra" type="number" class="input"></div>
+      <div><span class="lbl">MAC</span><input id="m-mac" type="number" class="input"></div>
+      <div><span class="lbl">ผ่าน RR</span><input id="m-pass" type="number" class="input"></div>
+      <div><span class="lbl">ไม่ผ่าน RR</span><input id="m-fail" type="number" class="input"></div>
+      <div><span class="lbl">ใส่ ETT กลับ</span><input id="m-ett" type="number" class="input"></div>
+      <div><span class="lbl">ส่งต่อเวรถัดไปดูแล</span><input id="m-handover" type="number" class="input"></div>
+    </div>
+
+    <!-- (Pre/Post op อยู่ที่ tab ที่ 3 ด้านบน) -->
+
+    <div class="grid-2">
+      <div>
+        <span class="lbl">ผู้ป่วยในห้องพักฟื้นเกิน 1 ชม.</span>
+        <input id="m-pacu1h" type="number" class="input">
+      </div>
+      <div>
+        <span class="lbl">สาเหตุ (เกิน 1 ชม.)</span>
+        <input id="m-pacu1h-reason" class="input" placeholder="เช่น วัยเด็ก, เครื่องมือ, ผู้รักษา, ร่วมรอ">
+      </div>
+    </div>
+
+    <div class="section-h">ASA Classification</div>
+    <div class="grid-4">
+      <div><span class="lbl">ASA1</span><input id="asa-1" type="number" class="input"></div>
+      <div><span class="lbl">ASA2</span><input id="asa-2" type="number" class="input"></div>
+      <div><span class="lbl">ASA3</span><input id="asa-3" type="number" class="input"></div>
+      <div><span class="lbl">ASA4</span><input id="asa-4" type="number" class="input"></div>
+      <div><span class="lbl">ASA5</span><input id="asa-5" type="number" class="input"></div>
+      <div><span class="lbl">ASA6</span><input id="asa-6" type="number" class="input"></div>
+    </div>
+
+    <div class="section-h">อุบัติการณ์ / ภาวะแทรกซ้อน</div>
+    <div class="space-y-2 text-sm">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-24">DOT:</span>
+        <div class="radio-row" data-group="cx-dot">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="cx-dot-detail" class="input flex-1 min-w-[140px]" placeholder="รายละเอียด (ถ้ามี)">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-24">CPR:</span>
+        <div class="radio-row" data-group="cx-cpr">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="cx-cpr-detail" class="input flex-1 min-w-[140px]" placeholder="รายละเอียด">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-24">Re-intubation:</span>
+        <div class="radio-row" data-group="cx-reint">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="cx-reint-detail" class="input flex-1 min-w-[140px]" placeholder="รายละเอียด">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-24">Fast Track:</span>
+        <div class="radio-row" data-group="cx-ft">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="cx-ft-detail" class="input flex-1 min-w-[140px]" placeholder="จำนวน">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-24">อื่นๆ:</span>
+        <div class="radio-row" data-group="cx-other">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="cx-other-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+      </div>
+    </div>
+
+    <div class="section-h">การบริการนอก OR / จำนวน Set</div>
+    <div class="grid-3">
+      <div><span class="lbl">ETT นอกสถานที่ (ราย)</span><input id="ext-ett" type="number" class="input"></div>
+      <div><span class="lbl">ที่ไหน / ตึก</span><input id="ext-where" class="input"></div>
+      <div><span class="lbl">จำนวน Set มาจาก (แผนก)</span><input id="set-dept" class="input"></div>
+    </div>
+
+    <div class="section-h">Emergency Drug Box</div>
+    <div class="grid-3 items-end">
+      <div><span class="lbl">จำนวนกล่อง</span><input id="dbox-count" type="number" class="input"></div>
+      <div>
+        <span class="lbl">สถานะ</span>
+        <div class="radio-row" data-group="dbox-status">
+          <button class="radio-pill" onclick="setRadio(this)">พร้อมใช้</button>
+          <button class="radio-pill" onclick="setRadio(this)">ไม่พร้อมใช้</button>
+        </div>
+      </div>
+      <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="dbox-reason" class="input"></div>
+    </div>
+    <div id="caWrap" class="grid-3 items-end hidden">
+      <div><span class="lbl">CA (กล่อง)</span><input id="ca-count" type="number" class="input"></div>
+      <div>
+        <span class="lbl">สถานะ CA</span>
+        <div class="radio-row" data-group="ca-status">
+          <button class="radio-pill" onclick="setRadio(this)">พร้อมใช้</button>
+          <button class="radio-pill" onclick="setRadio(this)">ไม่พร้อมใช้</button>
+        </div>
+      </div>
+      <div><span class="lbl">หมายเหตุ CA</span><input id="ca-reason" class="input"></div>
+    </div>
+
+    <div class="section-h">ปัญหา / ข้อขัดข้อง</div>
+    <div class="space-y-2 text-sm">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-44">ปัญหาเรื่องยาเสพติด:</span>
+        <div class="radio-row" data-group="iss-drug">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="iss-drug-detail" class="input flex-1 min-w-[140px]" placeholder="โปรดระบุ">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-44">ด้านอัตรากำลัง/สมรรถนะ:</span>
+        <div class="radio-row" data-group="iss-staff">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="iss-staff-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-44">ด้านเครื่องมือ/อุปกรณ์:</span>
+        <div class="radio-row" data-group="iss-equip">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="iss-equip-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-44">ด้านระบบงาน/ประสานงาน:</span>
+        <div class="radio-row" data-group="iss-sys">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="iss-sys-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-medium w-44">ด้านอื่นๆ:</span>
+        <div class="radio-row" data-group="iss-other">
+          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+        </div>
+        <input id="iss-other-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+      </div>
+    </div>
+
+    <!-- เฉพาะนอกเวลา: ทีม -->
+    <div id="teamsWrap" class="hidden">
+      <div class="section-h">ทีมและรายชื่อ (นอกเวลา)</div>
+      <div id="teamsList" class="space-y-2 text-sm"></div>
+      <button class="btn btn-ghost text-xs mt-2" onclick="addTeam()">+ เพิ่มทีม</button>
+    </div>
+
+    <div class="section-h">อัปโหลดรูปฟอร์มกระดาษ (ถ้ามี)</div>
+    <div class="space-y-2">
+      <input id="photoFile" type="file" accept="image/*" capture="environment" class="input">
+      <div id="photoPreview" class="text-xs text-slate-500">ยังไม่ได้เลือกรูป</div>
+    </div>
+
+    <div class="section-h">หมายเหตุ / ผู้บันทึก</div>
+    <div class="grid-2">
+      <div>
+        <span class="lbl">ผู้บันทึก (พิมพ์ค้นหา หรือเลือกจากรายชื่อ)</span>
+        <input id="recorder" list="nurses-options" class="input" placeholder="พิมพ์ชื่อ-นามสกุล หรือเลื่อนเลือก..." autocomplete="off">
+        <datalist id="nurses-options"></datalist>
+      </div>
+      <div><span class="lbl">ตำแหน่ง</span><input id="recorder-pos" class="input" value="พยาบาลวิสัญญี"></div>
+    </div>
+    <div>
+      <span class="lbl">หมายเหตุ / ข้อเสนอแนะ</span>
+      <textarea id="notes" class="input" rows="2"></textarea>
+    </div>
+
+    <div class="flex gap-2 pt-2">
+      <button class="btn btn-primary flex-1" onclick="saveLog()">💾 บันทึกยอด</button>
+      <button class="btn btn-ghost" onclick="clearForm()">รีเซ็ต</button>
+    </div>
+  </div>
+
+  <!-- PRE/POST OP FORM (โผล่เฉพาะเมื่อเลือก tab Pre/Post op) -->
+  <div id="prePostForm" class="card p-4 space-y-3 hidden">
+    <div class="section-h">📋 ส่งยอดเยี่ยม Pre/Post op</div>
+    <div class="grid-2">
+      <div>
+        <span class="lbl">📅 วันที่</span>
+        <input id="pp-date" type="date" class="input">
+      </div>
+      <div>
+        <span class="lbl">🏥 สาย</span>
+        <select id="pp-team" class="input">
+          <option value="">— เลือกสาย —</option>
+          <option value="1">สาย 1</option>
+          <option value="2">สาย 2</option>
+          <option value="3">สาย 3</option>
+          <option value="other">อื่นๆ</option>
+        </select>
+        <input id="pp-team-other" class="input mt-2 hidden" placeholder="ระบุสายอื่นๆ">
+      </div>
+    </div>
+
+    <div class="section-h">จำนวนเยี่ยม (ตัวหลัก)</div>
+    <div class="grid-2">
+      <div class="bg-blue-50 rounded p-2 border border-blue-100">
+        <span class="lbl text-blue-700">จำนวนผู้ป่วย Pre op *</span>
+        <input id="pp-preop" type="number" min="0" class="input" placeholder="0">
+      </div>
+      <div class="bg-emerald-50 rounded p-2 border border-emerald-100">
+        <span class="lbl text-emerald-700">จำนวนผู้ป่วย Post op *</span>
+        <input id="pp-postop" type="number" min="0" class="input" placeholder="0">
+      </div>
+    </div>
+
+    <div class="section-h">ข้อมูลผู้ป่วย</div>
+    <div class="grid-4">
+      <div><span class="lbl">ASA ≥ 3</span><input id="pp-asa3" type="number" min="0" class="input"></div>
+      <div><span class="lbl">การสอบถามความพึงพอใจ</span><input id="pp-sat" type="number" min="0" class="input"></div>
+      <div><span class="lbl">จำนวนไม่ได้ลงบันทึก</span><input id="pp-notrec" type="number" min="0" class="input"></div>
+      <div><span class="lbl">Dead in 24 hr.</span><input id="pp-dead" type="number" min="0" class="input"></div>
+    </div>
+
+    <div class="section-h">⚠️ ภาวะแทรกซ้อนหลังผ่าตัด</div>
+    <div class="grid-4">
+      <div><span class="lbl">Re-intubation</span><input id="pp-reint" type="number" min="0" class="input"></div>
+      <div><span class="lbl">N/V</span><input id="pp-nv" type="number" min="0" class="input"></div>
+      <div><span class="lbl">เจ็บคอ</span><input id="pp-sore" type="number" min="0" class="input"></div>
+      <div><span class="lbl">อื่นๆ (ระบุ)</span><input id="pp-other" class="input"></div>
+    </div>
+
+    <div class="section-h">ผู้บันทึก / หมายเหตุ</div>
+    <div class="grid-2">
+      <div>
+        <span class="lbl">ผู้บันทึก (พิมพ์ค้นหา)</span>
+        <input id="pp-recorder" list="nurses-options" class="input" autocomplete="off">
+      </div>
+      <div>
+        <span class="lbl">หมายเหตุ</span>
+        <input id="pp-notes" class="input">
+      </div>
+    </div>
+
+    <div class="flex gap-2 pt-2">
+      <button class="btn btn-primary flex-1" onclick="savePrePost()">💾 ส่งยอด Pre/Post op</button>
+      <button class="btn btn-ghost" onclick="clearPrePostForm()">รีเซ็ต</button>
+    </div>
+  </div>
+
+  <div class="card p-4">
+    <div class="font-semibold mb-2">📋 ประวัติบันทึกล่าสุด</div>
+    <div id="historyList" class="space-y-2 text-sm"></div>
+  </div>
+
+</main>
+
+<footer class="text-center py-6 text-xs text-slate-500">
+  © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · V2 Supabase
+</footer>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+let currentUser = null, currentType = 'ในเวลา', nursesList = [];
+
+// จุดบริการในเวลา (จาก Google Sheet เดิม)
+const POINTS_IN  = ['Pain management','CVT','RR3','RRตึกหัวใจ','Cathlab','RR2'];
+// จุดบริการนอกเวลา
+const POINTS_OUT = ['RR3','RRตึกหัวใจ','RR2','Cathlab','CVT','OR ส่วนกลาง','อื่นๆ'];
+
+async function loadNurses() {
+  try {
+    nursesList = await sbDB.list('nurses', { eq:{active:true}, order:'sort_order', asc:true });
+  } catch(e) { nursesList = []; }
+  // datalist สำหรับ recorder ทั้ง 2 ฟอร์ม — พิมพ์ค้นหาได้
+  document.getElementById('nurses-options').innerHTML =
+    nursesList.map(n => `<option value="${n.name}" label="${n.role}"></option>`).join('');
+  // auto-fill ตำแหน่งเมื่อเลือก/พิมพ์ตรงกับชื่อใน list
+  const inp = document.getElementById('recorder');
+  inp.addEventListener('input', () => {
+    const found = nursesList.find(n => n.name === inp.value);
+    if (found) document.getElementById('recorder-pos').value = found.role;
+  });
+}
+
+function refreshPoints() {
+  const sel = document.getElementById('f-point');
+  const arr = currentType === 'ในเวลา' ? POINTS_IN : POINTS_OUT;
+  sel.innerHTML = arr.map(p => `<option>${p}</option>`).join('');
+}
+
+async function ensureAuth() {
+  try {
+    const u = await sbAuth.getUser();
+    if (u) {
+      currentUser = u;
+      const p = await sbAuth.getProfile().catch(() => null);
+      document.getElementById('user-info').textContent = (p?.nickname || p?.full_name || u.email);
+      document.getElementById('signOutBtn').classList.remove('hidden');
+      document.getElementById('loginOverlay').style.display = 'none';
+      // recorder เป็น dropdown ดึงจาก nurses — ไม่ต้อง autofill จาก profile
+      if (p?.position) document.getElementById('recorder-pos').value = p.position;
+      return true;
+    }
+  } catch(e){ console.warn(e); }
+  document.getElementById('loginOverlay').style.display = 'flex';
+  return false;
+}
+async function signIn() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  err.classList.add('hidden');
+  try { await sbAuth.signIn(email, pwd); location.reload(); }
+  catch (e) { err.textContent = e.message; err.classList.remove('hidden'); }
+}
+async function signOut() { await sbAuth.signOut(); location.reload(); }
+
+document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+
+// Pre/Post-op ย้ายไปหน้าแยกแล้ว (pre-post-op.html)
+
+function switchType(t) {
+  currentType = t;
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.toggle('active', b.dataset.type === t));
+  const isPP = t === 'preop';
+  // toggle form visibility
+  document.getElementById('serviceForm').classList.toggle('hidden', isPP);
+  document.getElementById('prePostForm').classList.toggle('hidden', !isPP);
+  if (!isPP) {
+    document.getElementById('shiftWrap').classList.toggle('hidden', t === 'ในเวลา');
+    document.getElementById('teamsWrap').classList.toggle('hidden', t === 'ในเวลา');
+    document.getElementById('caWrap').classList.toggle('hidden', t === 'ในเวลา');
+    refreshPoints();
+  } else {
+    // ตั้งค่าเริ่มต้นวันที่ + ผู้บันทึก
+    if (!document.getElementById('pp-date').value)
+      document.getElementById('pp-date').value = new Date().toISOString().slice(0,10);
+    const recorder = document.getElementById('recorder').value;
+    if (recorder && !document.getElementById('pp-recorder').value) {
+      document.getElementById('pp-recorder').value = recorder;
+    }
+  }
+}
+
+// ตัวเลือก "สาย" ในฟอร์ม Pre/Post op
+document.getElementById('pp-team')?.addEventListener('change', e => {
+  document.getElementById('pp-team-other').classList.toggle('hidden', e.target.value !== 'other');
+});
+
+async function savePrePost() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const team = document.getElementById('pp-team').value;
+  if (!team) { sbUtils.toast('กรุณาเลือกสาย','error'); return; }
+  const num = id => parseInt(document.getElementById(id).value) || 0;
+  const txt = id => document.getElementById(id).value || '';
+  const preop  = num('pp-preop');
+  const postop = num('pp-postop');
+  if (preop === 0 && postop === 0) {
+    if (!confirm('ยังไม่ได้กรอก Pre-op หรือ Post-op — บันทึกต่อ?')) return;
+  }
+  const teamLabel = team === 'other' ? (txt('pp-team-other') || 'อื่นๆ') : team;
+  const row = {
+    date: document.getElementById('pp-date').value,
+    type: 'preop_postop',
+    location: 'Pre/Post op สาย ' + teamLabel,
+    service_point: 'สาย ' + teamLabel,
+    recorder_id: currentUser.id,
+    metrics: {
+      team: teamLabel,
+      pre_op: preop, post_op: postop,
+      asa_ge_3: num('pp-asa3'),
+      satisfaction_asked: num('pp-sat'),
+      not_recorded: num('pp-notrec'),
+      dead_24hr: num('pp-dead')
+    },
+    complications: {
+      reintubation: num('pp-reint'),
+      nausea_vomiting: num('pp-nv'),
+      sore_throat: num('pp-sore'),
+      other: txt('pp-other')
+    },
+    notes: `ผู้บันทึก: ${txt('pp-recorder')}\n${txt('pp-notes')}`
+  };
+  try {
+    await sbDB.insert('service_logs', row);
+    sbUtils.toast('✅ ส่งยอด Pre/Post op สำเร็จ','success');
+    clearPrePostForm();
+    loadHistory();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+function clearPrePostForm() {
+  ['pp-preop','pp-postop','pp-asa3','pp-sat','pp-notrec','pp-dead',
+   'pp-reint','pp-nv','pp-sore','pp-other','pp-notes','pp-team-other'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('pp-team').value = '';
+  document.getElementById('pp-team-other').classList.add('hidden');
+  document.getElementById('pp-date').value = new Date().toISOString().slice(0,10);
+}
+
+function setRadio(btn) {
+  const group = btn.closest('.radio-row');
+  group.querySelectorAll('.radio-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function getRadio(groupName) {
+  const g = document.querySelector(`.radio-row[data-group="${groupName}"]`);
+  const a = g?.querySelector('.radio-pill.active');
+  return a?.textContent.trim() || null;
+}
+
+function addTeam(team = '', n1 = '', n2 = '', cases = '') {
+  const div = document.createElement('div');
+  div.className = 'grid grid-cols-12 gap-2 items-end';
+  const teamIdx = document.querySelectorAll('#teamsList > div').length + 1;
+  div.innerHTML = `
+    <input class="input col-span-2 t-name" placeholder="ทีม ${teamIdx}" value="${team || 'ทีม '+teamIdx}">
+    <input class="input col-span-4 t-n1" placeholder="รายชื่อ 1" value="${n1}">
+    <input class="input col-span-4 t-n2" placeholder="รายชื่อ 2" value="${n2}">
+    <input class="input col-span-1 t-cases" type="number" placeholder="Case" value="${cases}">
+    <button class="text-rose-500 col-span-1" onclick="this.parentElement.remove()">✗</button>
+  `;
+  document.getElementById('teamsList').appendChild(div);
+}
+function collectTeams() {
+  return Array.from(document.querySelectorAll('#teamsList > div')).map(d => ({
+    team: d.querySelector('.t-name').value,
+    n1: d.querySelector('.t-n1').value,
+    n2: d.querySelector('.t-n2').value,
+    cases: parseInt(d.querySelector('.t-cases').value) || 0
+  })).filter(t => t.n1 || t.n2);
+}
+
+document.getElementById('photoFile').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  document.getElementById('photoPreview').textContent = f ? `เลือกแล้ว: ${f.name} (${(f.size/1024).toFixed(0)} KB)` : 'ยังไม่ได้เลือกรูป';
+});
+
+async function uploadPhoto() {
+  const f = document.getElementById('photoFile').files[0];
+  if (!f) return null;
+  const name = `service-${Date.now()}-${f.name}`;
+  try {
+    const { data, error } = await sb.storage.from('service-photos').upload(name, f, { upsert: false });
+    if (error) {
+      // bucket อาจยังไม่มี — แจ้งแต่ไม่ทำให้ save fail
+      console.warn('upload:', error.message);
+      return null;
+    }
+    const { data: pub } = sb.storage.from('service-photos').getPublicUrl(name);
+    return pub.publicUrl;
+  } catch(e) { return null; }
+}
+
+async function saveLog() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  sbUtils.toast('กำลังบันทึก...');
+  const photoUrl = await uploadPhoto();
+
+  const num = (id) => parseInt(document.getElementById(id).value) || 0;
+  const txt = (id) => document.getElementById(id).value || '';
+
+  const metrics = {
+    total: num('m-total'), ga: num('m-ga'), ra: num('m-ra'), mac: num('m-mac'),
+    pass_rr: num('m-pass'), fail_rr: num('m-fail'),
+    ett_return: num('m-ett'), handover_pm: num('m-handover'),
+    pacu_over_1h: num('m-pacu1h'), pacu_over_1h_reason: txt('m-pacu1h-reason'),
+    ext_ett: num('ext-ett'), ext_where: txt('ext-where'),
+    set_dept: txt('set-dept')
+  };
+  const asa = { ASA1:num('asa-1'), ASA2:num('asa-2'), ASA3:num('asa-3'),
+                ASA4:num('asa-4'), ASA5:num('asa-5'), ASA6:num('asa-6') };
+  const complications = {
+    DOT: { state: getRadio('cx-dot'), detail: txt('cx-dot-detail') },
+    CPR: { state: getRadio('cx-cpr'), detail: txt('cx-cpr-detail') },
+    ReIntubation: { state: getRadio('cx-reint'), detail: txt('cx-reint-detail') },
+    FastTrack: { state: getRadio('cx-ft'), detail: txt('cx-ft-detail') },
+    Other: { state: getRadio('cx-other'), detail: txt('cx-other-detail') }
+  };
+  const drug_box = {
+    count: num('dbox-count'), status: getRadio('dbox-status'), reason: txt('dbox-reason'),
+    ca_count: num('ca-count'), ca_status: getRadio('ca-status'), ca_reason: txt('ca-reason')
+  };
+  const issues = {
+    Drug:     { state: getRadio('iss-drug'),  detail: txt('iss-drug-detail') },
+    Staff:    { state: getRadio('iss-staff'), detail: txt('iss-staff-detail') },
+    Equipment:{ state: getRadio('iss-equip'), detail: txt('iss-equip-detail') },
+    System:   { state: getRadio('iss-sys'),   detail: txt('iss-sys-detail') },
+    Other:    { state: getRadio('iss-other'), detail: txt('iss-other-detail') }
+  };
+
+  const row = {
+    date: document.getElementById('f-date').value,
+    type: currentType,
+    shift: currentType === 'นอกเวลา' ? document.getElementById('f-shift').value : null,
+    service_point: document.getElementById('f-point').value,
+    location: document.getElementById('f-point').value,
+    recorder_id: currentUser.id,
+    metrics, asa, complications, drug_box, issues,
+    photo_url: photoUrl,
+    notes: `ผู้บันทึก: ${txt('recorder')} (${txt('recorder-pos')})\n${currentType === 'นอกเวลา' ? 'ทีม: '+JSON.stringify(collectTeams())+'\n' : ''}หมายเหตุ: ${txt('notes')}`
+  };
+  try {
+    await sbDB.insert('service_logs', row);
+    sbUtils.toast('บันทึกแล้ว ✓','success');
+    loadHistory();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+function clearForm() {
+  if (!confirm('รีเซ็ตฟอร์ม?')) return;
+  document.querySelectorAll('input, textarea').forEach(el => { if(el.type !== 'date') el.value=''; });
+  document.querySelectorAll('.radio-pill').forEach(b => b.classList.remove('active'));
+  document.getElementById('teamsList').innerHTML = '';
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+}
+
+async function loadHistory() {
+  const hist = await sbDB.list('service_logs', { order:'created_at', asc:false, limit:10 });
+  const el = document.getElementById('historyList');
+  if (hist.length === 0) { el.innerHTML = '<div class="text-slate-500">ยังไม่มีบันทึก</div>'; return; }
+  el.innerHTML = hist.map(h => `
+    <div class="bg-slate-50 p-3 rounded-lg flex justify-between items-start gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="font-medium">${sbUtils.fmtDate(h.date)} · ${h.type} ${h.shift?'· '+h.shift:''} ${h.service_point?'· '+h.service_point:''}</div>
+        <div class="text-xs text-slate-600 mt-1">Pt รวม ${h.metrics?.total||0} · GA ${h.metrics?.ga||0} · RA ${h.metrics?.ra||0} · MAC ${h.metrics?.mac||0}</div>
+        ${h.photo_url ? `<a href="${h.photo_url}" target="_blank" class="text-xs text-blue-600">📷 ดูรูป</a>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function subscribeRT() { sbRT.subscribe('service_logs', loadHistory); }
+
+(async () => {
+  await ensureAuth();
+  await loadNurses();
+  const h = (location.hash || '').replace('#','');
+  if (h === 'preop') switchType('preop');
+  else if (h === 'นอกเวลา') switchType('นอกเวลา');
+  else switchType('ในเวลา');
+  await loadHistory();
+  subscribeRT();
+})();
+</script>
+</body>
+</html>
