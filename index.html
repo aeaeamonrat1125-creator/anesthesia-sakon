@@ -115,7 +115,7 @@
         <div class="md:col-span-1 text-center">
           <div class="text-sm text-slate-500 mb-1">⭐ KPI หลัก</div>
           <div class="text-lg font-bold text-slate-700">ร้อยละความพึงพอใจของผู้รับบริการ</div>
-          <div class="text-xs text-slate-500 mt-1">ปีงบฯ <span id="sat-year">2568</span> · เป้า ≥90%</div>
+          <div class="text-xs text-slate-500 mt-1">ปีงบฯ <span id="sat-year">2568</span> · เป้า ≥<span class="sat-target-val">90</span>%</div>
           <div class="gauge-shell mt-3">
             <canvas id="gaugeSat"></canvas>
             <div class="absolute inset-0 flex items-end justify-center pb-3 pointer-events-none">
@@ -241,6 +241,13 @@
             class="bg-white/20 border border-white/30 text-white text-sm px-3 py-1.5 rounded-lg hidden">
             <option value="all">ทุกปีงบประมาณ</option>
           </select>
+          <div class="flex items-center gap-1 bg-white/20 border border-white/30 rounded-lg px-2 py-1.5" title="กำหนดเป้าหมาย %">
+            <span class="text-white/80 text-xs">🎯 เป้า</span>
+            <input id="sat-target-input" type="number" min="1" max="100"
+              class="bg-transparent text-white text-sm font-bold w-10 text-center outline-none"
+              onchange="setSatTarget(this.value)">
+            <span class="text-white/80 text-xs">%</span>
+          </div>
           <button onclick="refreshSatData()" class="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 border border-white/20">🔄 รีเฟรช</button>
           <a id="sat-sheet-link" href="https://docs.google.com/spreadsheets/d/1KY98rWXg2ASJCcyhkbHZUE5QXQOmkAVLTOJjvarfOQc/edit?usp=sharing" target="_blank"
             class="bg-white text-purple-700 font-semibold text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 shadow hover:shadow-md">📊 เปิด Google Sheet</a>
@@ -286,7 +293,7 @@
         <div class="card p-4 text-center border-t-4 border-amber-400">
           <div class="text-2xl mb-1">🎯</div>
           <div class="text-3xl font-bold" id="sat-status">--</div>
-          <div class="text-xs text-slate-500 mt-1">เทียบเป้า ≥ 90%</div>
+          <div class="text-xs text-slate-500 mt-1">เทียบเป้า ≥ <span class="sat-target-val">90</span>%</div>
         </div>
       </div>
 
@@ -294,7 +301,7 @@
       <div class="grid lg:grid-cols-2 gap-4">
         <div class="card p-5">
           <div class="font-semibold text-slate-700 mb-1">ภาพรวมความพึงพอใจ</div>
-          <div class="text-xs text-slate-500 mb-2">เป้าหมาย ≥ 90%</div>
+          <div class="text-xs text-slate-500 mb-2">เป้าหมาย ≥ <span class="sat-target-val">90</span>%</div>
           <div class="gauge-shell">
             <canvas id="satDashGauge"></canvas>
             <div class="absolute inset-0 flex items-end justify-center pb-2 pointer-events-none">
@@ -1535,6 +1542,17 @@ const SAT_Q_LABELS = [
   'การจัดสถานที่','ป้ายข้อความ','การประสานงาน','บริการรวดเร็ว'
 ];
 const SAT_SCORE_COLS = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
+let SAT_TARGET = parseInt(localStorage.getItem('sat_target') || '90');
+
+function setSatTarget(val) {
+  const v = Math.max(1, Math.min(100, parseInt(val) || 90));
+  SAT_TARGET = v;
+  localStorage.setItem('sat_target', String(v));
+  const inp = document.getElementById('sat-target-input');
+  if (inp) inp.value = v;
+  document.querySelectorAll('.sat-target-val').forEach(el => el.textContent = v);
+  if (satRawData) renderSatContent();
+}
 
 let satRawData = null;
 const satCharts = {};
@@ -1691,7 +1709,7 @@ function renderSatContent() {
   }));
   const avgScore = totalCnt ? totalSum/totalCnt : 0;
   const satPct   = (avgScore/5)*100;
-  const pass     = satPct >= 90;
+  const pass     = satPct >= SAT_TARGET;
 
   // Info bar
   document.getElementById('sat-data-info').textContent =
@@ -1709,7 +1727,7 @@ function renderSatContent() {
   const gLabel = document.getElementById('sat-gauge-label');
   const gSub   = document.getElementById('sat-gauge-sub');
   if (gLabel) { gLabel.textContent=satPct.toFixed(1)+'%'; gLabel.className='text-4xl font-bold '+(pass?'text-emerald-600':'text-amber-500'); }
-  if (gSub)   gSub.textContent = pass?'บรรลุเป้าหมาย ≥90%':'ต่ำกว่าเป้าหมาย';
+  if (gSub)   gSub.textContent = pass?`บรรลุเป้าหมาย ≥${SAT_TARGET}%`:'ต่ำกว่าเป้าหมาย';
   const gaugeCtx = document.getElementById('satDashGauge');
   if (gaugeCtx) {
     if (satCharts.gauge) satCharts.gauge.destroy();
@@ -2333,9 +2351,15 @@ function closeRoom() {
 loadAll().then(() => {
   subscribeAll();
   applyAuthUI();
-  // auth state change → re-apply
   if (window.sbAuth?.onAuth) sbAuth.onAuth(() => applyAuthUI());
 });
+
+// init เป้าหมายจาก localStorage
+(function initSatTarget() {
+  const inp = document.getElementById('sat-target-input');
+  if (inp) inp.value = SAT_TARGET;
+  document.querySelectorAll('.sat-target-val').forEach(el => el.textContent = SAT_TARGET);
+})();
 </script>
 </body>
 </html>
