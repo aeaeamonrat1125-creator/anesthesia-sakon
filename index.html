@@ -1804,15 +1804,46 @@ function renderSatContent() {
     });
   }
 
-  // Comments (col 25)
-  const comments = data.filter(r=>r[25]&&r[25].trim()).slice(-15).reverse();
+  // Comments (col 25) — แสดง 8 รายการล่าสุด + ตอบกลับ
+  const comments = data.filter(r=>r[25]&&r[25].trim()).slice(-8).reverse();
+  const replies  = JSON.parse(localStorage.getItem('sat_replies') || '{}');
+
+  function commentKey(r) {
+    return btoa(encodeURIComponent((r[0]||'') + '|' + (r[25]||''))).slice(0, 32);
+  }
+  function saveReply(key) {
+    const inp = document.getElementById('reply-inp-' + key);
+    if (!inp) return;
+    const val = inp.value.trim();
+    if (!val) return;
+    const all = JSON.parse(localStorage.getItem('sat_replies') || '{}');
+    all[key] = { text: val, at: new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) };
+    localStorage.setItem('sat_replies', JSON.stringify(all));
+    inp.closest('.reply-box').innerHTML = replyDisplay(all[key]);
+  }
+  function replyDisplay(rep) {
+    return `<div class="mt-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-800">
+      <span class="font-semibold text-xs text-emerald-600">👩‍⚕️ ตอบกลับ · ${rep.at}</span><br>${rep.text.replace(/</g,'&lt;')}
+    </div>`;
+  }
+  window._saveReply = saveReply;
+
   document.getElementById('sat-comments').innerHTML = comments.length===0
     ? '<div class="text-slate-500 text-sm py-4 text-center">ยังไม่มีความคิดเห็น</div>'
     : comments.map(r=>{
         let d=''; try{ d=new Date(r[0]).toLocaleDateString('th-TH',{day:'numeric',month:'short'}); }catch(e){}
+        const key = commentKey(r);
+        const rep = replies[key];
+        const replyArea = rep
+          ? replyDisplay(rep)
+          : `<div class="mt-2">
+               <button onclick="this.closest('.reply-box').innerHTML=\`<div class='flex gap-2 mt-2'><input id='reply-inp-${key}' placeholder='พิมพ์ตอบกลับ...' class='flex-1 text-sm border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-purple-400'><button onclick='_saveReply(\"${key}\")' class='bg-purple-600 text-white text-xs px-3 py-1.5 rounded-lg'>บันทึก</button></div>\`"
+                 class="text-xs text-purple-600 hover:underline">✏️ ตอบกลับ</button>
+             </div>`;
         return `<div class="bg-purple-50 rounded-lg p-3 border-l-4 border-purple-300">
           <div class="text-xs text-slate-500 mb-1">${r[2]||'-'}${d?' · '+d:''}</div>
           <div class="text-sm text-slate-700">${(r[25]||'').replace(/</g,'&lt;')}</div>
+          <div class="reply-box">${replyArea}</div>
         </div>`;
       }).join('');
 }
