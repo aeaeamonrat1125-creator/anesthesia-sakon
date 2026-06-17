@@ -1556,6 +1556,120 @@ function setSatTarget(val) {
 
 let satRawData = null;
 const satCharts = {};
+let satAllComments = [];
+let satCommentPage = 0;
+const SAT_PAGE_SIZE = 10;
+
+function commentKey(r) {
+  return btoa(encodeURIComponent((r[0]||'') + '|' + (r[25]||''))).slice(0, 32);
+}
+
+function parseSatDate(val) {
+  if (!val) return '';
+  try {
+    const s = val.toString().trim();
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    const dt = m ? new Date(+m[3], +m[1]-1, +m[2]) : new Date(s);
+    if (isNaN(dt.getTime())) return '';
+    return dt.toLocaleDateString('th-TH', {day:'numeric', month:'short'});
+  } catch(e) { return ''; }
+}
+
+function replyDisplay(rep) {
+  return `<div class="mt-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-800">
+    <span class="font-semibold text-xs text-emerald-600">👩‍⚕️ ตอบกลับ · ${rep.at}</span><br>${rep.text.replace(/</g,'&lt;')}
+  </div>`;
+}
+
+function showReplyInput(key) {
+  const box = document.getElementById('reply-box-' + key);
+  if (!box) return;
+  box.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'flex gap-2 mt-2';
+  const inp = document.createElement('input');
+  inp.id = 'reply-inp-' + key;
+  inp.placeholder = 'พิมพ์ตอบกลับ...';
+  inp.className = 'flex-1 text-sm border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-purple-400';
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'bg-purple-600 text-white text-xs px-3 py-1.5 rounded-lg';
+  saveBtn.textContent = 'บันทึก';
+  saveBtn.onclick = () => saveCommentReply(key);
+  wrap.appendChild(inp);
+  wrap.appendChild(saveBtn);
+  box.appendChild(wrap);
+  inp.focus();
+}
+
+function saveCommentReply(key) {
+  const inp = document.getElementById('reply-inp-' + key);
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) return;
+  const all = JSON.parse(localStorage.getItem('sat_replies') || '{}');
+  all[key] = { text: val, at: new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) };
+  localStorage.setItem('sat_replies', JSON.stringify(all));
+  const box = document.getElementById('reply-box-' + key);
+  if (box) box.innerHTML = replyDisplay(all[key]);
+}
+
+function renderSatComments() {
+  const container = document.getElementById('sat-comments');
+  if (!container) return;
+  const replies = JSON.parse(localStorage.getItem('sat_replies') || '{}');
+  const total = satAllComments.length;
+
+  if (satCommentPage === 0) {
+    container.innerHTML = total === 0
+      ? '<div class="text-slate-500 text-sm py-4 text-center">ยังไม่มีความคิดเห็น</div>'
+      : '';
+  }
+  const oldBtn = document.getElementById('sat-load-more');
+  if (oldBtn) oldBtn.remove();
+  if (total === 0) return;
+
+  const slice = satAllComments.slice(satCommentPage * SAT_PAGE_SIZE, (satCommentPage + 1) * SAT_PAGE_SIZE);
+  slice.forEach(r => {
+    const d   = parseSatDate(r[0]);
+    const key = commentKey(r);
+    const rep = replies[key];
+    const card = document.createElement('div');
+    card.className = 'bg-purple-50 rounded-lg p-3 border-l-4 border-purple-300';
+    const meta = document.createElement('div');
+    meta.className = 'text-xs text-slate-500 mb-1';
+    meta.textContent = (r[2]||'-') + (d ? ' · ' + d : '');
+    const text = document.createElement('div');
+    text.className = 'text-sm text-slate-700';
+    text.textContent = r[25] || '';
+    const replyBox = document.createElement('div');
+    replyBox.className = 'reply-box';
+    replyBox.id = 'reply-box-' + key;
+    if (rep) {
+      replyBox.innerHTML = replyDisplay(rep);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'text-xs text-purple-600 hover:underline mt-2';
+      btn.textContent = '✏️ ตอบกลับ';
+      btn.onclick = () => showReplyInput(key);
+      replyBox.appendChild(btn);
+    }
+    card.appendChild(meta);
+    card.appendChild(text);
+    card.appendChild(replyBox);
+    container.appendChild(card);
+  });
+
+  satCommentPage++;
+  const remaining = total - satCommentPage * SAT_PAGE_SIZE;
+  if (remaining > 0) {
+    const btn = document.createElement('button');
+    btn.id = 'sat-load-more';
+    btn.className = 'w-full mt-3 py-2 text-sm text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-50 transition';
+    btn.textContent = `ดูเพิ่มเติม (${remaining} รายการ)`;
+    btn.onclick = renderSatComments;
+    container.appendChild(btn);
+  }
+}
 
 function parseCSV(text) {
   // รองรับ \r\n, multi-line quoted fields, escaped double quotes
@@ -1804,48 +1918,10 @@ function renderSatContent() {
     });
   }
 
-  // Comments (col 25) — แสดง 8 รายการล่าสุด + ตอบกลับ
-  const comments = data.filter(r=>r[25]&&r[25].trim()).slice(-8).reverse();
-  const replies  = JSON.parse(localStorage.getItem('sat_replies') || '{}');
-
-  function commentKey(r) {
-    return btoa(encodeURIComponent((r[0]||'') + '|' + (r[25]||''))).slice(0, 32);
-  }
-  function saveReply(key) {
-    const inp = document.getElementById('reply-inp-' + key);
-    if (!inp) return;
-    const val = inp.value.trim();
-    if (!val) return;
-    const all = JSON.parse(localStorage.getItem('sat_replies') || '{}');
-    all[key] = { text: val, at: new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}) };
-    localStorage.setItem('sat_replies', JSON.stringify(all));
-    inp.closest('.reply-box').innerHTML = replyDisplay(all[key]);
-  }
-  function replyDisplay(rep) {
-    return `<div class="mt-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-800">
-      <span class="font-semibold text-xs text-emerald-600">👩‍⚕️ ตอบกลับ · ${rep.at}</span><br>${rep.text.replace(/</g,'&lt;')}
-    </div>`;
-  }
-  window._saveReply = saveReply;
-
-  document.getElementById('sat-comments').innerHTML = comments.length===0
-    ? '<div class="text-slate-500 text-sm py-4 text-center">ยังไม่มีความคิดเห็น</div>'
-    : comments.map(r=>{
-        let d=''; try{ d=new Date(r[0]).toLocaleDateString('th-TH',{day:'numeric',month:'short'}); }catch(e){}
-        const key = commentKey(r);
-        const rep = replies[key];
-        const replyArea = rep
-          ? replyDisplay(rep)
-          : `<div class="mt-2">
-               <button onclick="this.closest('.reply-box').innerHTML=\`<div class='flex gap-2 mt-2'><input id='reply-inp-${key}' placeholder='พิมพ์ตอบกลับ...' class='flex-1 text-sm border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-purple-400'><button onclick='_saveReply(\"${key}\")' class='bg-purple-600 text-white text-xs px-3 py-1.5 rounded-lg'>บันทึก</button></div>\`"
-                 class="text-xs text-purple-600 hover:underline">✏️ ตอบกลับ</button>
-             </div>`;
-        return `<div class="bg-purple-50 rounded-lg p-3 border-l-4 border-purple-300">
-          <div class="text-xs text-slate-500 mb-1">${r[2]||'-'}${d?' · '+d:''}</div>
-          <div class="text-sm text-slate-700">${(r[25]||'').replace(/</g,'&lt;')}</div>
-          <div class="reply-box">${replyArea}</div>
-        </div>`;
-      }).join('');
+  // Comments — pagination via renderSatComments()
+  satAllComments = data.filter(r => r[25] && r[25].trim()).reverse();
+  satCommentPage = 0;
+  renderSatComments();
 }
 
 function subscribeAll() {
