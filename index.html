@@ -237,6 +237,12 @@
           <div class="text-white/80 text-sm" id="sat-data-info">ดึงข้อมูลจาก Google Sheets อัตโนมัติ</div>
         </div>
         <div class="flex flex-wrap gap-2 items-center mt-2 sm:mt-0">
+          <div class="flex gap-1 bg-white/10 rounded-lg p-1">
+            <button id="sat-type-internal" onclick="switchSatSurvey('internal')"
+              class="px-3 py-1.5 text-sm font-semibold bg-white text-purple-700 shadow rounded-lg">ความพึงพอใจภายใน</button>
+            <button id="sat-type-patient" onclick="switchSatSurvey('patient')"
+              class="px-3 py-1.5 text-sm text-white/80 hover:bg-white/20 rounded-lg">ความพึงพอใจผู้ป่วย</button>
+          </div>
           <select id="sat-fy-picker" onchange="renderSatContent()"
             class="bg-white/20 border border-white/30 text-white text-sm px-3 py-1.5 rounded-lg hidden">
             <option value="all">ทุกปีงบประมาณ</option>
@@ -1542,6 +1548,48 @@ const SAT_Q_LABELS = [
   'การจัดสถานที่','ป้ายข้อความ','การประสานงาน','บริการรวดเร็ว'
 ];
 const SAT_SCORE_COLS = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
+
+// ── ความพึงพอใจผู้ป่วย (7 ข้อ) ──
+const SAT2_SHEET_ID   = '1co7dJtww1gGgSpA9VgxWFjjxPk6SEYE9uUiHvqzcoho';
+const SAT2_CSV_URL    = `https://docs.google.com/spreadsheets/d/${SAT2_SHEET_ID}/gviz/tq?tqx=out:csv&range=A:W`;
+const SAT2_SHEET_LINK = `https://docs.google.com/spreadsheets/d/${SAT2_SHEET_ID}/edit?usp=sharing`;
+const SAT2_Q_LABELS   = [
+  'เจ้าหน้าที่มีความสุภาพ','อธิบายก่อนผ่าตัด','เข้าใจคำอธิบาย',
+  'ดูแลอาการรบกวน','ดูแลอาการปวด','คำแนะนำปฏิบัติตัว','ภาพรวม'
+];
+const SAT2_SCORE_COLS  = [5, 6, 7, 8, 9, 10, 11];
+const SAT2_COMMENT_COL = 18;
+
+let satSurveyType = 'internal'; // 'internal' | 'patient'
+
+function getSatConfig() {
+  return satSurveyType === 'patient'
+    ? { csvUrl:SAT2_CSV_URL, sheetLink:SAT2_SHEET_LINK, qLabels:SAT2_Q_LABELS, scoreCols:SAT2_SCORE_COLS, commentCol:SAT2_COMMENT_COL }
+    : { csvUrl:SAT_CSV_URL,  sheetLink:SAT_SHEET_LINK,  qLabels:SAT_Q_LABELS,  scoreCols:SAT_SCORE_COLS,  commentCol:25 };
+}
+
+function parseSurveyScore(val) {
+  const n = parseFloat(val);
+  if (!isNaN(n) && n > 0) return n;
+  const m = (val||'').match(/\((\d)\)/);
+  return m ? parseInt(m[1]) : NaN;
+}
+
+async function switchSatSurvey(type) {
+  satSurveyType = type;
+  ['internal','patient'].forEach(t => {
+    const btn = document.getElementById('sat-type-' + t);
+    if (!btn) return;
+    btn.className = t === type
+      ? 'px-3 py-1.5 text-sm font-semibold bg-white text-purple-700 shadow rounded-lg'
+      : 'px-3 py-1.5 text-sm text-white/80 hover:bg-white/20 rounded-lg';
+  });
+  const link = document.getElementById('sat-sheet-link');
+  if (link) link.href = getSatConfig().sheetLink;
+  satRawData = null;
+  await refreshSatData();
+}
+
 let SAT_TARGET = parseInt(localStorage.getItem('sat_target') || '90');
 
 function setSatTarget(val) {
@@ -1558,10 +1606,11 @@ let satRawData = null;
 const satCharts = {};
 let satAllComments = [];
 let satCommentPage = 0;
+let satCommentCol  = 25;
 const SAT_PAGE_SIZE = 10;
 
 function commentKey(r) {
-  return btoa(encodeURIComponent((r[0]||'') + '|' + (r[25]||''))).slice(0, 32);
+  return btoa(encodeURIComponent((r[0]||'') + '|' + (r[satCommentCol]||''))).slice(0, 32);
 }
 
 function parseSatDate(val) {
@@ -1640,7 +1689,7 @@ function renderSatComments() {
     meta.textContent = (r[2]||'-') + (d ? ' · ' + d : '');
     const text = document.createElement('div');
     text.className = 'text-sm text-slate-700';
-    text.textContent = r[25] || '';
+    text.textContent = r[satCommentCol] || '';
     const replyBox = document.createElement('div');
     replyBox.className = 'reply-box';
     replyBox.id = 'reply-box-' + key;
@@ -1714,7 +1763,8 @@ function parseCSV(text) {
 }
 
 async function loadSatSheetData() {
-  const res = await fetch(SAT_CSV_URL);
+  const { csvUrl } = getSatConfig();
+  const res = await fetch(csvUrl);
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const text = await res.text();
   if (text.includes('<html') || text.includes('Sign in')) throw new Error('Sheet ยังไม่ได้ตั้งเป็น Public — ตั้งค่าแชร์ก่อน');
@@ -1800,6 +1850,7 @@ async function renderSatisfaction() {
 
 function renderSatContent() {
   if (!satRawData) return;
+  const cfg = getSatConfig();
 
   // กรองตามปีงบประมาณที่เลือก
   const fyVal = document.getElementById('sat-fy-picker')?.value || 'all';
@@ -1811,15 +1862,15 @@ function renderSatContent() {
   const n    = data.length;
 
   // คะแนนรายข้อ
-  const qAvg = SAT_SCORE_COLS.map(col => {
-    const vals = data.map(r => parseFloat(r[col])).filter(v => !isNaN(v) && v > 0);
+  const qAvg = cfg.scoreCols.map(col => {
+    const vals = data.map(r => parseSurveyScore(r[col])).filter(v => !isNaN(v) && v > 0);
     return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
   });
 
   // คะแนนรวม
   let totalSum=0, totalCnt=0;
-  SAT_SCORE_COLS.forEach(col => data.forEach(row => {
-    const v=parseFloat(row[col]); if(!isNaN(v)&&v>0){totalSum+=v;totalCnt++;}
+  cfg.scoreCols.forEach(col => data.forEach(row => {
+    const v=parseSurveyScore(row[col]); if(!isNaN(v)&&v>0){totalSum+=v;totalCnt++;}
   }));
   const avgScore = totalCnt ? totalSum/totalCnt : 0;
   const satPct   = (avgScore/5)*100;
@@ -1858,8 +1909,8 @@ function renderSatContent() {
 
   // Distribution doughnut
   const dist = [0,0,0,0,0];
-  SAT_SCORE_COLS.forEach(col => data.forEach(row => {
-    const v=parseInt(row[col]); if(v>=1&&v<=5) dist[v-1]++;
+  cfg.scoreCols.forEach(col => data.forEach(row => {
+    const v=parseSurveyScore(row[col]); if(v>=1&&v<=5) dist[v-1]++;
   }));
   const distCtx = document.getElementById('satChartDist');
   if (distCtx) {
@@ -1880,7 +1931,7 @@ function renderSatContent() {
     if (satCharts.questions) satCharts.questions.destroy();
     satCharts.questions = new Chart(qCtx, {
       type:'bar',
-      data:{ labels: SAT_Q_LABELS,
+      data:{ labels: cfg.qLabels,
         datasets:[{ label:'คะแนนเฉลี่ย', data:qAvg.map(v=>+v.toFixed(2)),
           backgroundColor: qAvg.map(v=>v>=4.5?'#10b981':v>=3.5?'#3b82f6':'#f59e0b'),
           borderRadius:6 }] },
@@ -1898,7 +1949,7 @@ function renderSatContent() {
     const t=(row[2]||'ไม่ระบุ').trim();
     if(!typeMap[t]) typeMap[t]={sum:0,cnt:0,n:0};
     typeMap[t].n++;
-    SAT_SCORE_COLS.forEach(col=>{const v=parseFloat(row[col]);if(!isNaN(v)&&v>0){typeMap[t].sum+=v;typeMap[t].cnt++;}});
+    cfg.scoreCols.forEach(col=>{const v=parseSurveyScore(row[col]);if(!isNaN(v)&&v>0){typeMap[t].sum+=v;typeMap[t].cnt++;}});
   });
   const typeLabels = Object.keys(typeMap).sort((a,b)=>typeMap[b].n-typeMap[a].n);
   const typeAvgs   = typeLabels.map(t=>typeMap[t].cnt?+(typeMap[t].sum/typeMap[t].cnt).toFixed(2):0);
@@ -1919,7 +1970,8 @@ function renderSatContent() {
   }
 
   // Comments — pagination via renderSatComments()
-  satAllComments = data.filter(r => r[25] && r[25].trim()).reverse();
+  satCommentCol  = cfg.commentCol;
+  satAllComments = data.filter(r => r[cfg.commentCol] && r[cfg.commentCol].trim()).reverse();
   satCommentPage = 0;
   renderSatComments();
 }
