@@ -237,6 +237,10 @@
           <div class="text-white/80 text-sm" id="sat-data-info">ดึงข้อมูลจาก Google Sheets อัตโนมัติ</div>
         </div>
         <div class="flex flex-wrap gap-2 items-center mt-2 sm:mt-0">
+          <select id="sat-fy-picker" onchange="renderSatContent()"
+            class="bg-white/20 border border-white/30 text-white text-sm px-3 py-1.5 rounded-lg hidden">
+            <option value="all">ทุกปีงบประมาณ</option>
+          </select>
           <button onclick="refreshSatData()" class="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 border border-white/20">🔄 รีเฟรช</button>
           <a id="sat-sheet-link" href="https://docs.google.com/spreadsheets/d/1KY98rWXg2ASJCcyhkbHZUE5QXQOmkAVLTOJjvarfOQc/edit?usp=sharing" target="_blank"
             class="bg-white text-purple-700 font-semibold text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 shadow hover:shadow-md">📊 เปิด Google Sheet</a>
@@ -1558,6 +1562,16 @@ async function loadSatSheetData() {
   satRawData = parseCSV(text);
 }
 
+function getFiscalYear(dateStr) {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d)) return null;
+    const m = d.getMonth() + 1;
+    const y = d.getFullYear();
+    return m >= 10 ? y + 543 : y + 542;
+  } catch(e) { return null; }
+}
+
 async function refreshSatData() {
   satRawData = null;
   document.getElementById('sat-content')?.classList.add('hidden');
@@ -1579,11 +1593,35 @@ async function renderSatisfaction() {
       return;
     }
   }
+
+  // สร้าง ปีงบฯ dropdown จากข้อมูลจริง
+  const fySet = new Set();
+  satRawData.forEach(r => { const fy = getFiscalYear(r[0]); if (fy) fySet.add(fy); });
+  const fyList = [...fySet].sort((a,b) => b - a);
+  const picker = document.getElementById('sat-fy-picker');
+  if (picker && fyList.length > 0) {
+    const cur = picker.value;
+    picker.innerHTML = '<option value="all">ทุกปีงบประมาณ</option>' +
+      fyList.map(y => `<option value="${y}" ${String(cur)===String(y)?'selected':''}>${y}</option>`).join('');
+    picker.classList.remove('hidden');
+  }
+
   document.getElementById('sat-loading')?.classList.add('hidden');
   document.getElementById('sat-error')?.classList.add('hidden');
   document.getElementById('sat-content')?.classList.remove('hidden');
+  renderSatContent();
+}
 
-  const data = satRawData;
+function renderSatContent() {
+  if (!satRawData) return;
+
+  // กรองตามปีงบประมาณที่เลือก
+  const fyVal = document.getElementById('sat-fy-picker')?.value || 'all';
+  const data  = fyVal === 'all'
+    ? satRawData
+    : satRawData.filter(r => String(getFiscalYear(r[0])) === String(fyVal));
+
+  const fyLabel = fyVal === 'all' ? 'ทุกปีงบประมาณ' : `ปีงบประมาณ ${fyVal}`;
   const n    = data.length;
 
   // คะแนนรายข้อ
@@ -1603,7 +1641,7 @@ async function renderSatisfaction() {
 
   // Info bar
   document.getElementById('sat-data-info').textContent =
-    `${n} ผู้ตอบ · โหลดล่าสุด ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;
+    `${fyLabel} · ${n} ผู้ตอบ · โหลดล่าสุด ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;
 
   // KPI cards
   document.getElementById('sat-n').textContent   = n;
