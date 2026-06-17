@@ -1539,19 +1539,46 @@ const SAT_SCORE_COLS = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
 let satRawData = null;
 const satCharts = {};
 
-function parseCSVLine(line) {
-  const r = []; let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { if (inQ && line[i+1]==='"') { cur+='"'; i++; } else inQ=!inQ; }
-    else if (c === ',' && !inQ) { r.push(cur.trim()); cur=''; }
-    else cur += c;
-  }
-  r.push(cur.trim());
-  return r;
-}
 function parseCSV(text) {
-  return text.split('\n').slice(1).filter(l=>l.trim()).map(l=>parseCSVLine(l));
+  // รองรับ \r\n, multi-line quoted fields, escaped double quotes
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const rows = [];
+  let pos = 0, isHeader = true;
+
+  while (pos <= text.length) {
+    const row = [];
+
+    // parse แต่ละ field ในแถว
+    while (pos <= text.length) {
+      let field = '';
+      if (pos < text.length && text[pos] === '"') {
+        // quoted field: อ่านจนเจอ closing quote
+        pos++;
+        while (pos < text.length) {
+          if (text[pos] === '"') {
+            if (text[pos + 1] === '"') { field += '"'; pos += 2; } // escaped ""
+            else { pos++; break; }                                  // closing quote
+          } else { field += text[pos++]; }
+        }
+      } else {
+        // unquoted field: อ่านจนเจอ , หรือ \n หรือ EOF
+        while (pos < text.length && text[pos] !== ',' && text[pos] !== '\n') {
+          field += text[pos++];
+        }
+      }
+      row.push(field.trim());
+
+      if (pos < text.length && text[pos] === ',') { pos++; } // ข้าม comma
+      else { break; }                                         // จบ field สุดท้ายของแถว
+    }
+
+    if (pos < text.length && text[pos] === '\n') pos++; // ข้าม newline
+    else if (pos >= text.length && row.every(f => f === '')) break; // EOF ว่าง
+
+    if (isHeader) { isHeader = false; continue; }      // ข้าม header
+    if (row[0]) rows.push(row);                        // เฉพาะแถวที่มี timestamp
+  }
+  return rows;
 }
 
 async function loadSatSheetData() {
