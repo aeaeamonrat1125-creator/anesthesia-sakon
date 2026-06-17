@@ -1563,11 +1563,38 @@ async function loadSatSheetData() {
 }
 
 function getFiscalYear(dateStr) {
+  if (!dateStr) return null;
   try {
-    const d = new Date(dateStr);
-    if (isNaN(d)) return null;
-    const m = d.getMonth() + 1;
-    const y = d.getFullYear();
+    const s = dateStr.toString().trim();
+    let m, y;
+
+    // รองรับ: D/M/YYYY, M/D/YYYY, YYYY-MM-DD, D/M/YY
+    const match = s.match(/^(\d{1,4})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (match) {
+      let a = +match[1], b = +match[2], c = +match[3];
+      if (a > 100) {
+        // YYYY-MM-DD format
+        y = a > 2500 ? a - 543 : a;
+        m = b;
+      } else {
+        // c คือปี
+        y = c < 100 ? c + 2000 : c > 2500 ? c - 543 : c;
+        // ถ้า a > 12 แน่นอนว่า a=วัน, b=เดือน
+        // ถ้า b > 12 แน่นอนว่า b=วัน (ผิดปกติ), a=เดือน
+        // ถ้าทั้งคู่ ≤ 12 ใช้ D/M/YYYY (ไทย)
+        m = (a > 12) ? b : (b > 12) ? a : b;
+      }
+    }
+
+    // fallback: ให้ JS parse เอง
+    if (!m || !y) {
+      const d = new Date(s);
+      if (isNaN(d.getTime())) return null;
+      m = d.getMonth() + 1;
+      y = d.getFullYear();
+      if (y > 2500) y -= 543;
+    }
+
     return m >= 10 ? y + 543 : y + 542;
   } catch(e) { return null; }
 }
@@ -1599,7 +1626,7 @@ async function renderSatisfaction() {
   satRawData.forEach(r => { const fy = getFiscalYear(r[0]); if (fy) fySet.add(fy); });
   const fyList = [...fySet].sort((a,b) => b - a);
   const picker = document.getElementById('sat-fy-picker');
-  if (picker && fyList.length > 0) {
+  if (picker) {
     const cur = picker.value;
     picker.innerHTML = '<option value="all">ทุกปีงบประมาณ</option>' +
       fyList.map(y => `<option value="${y}" ${String(cur)===String(y)?'selected':''}>${y}</option>`).join('');
