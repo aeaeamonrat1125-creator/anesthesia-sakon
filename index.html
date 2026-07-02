@@ -71,10 +71,7 @@
     </div>
     <div class="flex gap-2 items-center flex-wrap">
       <a href="service-log.html" class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">📋 ยอดบริการ</a>
-      <a href="sheets.html"      class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">📊 G-Sheets</a>
       <a href="inspection.html"  class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">🔧 ตรวจเครื่อง</a>
-      <a href="staff.html"       class="flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">👥 <span class="hidden sm:inline">บุคลากร</span></a>
-      <a href="signup.html"      class="hidden sm:flex bg-white/20 hover:bg-white/30 text-white text-sm font-semibold px-3 py-1.5 rounded-lg border border-white/30 items-center">✨ สมัครสมาชิก</a>
       <button onclick="toggleFullscreen(true)" class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center">⛶</button>
     </div>
   </div>
@@ -87,6 +84,10 @@
       <button class="tab-btn active whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium flex-shrink-0" data-tab="about">ℹ️ เกี่ยวกับหน่วยงาน</button>
       <button class="tab-btn whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0" data-tab="results">📈 ผลลัพธ์การทำงาน</button>
       <button class="tab-btn whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0" data-tab="satisfaction">😊 ความพึงพอใจ</button>
+      <div class="w-px h-5 bg-white/20 flex-shrink-0 self-center"></div>
+      <a href="staff.html" class="whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0 text-white/80 hover:text-white flex items-center gap-1">👥 บุคลากร</a>
+      <a href="signup.html" class="whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0 text-white/80 hover:text-white flex items-center gap-1">✨ สมัครสมาชิก</a>
+      <a href="sheets.html" class="whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0 text-white/80 hover:text-white flex items-center gap-1">📊 G-Sheets</a>
     </div>
     <!-- hamburger — pinned right -->
     <div class="relative flex-shrink-0 ml-1">
@@ -898,6 +899,7 @@
         <button onclick="closeRoom()" class="text-slate-500 hover:text-slate-800 text-3xl leading-none">×</button>
       </div>
 
+      <div id="rm-filters" class="hidden flex gap-2 flex-wrap mb-4"></div>
       <div id="rm-groups" class="space-y-5"></div>
     </div>
   </div>
@@ -2564,37 +2566,78 @@ function eqCard(e) {
       <span class="text-xs px-2 py-0.5 rounded-full ${badge} whitespace-nowrap">${e.status||'-'}</span>
     </div>
     <div class="space-y-0.5 text-xs text-slate-600">
-      ${e.brand ? `<div>🏷️ ${e.brand}</div>` : ''}
-      ${e.model ? `<div>📦 ${e.model}</div>` : ''}
-      ${e.serial ? `<div>🔢 <span class="font-mono">${e.serial}</span></div>` : ''}
+      ${e.location ? `<div>📍 ${e.location}</div>` : ''}
+      ${(e.brand||e.model) ? `<div>🏷️ ${[e.brand,e.model].filter(Boolean).join(' / ')}</div>` : ''}
+      ${e.serial ? `<div>🔢 Serial: <span class="font-mono">${e.serial}</span></div>` : ''}
+      ${e.asset_no ? `<div>📋 เลขคุรุภัณฑ์: <span class="font-mono">${e.asset_no}</span></div>` : ''}
+      ${e.skh ? `<div>🔖 SKH: <span class="font-mono">${e.skh}</span></div>` : ''}
       ${e.received_date ? `<div>📅 รับ ${sbUtils.fmtDate(e.received_date)}</div>` : ''}
       ${e.repair_date ? `<div>🔧 ซ่อม ${sbUtils.fmtDate(e.repair_date)}</div>` : ''}
       ${e.notes ? `<div class="text-slate-500 italic mt-1">📝 ${e.notes}</div>` : ''}
     </div>
   </div>`;
 }
+let _roomGroups = {};
+const _KIND_ORDER = ['Machine','Monitor'];
+const _colorMap = { 'Machine':'emerald','Monitor':'blue','Defibrillator':'rose','Ventilator':'amber','Infusion Pump':'purple' };
+const _icoMap   = { 'Machine':'⚙️','Monitor':'📊','Defibrillator':'⚡','Ventilator':'🫁','Infusion Pump':'💧' };
+
 function openRoom(room) {
   const inRoom = state.equipment.filter(e => e.location === room);
   document.getElementById('rm-name').textContent = '🏥 ' + room;
-  // จัดกลุ่มตาม kind ตามที่มีจริง — ไม่ hardcode
   const groups = {};
   inRoom.forEach(e => {
     const k = e.kind || 'อื่นๆ';
     groups[k] = groups[k] || [];
     groups[k].push(e);
   });
-  const colorMap = { 'Machine':'emerald','Monitor':'blue','Defibrillator':'rose',
-                     'Ventilator':'amber','Infusion Pump':'purple' };
-  const icoMap = { 'Machine':'⚙️','Monitor':'📊','Defibrillator':'⚡','Ventilator':'🫁','Infusion Pump':'💧' };
-  document.getElementById('rm-groups').innerHTML = Object.keys(groups).length === 0
+  // เรียง Monitor ตามชื่อ/เบอร์
+  if (groups['Monitor']) groups['Monitor'].sort((a,b) => (a.name||'').localeCompare(b.name||'','th',{numeric:true}));
+  _roomGroups = groups;
+
+  // Pill filter
+  const kinds = Object.keys(groups);
+  const filtersEl = document.getElementById('rm-filters');
+  if (kinds.length > 1) {
+    filtersEl.classList.remove('hidden');
+    filtersEl.innerHTML = ['ทั้งหมด', ...kinds].map((k,i) =>
+      `<button onclick="filterRoom('${k}')" class="rm-pill ${i===0?'bg-purple-600 text-white':'bg-slate-100 text-slate-600'} px-3 py-1 rounded-full text-xs font-semibold">${k}</button>`
+    ).join('');
+  } else {
+    filtersEl.classList.add('hidden');
+  }
+
+  renderRoomGroups('ทั้งหมด');
+  const m = document.getElementById('roomModal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+
+function filterRoom(kind) {
+  document.querySelectorAll('.rm-pill').forEach(p => {
+    const active = p.textContent.trim() === kind;
+    p.className = `rm-pill ${active?'bg-purple-600 text-white':'bg-slate-100 text-slate-600'} px-3 py-1 rounded-full text-xs font-semibold`;
+  });
+  renderRoomGroups(kind);
+}
+
+function renderRoomGroups(kindFilter) {
+  let entries = Object.entries(_roomGroups);
+  if (kindFilter && kindFilter !== 'ทั้งหมด') entries = entries.filter(([k]) => k === kindFilter);
+  entries.sort(([a],[b]) => {
+    const ai = _KIND_ORDER.indexOf(a), bi = _KIND_ORDER.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1; if (bi !== -1) return 1;
+    return a.localeCompare(b);
+  });
+  document.getElementById('rm-groups').innerHTML = entries.length === 0
     ? `<div class="text-center text-slate-400 py-12">
         <div class="text-5xl mb-2">📦</div>
         <div>ยังไม่มีเครื่องในห้องนี้</div>
         <a href="staff.html#equipment" class="text-blue-600 text-sm mt-2 inline-block">+ เพิ่มเครื่อง</a>
       </div>`
-    : Object.entries(groups).map(([k, items]) => {
-        const c = colorMap[k] || 'slate';
-        const ico = icoMap[k] || '🔧';
+    : entries.map(([k, items]) => {
+        const c = _colorMap[k] || 'slate';
+        const ico = _icoMap[k] || '🔧';
         return `<div>
           <div class="font-bold text-${c}-700 text-lg mb-2 flex items-center gap-2">
             <span>${ico}</span> ${k} <span class="text-sm text-slate-500 font-normal">(${items.length})</span>
@@ -2602,9 +2645,8 @@ function openRoom(room) {
           <div class="grid sm:grid-cols-2 gap-3">${items.map(eqCard).join('')}</div>
         </div>`;
       }).join('');
-  const m = document.getElementById('roomModal');
-  m.classList.remove('hidden'); m.classList.add('flex');
 }
+
 function closeRoom() {
   const m = document.getElementById('roomModal');
   m.classList.add('hidden'); m.classList.remove('flex');

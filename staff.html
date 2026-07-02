@@ -196,7 +196,7 @@
     <div class="card p-4 scroll-x">
       <table class="min-w-full text-sm">
         <thead class="text-slate-500 border-b text-left">
-          <tr><th class="py-2">ชื่อ</th><th>ยี่ห้อ/รุ่น</th><th>Serial</th><th>ที่ตั้ง</th><th>สถานะ</th><th>รับเข้า</th><th></th></tr>
+          <tr><th class="py-2">ชื่อ</th><th>ที่ตั้ง</th><th>ยี่ห้อ/รุ่น</th><th>Serial</th><th>เลขคุรุภัณฑ์</th><th>SKH</th><th>สถานะ</th><th>รับเข้า</th><th></th></tr>
         </thead>
         <tbody id="eqBody"></tbody>
       </table>
@@ -557,14 +557,16 @@ function renderEquipment() {
     const cls = e.status === 'ใช้งานได้' ? 'status-ok' : e.status === 'รอซ่อม' ? 'status-bad' : 'status-warn';
     return `<tr class="border-b last:border-0">
       <td class="py-2 font-medium">${e.name||'-'}</td>
-      <td>${e.brand||''} ${e.model||''}</td>
-      <td class="text-xs">${e.serial||''}</td>
-      <td>${e.location||''}</td>
+      <td class="text-xs">${e.location||''}</td>
+      <td class="text-xs">${[e.brand,e.model].filter(Boolean).join(' / ')||''}</td>
+      <td class="text-xs font-mono">${e.serial||''}</td>
+      <td class="text-xs font-mono">${e.asset_no||''}</td>
+      <td class="text-xs font-mono">${e.skh||''}</td>
       <td><span class="text-xs px-2 py-1 rounded-full ${cls}">${e.status||'-'}</span></td>
       <td class="text-xs">${e.received_date||''}</td>
       <td><button class="text-blue-600 text-sm" onclick="openEqForm('${e.id}')">แก้</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" class="text-center text-slate-500 py-4">ยังไม่มีเครื่องมือ</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="text-center text-slate-500 py-4">ยังไม่มีเครื่องมือ</td></tr>';
 }
 function openEqForm(id) {
   if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
@@ -590,6 +592,8 @@ function openEqForm(id) {
         <input id="f-model" class="input" placeholder="รุ่น" value="${e.model||''}">
       </div>
       <input id="f-serial" class="input" placeholder="Serial" value="${e.serial||''}">
+      <input id="f-asset-no" class="input" placeholder="เลขคุรุภัณฑ์ เช่น 6515-001-0001-21/55" value="${e.asset_no||''}">
+      <input id="f-skh" class="input" placeholder="SKH เช่น SKH-00397" value="${e.skh||''}">
       <select id="f-status" class="input">
         ${['ใช้งานได้','รอซ่อม','ซ่อมแล้ว','จำหน่าย'].map(s => `<option ${e.status===s?'selected':''}>${s}</option>`).join('')}
       </select>
@@ -627,7 +631,8 @@ async function saveEq(id) {
   const row = {
     kind: val('f-kind'),
     name: val('f-name'), brand: val('f-brand'), model: val('f-model'),
-    serial: val('f-serial'), location: val('f-loc'), status: val('f-status'),
+    serial: val('f-serial'), asset_no: val('f-asset-no'), skh: val('f-skh'),
+    location: val('f-loc'), status: val('f-status'),
     received_date: val('f-recv') || null, repair_date: val('f-rep') || null,
     owner: val('f-owner'), notes: val('f-notes')
   };
