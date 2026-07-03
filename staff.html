@@ -198,6 +198,21 @@
       <div class="font-semibold">เครื่องมือทั้งหมด (<span id="eq-count">0</span>)</div>
       <button class="btn btn-primary" onclick="openEqForm()">+ เพิ่มเครื่องมือ</button>
     </div>
+    <!-- ตัวกรอง -->
+    <div class="card p-3 flex flex-wrap gap-2 items-center">
+      <div id="eq-kind-pills" class="flex gap-1.5 flex-wrap"></div>
+      <div class="w-px h-5 bg-slate-200 hidden sm:block"></div>
+      <select id="eq-loc-filter" class="input text-sm py-1 w-auto" onchange="renderEquipment()">
+        <option value="">📍 ทุกที่ตั้ง</option>
+      </select>
+      <select id="eq-status-filter" class="input text-sm py-1 w-auto" onchange="renderEquipment()">
+        <option value="">🔘 ทุกสถานะ</option>
+        <option value="ใช้งานได้">✅ ใช้งานได้</option>
+        <option value="รอซ่อม">🔴 รอซ่อม</option>
+        <option value="ซ่อมแล้ว">🟡 ซ่อมแล้ว</option>
+      </select>
+      <button onclick="clearEqFilters()" class="text-xs text-slate-400 hover:text-slate-700 underline ml-1">ล้างตัวกรอง</button>
+    </div>
     <div class="card p-4 scroll-x">
       <table class="min-w-full text-sm">
         <thead class="text-slate-500 border-b text-left">
@@ -672,9 +687,32 @@ async function deleteStaff(id) {
 }
 
 // ===== EQUIPMENT =====
+let _eqKindFilter = '';
 function renderEquipment() {
-  document.getElementById('eq-count').textContent = cache.equipment.length;
-  document.getElementById('eqBody').innerHTML = cache.equipment.map(e => {
+  // สร้าง kind pills จากข้อมูลจริง
+  const kinds = ['', ...[...new Set(cache.equipment.map(e => e.kind).filter(Boolean))].sort()];
+  document.getElementById('eq-kind-pills').innerHTML = kinds.map(k =>
+    `<button onclick="setEqKind('${k}')" class="eq-kind-pill text-xs px-3 py-1 rounded-full border font-medium transition ${_eqKindFilter===k ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-slate-600 border-slate-300 hover:border-purple-400'}">${k||'ทั้งหมด'}</button>`
+  ).join('');
+
+  // สร้าง location options จากข้อมูลจริง
+  const locSel = document.getElementById('eq-loc-filter');
+  const curLoc = locSel.value;
+  const locs = [...new Set(cache.equipment.map(e => e.location).filter(Boolean))].sort();
+  locSel.innerHTML = `<option value="">📍 ทุกที่ตั้ง</option>` + locs.map(l => `<option value="${l}" ${curLoc===l?'selected':''}>${l}</option>`).join('');
+
+  // กรอง
+  const selKind   = _eqKindFilter;
+  const selLoc    = locSel.value;
+  const selStatus = document.getElementById('eq-status-filter').value;
+  const filtered  = cache.equipment.filter(e =>
+    (!selKind   || e.kind     === selKind) &&
+    (!selLoc    || e.location === selLoc) &&
+    (!selStatus || e.status   === selStatus)
+  );
+
+  document.getElementById('eq-count').textContent = filtered.length;
+  document.getElementById('eqBody').innerHTML = filtered.map(e => {
     const cls = e.status === 'ใช้งานได้' ? 'status-ok' : e.status === 'รอซ่อม' ? 'status-bad' : 'status-warn';
     return `<tr class="border-b last:border-0">
       <td class="py-2 font-medium">${e.name||'-'}</td>
@@ -688,7 +726,14 @@ function renderEquipment() {
       <td class="text-xs">${e.received_date||''}</td>
       <td><button class="text-blue-600 text-sm" onclick="openEqForm('${e.id}')">แก้</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="10" class="text-center text-slate-500 py-4">ยังไม่มีเครื่องมือ</td></tr>';
+  }).join('') || '<tr><td colspan="10" class="text-center text-slate-500 py-4">ไม่พบเครื่องมือ</td></tr>';
+}
+function setEqKind(k) { _eqKindFilter = k; renderEquipment(); }
+function clearEqFilters() {
+  _eqKindFilter = '';
+  document.getElementById('eq-loc-filter').value = '';
+  document.getElementById('eq-status-filter').value = '';
+  renderEquipment();
 }
 function openEqForm(id) {
   if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
