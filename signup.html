@@ -176,13 +176,31 @@ async function doSignup() {
 
     // 2. อัปเดต profile (มาจาก trigger handle_new_user)
     if (data?.user?.id) {
-      await new Promise(r => setTimeout(r, 500)); // รอ trigger รัน
+      await new Promise(r => setTimeout(r, 600)); // รอ trigger รัน
       await sb.from('profiles').update({
         full_name: fullName, nickname, position, phone
       }).eq('id', data.user.id);
+
+      // 3. ค้นหา nurse record ที่ชื่อตรงกัน → link อัตโนมัติ
+      const { data: matched } = await sb.from('nurses')
+        .select('id, nickname, photo_url')
+        .ilike('name', fullName.trim())
+        .is('user_id', null)
+        .limit(1);
+      if (matched?.length > 0) {
+        const nurse = matched[0];
+        const nurseUpdate = { user_id: data.user.id };
+        if (nickname && !nurse.nickname) nurseUpdate.nickname = nickname;
+        await sb.from('nurses').update(nurseUpdate).eq('id', nurse.id);
+        await sb.from('profiles').update({ nurse_id: nurse.id }).eq('id', data.user.id);
+        // sync photo จาก nurses → profile ถ้ามี
+        if (nurse.photo_url) {
+          await sb.from('profiles').update({ photo_url: nurse.photo_url }).eq('id', data.user.id);
+        }
+      }
     }
 
-    // 3. แสดงหน้าสำเร็จ
+    // 4. แสดงหน้าสำเร็จ
     document.getElementById('formCard').classList.add('hidden');
     document.getElementById('successCard').classList.remove('hidden');
     document.querySelectorAll('.step-num').forEach((el, i) => {

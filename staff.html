@@ -620,7 +620,13 @@ async function handleNursePhotoUpload(e) {
     const url = sb.storage.from('equipment-photos').getPublicUrl(name).data.publicUrl;
     await sbDB.update('nurses', _uploadingNurseId, { photo_url: url });
     const nurse = cache.nurses.find(n => n.id === _uploadingNurseId);
-    if (nurse) nurse.photo_url = url;
+    if (nurse) {
+      nurse.photo_url = url;
+      // sync รูปไปที่ profiles ถ้ามีบัญชี login เชื่อมอยู่
+      if (nurse.user_id) {
+        await sb.from('profiles').update({ photo_url: url }).eq('id', nurse.user_id);
+      }
+    }
     renderNursesList();
     sbUtils.toast('อัปโหลดรูปสำเร็จ ✅', 'success');
   } catch(err) { sbUtils.toast(err.message, 'error'); }
@@ -1185,7 +1191,10 @@ function renderNursesList() {
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold text-slate-800 truncate">${n.name || '-'}</div>
-                  ${n.nickname ? `<div class="text-xs text-purple-400 font-medium">"${n.nickname}"</div>` : ''}
+                  <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    ${n.nickname ? `<span class="text-xs text-purple-400 font-medium">"${n.nickname}"</span>` : ''}
+                    ${n.user_id ? `<span class="text-xs bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full">👤 มีบัญชี</span>` : ''}
+                  </div>
                 </div>
                 ${canEdit ? `<div class="flex-shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity text-xs text-slate-400">✏️</div>` : ''}
               </div>`;
