@@ -510,20 +510,20 @@ function renderOrgChart() {
         return `
         ${i > 0 ? '<div class="w-0.5 h-6 bg-slate-300"></div>' : ''}
         <div class="flex flex-col items-center">
-          <div class="relative mb-1.5">
+          <div class="relative mb-1.5 group/photo">
             ${photo
               ? `<img src="${photo}" class="w-14 h-14 rounded-full object-cover shadow" style="border:3px solid ${p.border}">`
               : `<div class="w-14 h-14 rounded-full bg-${p.color}-100 flex items-center justify-center text-${p.color}-600 font-bold text-xs shadow" style="border:3px solid ${p.border}">${p.initials}</div>`
             }
             ${canEdit ? `<button onclick="triggerOrgPhoto('${p.id}')" title="อัปโหลดรูป"
-              class="absolute -bottom-1 -right-1 w-5 h-5 bg-white border border-slate-300 rounded-full flex items-center justify-center text-slate-500 hover:bg-purple-100 shadow text-xs">📷</button>` : ''}
+              class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer">📷</button>` : ''}
           </div>
-          <div class="relative ${p.bg} text-white rounded-lg px-4 py-1.5 text-center shadow text-xs min-w-[200px]">
+          <div class="relative group/label ${p.bg} text-white rounded-lg px-4 py-1.5 text-center shadow text-xs min-w-[200px]">
             <div class="font-semibold">${name}</div>
             <div class="opacity-85 mt-0.5">${pos}</div>
             ${canEdit ? `<button onclick="openOrgEdit('${p.id}','${name.replace(/'/g,"\\'")}','${pos.replace(/'/g,"\\'")}','${p.bg}')"
               title="แก้ไขชื่อ/ตำแหน่ง"
-              class="absolute -top-2 -right-2 w-5 h-5 bg-white border border-slate-300 rounded-full flex items-center justify-center text-slate-500 hover:bg-yellow-100 shadow text-xs">✏️</button>` : ''}
+              class="absolute inset-0 rounded-lg flex items-center justify-center bg-black/20 text-white text-base opacity-0 group-hover/label:opacity-100 transition-opacity cursor-pointer">✏️</button>` : ''}
           </div>
         </div>`;
       }).join('')}
@@ -1101,13 +1101,13 @@ function renderNursesList() {
               const init = (n.nickname || n.name || '?').charAt(0).toUpperCase();
               const canEdit = !!currentUser;
               return `<div class="nurse-card">
-                <div class="relative flex-shrink-0">
+                <div class="relative flex-shrink-0 group/photo">
                   ${n.photo_url
                     ? `<img src="${n.photo_url}" class="nurse-avatar object-cover" style="background:${s.av}">`
                     : `<div class="nurse-avatar" style="background:${s.av}">${init}</div>`
                   }
                   ${canEdit ? `<button onclick="triggerNursePhoto(${n.id})" title="อัปโหลดรูป"
-                    class="absolute -bottom-1 -right-1 w-5 h-5 bg-white border border-slate-200 rounded-full flex items-center justify-center text-xs hover:bg-purple-100 shadow">📷</button>` : ''}
+                    class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer">📷</button>` : ''}
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold text-slate-800 truncate">${n.name || '-'}</div>
