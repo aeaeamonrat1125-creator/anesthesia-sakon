@@ -81,6 +81,7 @@
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="docs">📄 เอกสารวิชาการ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="ops">📊 สถิติบริการ</button>
         <div class="border-t border-white/10 my-1"></div>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="orgchart">🏛 ผังองค์กร</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="nurses">📒 รายชื่อทั้งหมด</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="staff">👤 บัญชี Login</button>
       </div>
@@ -123,6 +124,53 @@
   </section>
 
   <!-- NURSES LIST (ทะเบียนบุคลากรทั้งหมด) -->
+  <!-- ORG CHART -->
+  <section data-page="orgchart" class="hidden">
+    <div class="card p-6 sm:p-10">
+      <div class="text-center mb-8">
+        <div class="text-lg font-bold text-slate-700">🏛 ผังองค์กรสายบังคับบัญชา</div>
+        <div class="text-xs text-slate-500 mt-1">หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</div>
+      </div>
+
+      <div class="flex flex-col items-center select-none">
+
+        <!-- ผอ. -->
+        <div class="flex flex-col items-center">
+          <div class="w-24 h-24 rounded-full bg-blue-100 border-4 border-blue-400 flex items-center justify-center text-blue-600 font-bold text-lg shadow mb-2">นพ.</div>
+          <div class="bg-blue-500 text-white rounded-xl px-5 py-2.5 text-center shadow min-w-[230px]">
+            <div class="font-semibold text-sm">นายแพทย์สมศักดิ์ ประภาณวัตร</div>
+            <div class="text-xs opacity-90 mt-0.5">ผู้อำนวยการโรงพยาบาลสกลนคร</div>
+          </div>
+        </div>
+
+        <!-- เส้นเชื่อม -->
+        <div class="w-0.5 h-10 bg-slate-300"></div>
+
+        <!-- หัวหน้ากลุ่มการพยาบาล -->
+        <div class="flex flex-col items-center">
+          <div class="w-24 h-24 rounded-full bg-purple-100 border-4 border-purple-400 flex items-center justify-center text-purple-600 font-bold text-lg shadow mb-2">พย.</div>
+          <div class="bg-purple-600 text-white rounded-xl px-5 py-2.5 text-center shadow min-w-[230px]">
+            <div class="font-semibold text-sm">นางโพลัน นัดสันเทียะ</div>
+            <div class="text-xs opacity-90 mt-0.5">หัวหน้ากลุ่มการพยาบาล</div>
+          </div>
+        </div>
+
+        <!-- เส้นเชื่อม -->
+        <div class="w-0.5 h-10 bg-slate-300"></div>
+
+        <!-- หัวหน้างานพยาบาลวิสัญญี -->
+        <div class="flex flex-col items-center">
+          <div class="w-24 h-24 rounded-full bg-pink-100 border-4 border-pink-400 flex items-center justify-center text-pink-600 font-bold text-lg shadow mb-2">พย.</div>
+          <div class="bg-pink-500 text-white rounded-xl px-5 py-2.5 text-center shadow min-w-[230px]">
+            <div class="font-semibold text-sm">น.ส.โชติมา อภิวัฒน์ชัชวาลย์</div>
+            <div class="text-xs opacity-90 mt-0.5">หัวหน้างานกลุ่มงานการพยาบาลวิสัญญี</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <section data-page="nurses" class="space-y-5 hidden">
 
     <!-- Hero -->
