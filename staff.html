@@ -196,7 +196,7 @@
     <div class="card p-4 scroll-x">
       <table class="min-w-full text-sm">
         <thead class="text-slate-500 border-b text-left">
-          <tr><th class="py-2">ชื่อ</th><th>ที่ตั้ง</th><th>ยี่ห้อ/รุ่น</th><th>Serial</th><th>เลขคุรุภัณฑ์</th><th>SKH</th><th>สถานะ</th><th>รับเข้า</th><th></th></tr>
+          <tr><th class="py-2">ชื่อ</th><th>ชนิด</th><th>ที่ตั้ง</th><th>ยี่ห้อ/รุ่น</th><th>Serial</th><th>เลขคุรุภัณฑ์</th><th>SKH</th><th>สถานะ</th><th>รับเข้า</th><th></th></tr>
         </thead>
         <tbody id="eqBody"></tbody>
       </table>
@@ -557,6 +557,7 @@ function renderEquipment() {
     const cls = e.status === 'ใช้งานได้' ? 'status-ok' : e.status === 'รอซ่อม' ? 'status-bad' : 'status-warn';
     return `<tr class="border-b last:border-0">
       <td class="py-2 font-medium">${e.name||'-'}</td>
+      <td class="text-xs">${e.kind||''}</td>
       <td class="text-xs">${e.location||''}</td>
       <td class="text-xs">${[e.brand,e.model].filter(Boolean).join(' / ')||''}</td>
       <td class="text-xs font-mono">${e.serial||''}</td>
@@ -566,7 +567,7 @@ function renderEquipment() {
       <td class="text-xs">${e.received_date||''}</td>
       <td><button class="text-blue-600 text-sm" onclick="openEqForm('${e.id}')">แก้</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="9" class="text-center text-slate-500 py-4">ยังไม่มีเครื่องมือ</td></tr>';
+  }).join('') || '<tr><td colspan="10" class="text-center text-slate-500 py-4">ยังไม่มีเครื่องมือ</td></tr>';
 }
 function openEqForm(id) {
   if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
