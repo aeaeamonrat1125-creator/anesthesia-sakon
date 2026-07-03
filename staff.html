@@ -147,40 +147,8 @@
     </div>
 
     <!-- ผังองค์กรสายบังคับบัญชา (compact) -->
-    <div class="card p-4">
-      <div class="text-xs font-semibold text-slate-500 mb-3 text-center tracking-wide">🏛 สายบังคับบัญชา</div>
-      <div class="flex flex-col items-center gap-0 select-none">
-
-        <div class="flex flex-col items-center">
-          <div class="w-14 h-14 rounded-full bg-blue-100 border-3 border-blue-400 flex items-center justify-center text-blue-600 font-bold text-xs shadow mb-1.5" style="border-width:3px">นพ.</div>
-          <div class="bg-blue-500 text-white rounded-lg px-4 py-1.5 text-center shadow text-xs min-w-[200px]">
-            <div class="font-semibold">นายแพทย์สมศักดิ์ ประภาณวัตร</div>
-            <div class="opacity-85 mt-0.5">ผู้อำนวยการโรงพยาบาลสกลนคร</div>
-          </div>
-        </div>
-
-        <div class="w-0.5 h-6 bg-slate-300"></div>
-
-        <div class="flex flex-col items-center">
-          <div class="w-14 h-14 rounded-full bg-purple-100 border-purple-400 flex items-center justify-center text-purple-600 font-bold text-xs shadow mb-1.5" style="border:3px solid #a855f7">พย.</div>
-          <div class="bg-purple-600 text-white rounded-lg px-4 py-1.5 text-center shadow text-xs min-w-[200px]">
-            <div class="font-semibold">นางโพลัน นัดสันเทียะ</div>
-            <div class="opacity-85 mt-0.5">หัวหน้ากลุ่มการพยาบาล</div>
-          </div>
-        </div>
-
-        <div class="w-0.5 h-6 bg-slate-300"></div>
-
-        <div class="flex flex-col items-center">
-          <div class="w-14 h-14 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-bold text-xs shadow mb-1.5" style="border:3px solid #ec4899">พย.</div>
-          <div class="bg-pink-500 text-white rounded-lg px-4 py-1.5 text-center shadow text-xs min-w-[200px]">
-            <div class="font-semibold">น.ส.โชติมา อภิวัฒน์ชัชวาลย์</div>
-            <div class="opacity-85 mt-0.5">หัวหน้างานกลุ่มงานการพยาบาลวิสัญญี</div>
-          </div>
-        </div>
-
-      </div>
-    </div>
+    <div class="card p-4" id="orgChartCard"></div>
+    <input type="file" id="orgPhotoInput" accept="image/*" class="hidden" onchange="handleOrgPhotoUpload(event)">
 
     <!-- Position filter pills — horizontal scroll on mobile -->
     <div class="pills-row">
@@ -396,7 +364,7 @@
 <script src="supabase-client.js"></script>
 <script>
 let currentUser = null, currentProfile = null;
-const cache = { staff:[], equipment:[], schedule:[], meetings:[], activities:[], refers:[], documents:[], docTypes:[], ops:[], kpis:[], kpiHistory:[], announcements:[], nurses:[] };
+const cache = { staff:[], equipment:[], schedule:[], meetings:[], activities:[], refers:[], documents:[], docTypes:[], ops:[], kpis:[], kpiHistory:[], announcements:[], nurses:[], orgChart:[] };
 
 // ===== FULLSCREEN =====
 function toggleFullscreen(on) {
@@ -493,7 +461,7 @@ async function signOut() { await sbAuth.signOut(); location.reload(); }
 // ===== LOAD ALL =====
 async function loadAll() {
   try {
-    const [staff, eq, mt, ac, rf, dc, dt, op, kp, kh, an, nu] = await Promise.all([
+    const [staff, eq, mt, ac, rf, dc, dt, op, kp, kh, an, nu, org] = await Promise.all([
       sbDB.list('profiles', { order:'full_name', asc:true }),
       sbDB.list('equipment', { order:'name', asc:true }),
       sbDB.list('meetings', { order:'date', asc:false }),
@@ -505,15 +473,73 @@ async function loadAll() {
       sbDB.list('kpis', { order:'sort_order', asc:true }),
       sbDB.list('kpi_history'),
       sbDB.list('announcements', { order:'date', asc:false }).catch(() => []),
-      sbDB.list('nurses', { order:'sort_order', asc:true }).catch(() => [])
+      sbDB.list('nurses', { order:'sort_order', asc:true }).catch(() => []),
+      sbDB.list('org_chart').catch(() => [])
     ]);
     cache.staff = staff; cache.equipment = eq; cache.meetings = mt; cache.activities = ac;
     cache.refers = rf; cache.documents = dc; cache.docTypes = dt; cache.ops = op;
     cache.kpis = kp; cache.kpiHistory = kh; cache.announcements = an; cache.nurses = nu;
+    cache.orgChart = org;
     renderStaff();
     renderKpiPicker();
     renderAnnouncements();
+    renderOrgChart();
   } catch (err) { sbUtils.toast(err.message, 'error'); }
+}
+
+// ===== ORG CHART =====
+const ORG_PEOPLE = [
+  { id:'director',    initials:'นพ.', color:'blue',   border:'#3b82f6', name:'นายแพทย์สมศักดิ์ ประภาณวัตร',   pos:'ผู้อำนวยการโรงพยาบาลสกลนคร',          bg:'bg-blue-500' },
+  { id:'nursing_head',initials:'พย.', color:'purple', border:'#a855f7', name:'นางโพลัน นัดสันเทียะ',            pos:'หัวหน้ากลุ่มการพยาบาล',                bg:'bg-purple-600' },
+  { id:'anes_head',   initials:'พย.', color:'pink',   border:'#ec4899', name:'น.ส.โชติมา อภิวัฒน์ชัชวาลย์',   pos:'หัวหน้างานกลุ่มงานการพยาบาลวิสัญญี',  bg:'bg-pink-500' },
+];
+let _uploadingOrgId = null;
+function renderOrgChart() {
+  const photoMap = {};
+  (cache.orgChart||[]).forEach(r => { if (r.photo_url) photoMap[r.id] = r.photo_url; });
+  const canEdit = !!currentUser;
+  document.getElementById('orgChartCard').innerHTML = `
+    <div class="text-xs font-semibold text-slate-500 mb-3 text-center tracking-wide">🏛 สายบังคับบัญชา</div>
+    <div class="flex flex-col items-center gap-0 select-none">
+      ${ORG_PEOPLE.map((p, i) => `
+        ${i > 0 ? '<div class="w-0.5 h-6 bg-slate-300"></div>' : ''}
+        <div class="flex flex-col items-center">
+          <div class="relative mb-1.5">
+            ${photoMap[p.id]
+              ? `<img src="${photoMap[p.id]}" class="w-14 h-14 rounded-full object-cover shadow" style="border:3px solid ${p.border}">`
+              : `<div class="w-14 h-14 rounded-full bg-${p.color}-100 flex items-center justify-center text-${p.color}-600 font-bold text-xs shadow" style="border:3px solid ${p.border}">${p.initials}</div>`
+            }
+            ${canEdit ? `<button onclick="triggerOrgPhoto('${p.id}')" title="อัปโหลดรูป"
+              class="absolute -bottom-1 -right-1 w-5 h-5 bg-white border border-slate-300 rounded-full flex items-center justify-center text-slate-500 hover:bg-purple-100 hover:text-purple-600 shadow text-xs">📷</button>` : ''}
+          </div>
+          <div class="${p.bg} text-white rounded-lg px-4 py-1.5 text-center shadow text-xs min-w-[200px]">
+            <div class="font-semibold">${p.name}</div>
+            <div class="opacity-85 mt-0.5">${p.pos}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+function triggerOrgPhoto(id) {
+  _uploadingOrgId = id;
+  document.getElementById('orgPhotoInput').value = '';
+  document.getElementById('orgPhotoInput').click();
+}
+async function handleOrgPhotoUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file || !_uploadingOrgId) return;
+  sbUtils.toast('กำลังอัปโหลด...', 'info');
+  try {
+    const name = `org-${_uploadingOrgId}-${Date.now()}.${file.name.split('.').pop()}`;
+    const { error } = await sb.storage.from('equipment-photos').upload(name, file, { upsert: true });
+    if (error) throw error;
+    const url = sb.storage.from('equipment-photos').getPublicUrl(name).data.publicUrl;
+    await sb.from('org_chart').upsert({ id: _uploadingOrgId, photo_url: url });
+    cache.orgChart = cache.orgChart.filter(r => r.id !== _uploadingOrgId);
+    cache.orgChart.push({ id: _uploadingOrgId, photo_url: url });
+    renderOrgChart();
+    sbUtils.toast('อัปโหลดรูปสำเร็จ ✅', 'success');
+  } catch(err) { sbUtils.toast(err.message, 'error'); }
 }
 
 // ===== STAFF =====
