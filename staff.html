@@ -537,7 +537,7 @@ function renderOrgChart() {
         <div class="flex flex-col items-center">
           <div class="relative mb-1.5 group/photo ${canEdit ? 'cursor-pointer' : ''}" ${canEdit ? `onclick="triggerOrgPhoto('${p.id}')"` : ''}>
             ${photo
-              ? `<img src="${photo}" class="w-14 h-14 rounded-full object-cover shadow" style="border:3px solid ${p.border}">`
+              ? `<img src="${photo}" class="w-14 h-14 rounded-full object-cover shadow cursor-zoom-in" style="border:3px solid ${p.border}" onclick="event.stopPropagation();openLightbox('${photo}','${name.replace(/'/g,"&#39;")}')">`
               : `<div class="w-14 h-14 rounded-full bg-${p.color}-100 flex items-center justify-center text-${p.color}-600 font-bold text-xs shadow" style="border:3px solid ${p.border}">${p.initials}</div>`
             }
             ${canEdit ? `<div class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 transition-opacity pointer-events-none">📷</div>` : ''}
@@ -913,7 +913,7 @@ async function delMeeting(id) { if (confirm('ลบ?')) { await sbDB.remove('mee
 function renderActivities() {
   document.getElementById('activityList').innerHTML = cache.activities.map(a => `
     <div class="card overflow-hidden">
-      ${a.image_url ? `<div class="act-img-wrap"><img src="${a.image_url}" alt="${a.name||''}"></div>` : ''}
+      ${a.image_url ? `<div class="act-img-wrap"><img src="${a.image_url}" alt="${a.name||''}" class="cursor-zoom-in" onclick="openLightbox('${a.image_url}','${(a.name||'').replace(/'/g,"&#39;")}')"></div>` : ''}
       <div class="p-4 flex justify-between items-start gap-3">
         <div class="flex-1">
           <div class="font-semibold">${a.name||'-'}</div>
@@ -1184,7 +1184,7 @@ function renderNursesList() {
               return `<div class="nurse-card group/card ${canEdit ? 'cursor-pointer' : ''}" ${canEdit ? `onclick="openNurseForm(${n.id})"` : ''}>
                 <div class="relative flex-shrink-0 group/photo ${canEdit ? 'cursor-pointer' : ''}" onclick="${canEdit ? `event.stopPropagation();triggerNursePhoto(${n.id})` : ''}">
                   ${n.photo_url
-                    ? `<img src="${n.photo_url}" class="nurse-avatar object-cover" style="background:${s.av}">`
+                    ? `<img src="${n.photo_url}" class="nurse-avatar object-cover cursor-zoom-in" style="background:${s.av}" onclick="event.stopPropagation();openLightbox('${n.photo_url}','${(n.name||'').replace(/'/g,"&#39;")}')">`
                     : `<div class="nurse-avatar" style="background:${s.av}">${init}</div>`
                   }
                   ${canEdit ? `<div class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 transition-opacity pointer-events-none">📷</div>` : ''}
@@ -1681,5 +1681,28 @@ function subscribeAll() {
     </div>
   </div>
 </div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="fixed inset-0 bg-black/92 z-[999] hidden items-center justify-center p-4 flex-col gap-3" onclick="closeLightbox()">
+  <img id="lb-img" src="" alt="" class="max-w-full object-contain rounded-xl shadow-2xl" style="max-height:85vh" onclick="event.stopPropagation()">
+  <div id="lb-caption" class="text-white/80 text-sm text-center"></div>
+  <button onclick="closeLightbox()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white text-2xl flex items-center justify-center transition">×</button>
+</div>
+
+<script>
+function openLightbox(src, caption) {
+  document.getElementById('lb-img').src = src;
+  document.getElementById('lb-caption').textContent = caption || '';
+  const lb = document.getElementById('lightbox');
+  lb.classList.remove('hidden'); lb.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.add('hidden');
+  document.getElementById('lightbox').classList.remove('flex');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+</script>
 </body>
 </html>
