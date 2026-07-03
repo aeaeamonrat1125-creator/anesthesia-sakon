@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>แบบประเมินความพึงพอใจ — วิสัญญีพยาบาล รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family:'Sarabun',sans-serif; background:#f5f3ff; }
+  .grad { background:linear-gradient(135deg,#6d28d9 0%,#9333ea 60%,#c026d3 100%); }
+  .r-btn {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; padding:10px 4px; border-radius:12px; border:2px solid #e2e8f0;
+    background:#fff; cursor:pointer; transition:all .15s; flex:1; min-width:0;
+    font-size:11px; font-weight:600; color:#64748b; line-height:1.2;
+  }
+  .r-btn .emoji { font-size:1.6rem; line-height:1; }
+  .r-btn:active { transform:scale(.96); }
+  .r-btn.sel-5 { background:#dcfce7; border-color:#16a34a; color:#15803d; }
+  .r-btn.sel-4 { background:#dbeafe; border-color:#2563eb; color:#1d4ed8; }
+  .r-btn.sel-3 { background:#fef9c3; border-color:#ca8a04; color:#a16207; }
+  .r-btn.sel-2 { background:#ffedd5; border-color:#ea580c; color:#c2410c; }
+  .r-btn.sel-1 { background:#fee2e2; border-color:#dc2626; color:#b91c1c; }
+  .opt-btn {
+    display:flex; align-items:center; gap:10px; padding:14px 16px;
+    border-radius:14px; border:2px solid #e2e8f0; background:#fff;
+    cursor:pointer; transition:all .15s; font-size:16px; font-weight:500; color:#374151;
+  }
+  .opt-btn:active { transform:scale(.98); }
+  .opt-btn.selected { background:#ede9fe; border-color:#7c3aed; color:#6d28d9; font-weight:700; }
+  .opt-btn .dot {
+    width:22px; height:22px; border-radius:50%; border:2px solid #d1d5db;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .opt-btn.selected .dot { background:#7c3aed; border-color:#7c3aed; }
+  .opt-btn.selected .dot::after { content:'✓'; color:#fff; font-size:13px; font-weight:700; }
+  .step { display:none; }
+  .step.active { display:block; animation:fadeUp .25s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .progress-bar { transition:width .3s ease; }
+  .q-card { background:#fff; border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .q-title { font-size:15px; font-weight:600; color:#1e293b; margin-bottom:12px; line-height:1.5; }
+  .rating-row { display:flex; gap:6px; }
+  .input-field {
+    width:100%; padding:14px 16px; border:2px solid #e2e8f0; border-radius:12px;
+    font-family:'Sarabun',sans-serif; font-size:16px; outline:none; transition:border .15s;
+  }
+  .input-field:focus { border-color:#7c3aed; }
+  .btn-next {
+    width:100%; padding:16px; border-radius:16px; font-size:18px; font-weight:700;
+    background:linear-gradient(135deg,#7c3aed,#9333ea); color:#fff; border:none;
+    cursor:pointer; transition:all .15s; box-shadow:0 4px 14px rgba(124,58,237,.35);
+  }
+  .btn-next:active { transform:scale(.98); }
+  .btn-back {
+    padding:14px 24px; border-radius:14px; font-size:16px; font-weight:600;
+    background:#f1f5f9; color:#64748b; border:none; cursor:pointer;
+  }
+  .unanswered { border-color:#ef4444 !important; animation:shake .3s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  select.input-field { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:40px; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<div class="grad text-white px-4 py-5 text-center">
+  <div class="text-xs opacity-75 mb-1">หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</div>
+  <div class="text-lg font-bold leading-tight">แบบประเมินความพึงพอใจ<br>ต่อคุณภาพการบริการวิสัญญีพยาบาล</div>
+</div>
+
+<!-- Progress -->
+<div class="bg-white shadow-sm px-4 py-3 sticky top-0 z-10">
+  <div class="flex items-center justify-between mb-2">
+    <span class="text-sm text-slate-500" id="stepLabel">ขั้นตอนที่ 1 จาก 4</span>
+    <span class="text-sm font-semibold text-purple-700" id="stepPct">0%</span>
+  </div>
+  <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+    <div class="progress-bar h-full bg-gradient-to-r from-purple-600 to-pink-500 rounded-full" id="progressBar" style="width:0%"></div>
+  </div>
+  <div class="flex justify-between mt-1.5">
+    <span id="dot1" class="text-xs font-semibold text-purple-600">📋 ข้อมูล</span>
+    <span id="dot2" class="text-xs text-slate-400">⭐ ประเมิน 1-5</span>
+    <span id="dot3" class="text-xs text-slate-400">⭐ ประเมิน 6-10</span>
+    <span id="dot4" class="text-xs text-slate-400">💬 ส่ง</span>
+  </div>
+</div>
+
+<div class="max-w-xl mx-auto px-4 py-4 space-y-4">
+
+<!-- ===== STEP 1: ข้อมูลพื้นฐาน ===== -->
+<div class="step active" id="step1">
+  <div class="q-card">
+    <div class="q-title">📍 หน่วยงานผู้ประเมิน <span class="text-red-500">*</span></div>
+    <input id="dept" class="input-field" type="text" placeholder="กรอกชื่อหน่วยงาน เช่น OR1, RR2 ...">
+  </div>
+
+  <div class="q-card">
+    <div class="q-title">👤 ผู้ประเมิน <span class="text-red-500">*</span></div>
+    <div class="space-y-2" id="typeGroup">
+      <div class="opt-btn" onclick="selectOpt('type',this,'แพทย์')"><div class="dot"></div>แพทย์</div>
+      <div class="opt-btn" onclick="selectOpt('type',this,'พยาบาล')"><div class="dot"></div>พยาบาล</div>
+      <div class="opt-btn" onclick="selectOpt('type',this,'ผู้ช่วยพยาบาล')"><div class="dot"></div>ผู้ช่วยพยาบาล</div>
+      <div class="opt-btn" onclick="selectOpt('type',this,'ผู้ช่วยเหลือคนไข้')"><div class="dot"></div>ผู้ช่วยเหลือคนไข้</div>
+      <div class="opt-btn" onclick="selectOpt('type',this,'คนงาน')"><div class="dot"></div>คนงาน</div>
+      <div class="opt-btn" onclick="selectOpt('type',this,'อื่นๆ')"><div class="dot"></div>อื่นๆ</div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-title">⚧ เพศ <span class="text-red-500">*</span></div>
+    <div class="flex gap-3" id="genderGroup">
+      <div class="opt-btn flex-1 justify-center" onclick="selectOpt('gender',this,'ชาย')"><div class="dot"></div>♂ ชาย</div>
+      <div class="opt-btn flex-1 justify-center" onclick="selectOpt('gender',this,'หญิง')"><div class="dot"></div>♀ หญิง</div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-title">🎂 อายุ (ปี) <span class="text-red-500">*</span></div>
+    <input id="age" class="input-field" type="number" placeholder="เช่น 35" min="15" max="99">
+  </div>
+
+  <button class="btn-next" onclick="nextStep(1)">ถัดไป → ประเมินความพึงพอใจ</button>
+</div>
+
+<!-- ===== STEP 2: คำถาม 1-5 ===== -->
+<div class="step" id="step2">
+  <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 mb-4 text-center">
+    <div class="text-sm font-semibold text-purple-700">กรุณาให้คะแนนความพึงพอใจ</div>
+    <div class="flex justify-center gap-3 mt-2 text-xs">
+      <span class="text-green-600 font-bold">😍 5=ดีเยี่ยม</span>
+      <span class="text-blue-600 font-bold">😊 4=ดี</span>
+      <span class="text-yellow-600 font-bold">😐 3=ปานกลาง</span>
+      <span class="text-orange-600 font-bold">😕 2=พอใช้</span>
+      <span class="text-red-600 font-bold">😞 1=ควรปรับปรุง</span>
+    </div>
+  </div>
+  <div id="qGroup1"></div>
+  <div class="flex gap-3 mt-2">
+    <button class="btn-back" onclick="goStep(1)">← ย้อนกลับ</button>
+    <button class="btn-next flex-1" onclick="nextStep(2)">ถัดไป → ข้อ 6-10</button>
+  </div>
+</div>
+
+<!-- ===== STEP 3: คำถาม 6-10 ===== -->
+<div class="step" id="step3">
+  <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 mb-4 text-center">
+    <div class="text-sm font-semibold text-purple-700">กรุณาให้คะแนนความพึงพอใจ (ต่อ)</div>
+  </div>
+  <div id="qGroup2"></div>
+  <div class="flex gap-3 mt-2">
+    <button class="btn-back" onclick="goStep(2)">← ย้อนกลับ</button>
+    <button class="btn-next flex-1" onclick="nextStep(3)">ถัดไป → ความคิดเห็น</button>
+  </div>
+</div>
+
+<!-- ===== STEP 4: ความคิดเห็น + ส่ง ===== -->
+<div class="step" id="step4">
+  <div class="q-card">
+    <div class="q-title">💬 ความคิดเห็น / ข้อเสนอแนะเพิ่มเติม</div>
+    <textarea id="comment" class="input-field" rows="4" placeholder="(ไม่บังคับ) กรอกความคิดเห็นหรือข้อเสนอแนะ..."></textarea>
+  </div>
+
+  <!-- สรุปก่อนส่ง -->
+  <div class="q-card" id="summaryBox">
+    <div class="font-semibold text-slate-700 mb-3">📋 สรุปคำตอบ</div>
+    <div id="summaryContent" class="text-sm text-slate-600 space-y-1"></div>
+  </div>
+
+  <div class="flex gap-3 mt-2">
+    <button class="btn-back" onclick="goStep(3)">← ย้อนกลับ</button>
+    <button class="btn-next flex-1" id="submitBtn" onclick="submitForm()">📤 ส่งแบบประเมิน</button>
+  </div>
+</div>
+
+<!-- ===== STEP 5: ขอบคุณ ===== -->
+<div class="step" id="step5">
+  <div class="text-center py-10">
+    <div class="text-7xl mb-4">🙏</div>
+    <div class="text-2xl font-bold text-purple-700 mb-3">ขอบคุณสำหรับการประเมิน!</div>
+    <div class="text-slate-600 mb-6">ความคิดเห็นของท่านมีคุณค่าอย่างมากต่อการพัฒนาคุณภาพการบริการของเรา</div>
+    <div class="bg-white rounded-2xl p-4 mb-6 shadow">
+      <div class="text-sm text-slate-500 mb-1">คะแนนเฉลี่ยของท่าน</div>
+      <div class="text-5xl font-bold text-purple-700" id="myScore">-</div>
+      <div class="text-sm text-slate-500">จาก 5.00 คะแนน</div>
+    </div>
+    <a href="index.html" class="btn-next inline-block px-8 py-4 rounded-2xl text-base no-underline">🏠 กลับหน้าหลัก</a>
+    <div class="mt-4">
+      <button onclick="resetForm()" class="text-purple-600 underline text-sm">ทำแบบประเมินอีกครั้ง</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /max-w -->
+
+<script>
+// ===== CONFIG =====
+// วาง Web App URL ที่นี่หลังจาก Deploy ใน Apps Script
+const WEBAPP_URL = 'YOUR_WEBAPP_URL_HERE';
+
+const QUESTIONS = [
+  '1. เจ้าหน้าที่พูดจาสุภาพ ยิ้มแย้ม แจ่มใส มีความเป็นกันเอง',
+  '2. เจ้าหน้าที่เอาใจใส่ มีความกระตือรือร้นในการให้บริการ',
+  '3. เจ้าหน้าที่มีความเชี่ยวชาญและความรู้ความชำนาญในการให้การพยาบาลผู้ป่วย',
+  '4. ความสะอาดของสถานที่ให้บริการโดยรวม',
+  '5. ความเพียงพอของอุปกรณ์/เครื่องมือแพทย์ที่ใช้ในการให้บริการรักษาพยาบาล',
+  '6. มีจำนวนพยาบาลและบุคลากรด้านอื่นๆ เพียงพอกับความต้องการ',
+  '7. การจัดสถานที่และอุปกรณ์มีความเป็นระเบียบสะดวกต่อการติดต่อใช้บริการ',
+  '8. ป้ายข้อความบอกจุดบริการ/ป้ายประชาสัมพันธ์ มีความชัดเจนและเข้าใจง่าย',
+  '9. การติดต่อประสานงานระหว่างหน่วยงานมีความสะดวกรวดเร็ว',
+  '10. ให้บริการรวดเร็วทันใจ ถูกต้องตามมาตรฐานแห่งวิชาชีพ',
+];
+
+const RATING_CONFIG = [
+  { val:5, emoji:'😍', label:'ดีเยี่ยม', cls:'sel-5' },
+  { val:4, emoji:'😊', label:'ดี',       cls:'sel-4' },
+  { val:3, emoji:'😐', label:'ปานกลาง', cls:'sel-3' },
+  { val:2, emoji:'😕', label:'พอใช้',   cls:'sel-2' },
+  { val:1, emoji:'😞', label:'ควรปรับปรุง', cls:'sel-1' },
+];
+
+const answers = { dept:'', type:'', gender:'', age:'', scores: Array(10).fill(0), comment:'' };
+let currentStep = 1;
+
+// ===== BUILD QUESTION CARDS =====
+function buildQGroup(groupEl, from, to) {
+  groupEl.innerHTML = QUESTIONS.slice(from, to).map((q, i) => {
+    const idx = from + i;
+    return `<div class="q-card" id="qcard${idx}">
+      <div class="q-title">${q} <span class="text-red-500">*</span></div>
+      <div class="rating-row">
+        ${RATING_CONFIG.map(r => `
+          <button class="r-btn" data-qi="${idx}" data-val="${r.val}" onclick="selectRating(${idx},${r.val},this)">
+            <span class="emoji">${r.emoji}</span>
+            <span>${r.label}</span>
+          </button>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  // restore selections
+  QUESTIONS.slice(from, to).forEach((_, i) => {
+    const idx = from + i;
+    if (answers.scores[idx]) {
+      const btn = groupEl.querySelector(`[data-qi="${idx}"][data-val="${answers.scores[idx]}"]`);
+      if (btn) applyRatingStyle(btn, answers.scores[idx]);
+    }
+  });
+}
+
+// ===== SINGLE SELECT OPTION =====
+function selectOpt(field, el, val) {
+  const group = el.parentElement;
+  group.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  answers[field] = val;
+  group.classList.remove('unanswered');
+}
+
+// ===== RATING SELECTION =====
+function selectRating(qi, val, btn) {
+  const row = btn.closest('.rating-row');
+  row.querySelectorAll('.r-btn').forEach(b => {
+    b.className = 'r-btn';
+  });
+  applyRatingStyle(btn, val);
+  answers.scores[qi] = val;
+  document.getElementById('qcard' + qi)?.classList.remove('unanswered');
+}
+function applyRatingStyle(btn, val) {
+  const cfg = RATING_CONFIG.find(r => r.val === val);
+  if (cfg) btn.classList.add('r-btn', cfg.cls);
+}
+
+// ===== STEP NAVIGATION =====
+function goStep(n) {
+  document.getElementById('step' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step' + n).classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 2) buildQGroup(document.getElementById('qGroup1'), 0, 5);
+  if (n === 3) buildQGroup(document.getElementById('qGroup2'), 5, 10);
+  if (n === 4) buildSummary();
+}
+
+function nextStep(from) {
+  if (from === 1) {
+    if (!validateStep1()) return;
+    goStep(2);
+  } else if (from === 2) {
+    if (!validateRatings(0, 5)) return;
+    goStep(3);
+  } else if (from === 3) {
+    if (!validateRatings(5, 10)) return;
+    goStep(4);
+  }
+}
+
+// ===== VALIDATION =====
+function validateStep1() {
+  let ok = true;
+  const dept = document.getElementById('dept');
+  if (!dept.value.trim()) { dept.classList.add('unanswered'); ok = false; }
+  else dept.classList.remove('unanswered');
+
+  const tg = document.getElementById('typeGroup');
+  if (!answers.type) { tg.classList.add('unanswered'); ok = false; }
+  else tg.classList.remove('unanswered');
+
+  const gg = document.getElementById('genderGroup');
+  if (!answers.gender) { gg.classList.add('unanswered'); ok = false; }
+  else gg.classList.remove('unanswered');
+
+  const age = document.getElementById('age');
+  if (!age.value || age.value < 1) { age.classList.add('unanswered'); ok = false; }
+  else age.classList.remove('unanswered');
+
+  if (!ok) { alert('กรุณากรอกข้อมูลให้ครบทุกช่อง'); }
+  else {
+    answers.dept   = document.getElementById('dept').value.trim();
+    answers.age    = document.getElementById('age').value;
+  }
+  return ok;
+}
+
+function validateRatings(from, to) {
+  let ok = true;
+  for (let i = from; i < to; i++) {
+    const card = document.getElementById('qcard' + i);
+    if (!answers.scores[i]) {
+      card?.classList.add('unanswered');
+      ok = false;
+    }
+  }
+  if (!ok) alert('กรุณาให้คะแนนทุกข้อ');
+  return ok;
+}
+
+// ===== SUMMARY =====
+function buildSummary() {
+  const avg = (answers.scores.reduce((s,v)=>s+v,0) / 10).toFixed(2);
+  const pct = (avg/5*100).toFixed(1);
+  document.getElementById('summaryContent').innerHTML = `
+    <div class="grid grid-cols-2 gap-1 text-xs">
+      <span class="text-slate-500">หน่วยงาน:</span><span class="font-medium">${answers.dept}</span>
+      <span class="text-slate-500">ผู้ประเมิน:</span><span class="font-medium">${answers.type}</span>
+      <span class="text-slate-500">เพศ:</span><span class="font-medium">${answers.gender}</span>
+      <span class="text-slate-500">อายุ:</span><span class="font-medium">${answers.age} ปี</span>
+      <span class="text-slate-500">คะแนนเฉลี่ย:</span><span class="font-bold text-purple-700">${avg}/5.00 (${pct}%)</span>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-1">
+      ${answers.scores.map((s,i)=>`<span class="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">ข้อ${i+1}: ${s}</span>`).join('')}
+    </div>`;
+}
+
+// ===== SUBMIT =====
+async function submitForm() {
+  answers.comment = document.getElementById('comment').value.trim();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังส่ง...';
+
+  const payload = {
+    dept:    answers.dept,
+    type:    answers.type,
+    gender:  answers.gender,
+    age:     answers.age,
+    scores:  answers.scores,
+    comment: answers.comment,
+    ts:      new Date().toISOString()
+  };
+
+  try {
+    if (WEBAPP_URL !== 'YOUR_WEBAPP_URL_HERE') {
+      await fetch(WEBAPP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+    // แสดงผลขอบคุณ
+    const avg = (answers.scores.reduce((s,v)=>s+v,0)/10).toFixed(2);
+    document.getElementById('myScore').textContent = avg;
+    goStep(5);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '📤 ส่งแบบประเมิน';
+    alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
+  }
+}
+
+// ===== PROGRESS =====
+function updateProgress() {
+  const pct = ((currentStep-1)/4*100).toFixed(0);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('stepPct').textContent = pct + '%';
+  const labels = ['stepLabel','dot1','dot2','dot3','dot4'];
+  document.getElementById('stepLabel').textContent = currentStep <= 4
+    ? `ขั้นตอนที่ ${currentStep} จาก 4`
+    : 'เสร็จสมบูรณ์ ✅';
+  ['dot1','dot2','dot3','dot4'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (i+1 < currentStep) el.className = 'text-xs font-semibold text-emerald-600';
+    else if (i+1 === currentStep) el.className = 'text-xs font-semibold text-purple-700';
+    else el.className = 'text-xs text-slate-400';
+  });
+}
+
+// ===== RESET =====
+function resetForm() {
+  answers.dept=''; answers.type=''; answers.gender=''; answers.age='';
+  answers.scores=Array(10).fill(0); answers.comment='';
+  document.getElementById('dept').value='';
+  document.getElementById('age').value='';
+  document.getElementById('comment').value='';
+  document.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+  goStep(1);
+}
+
+// init
+buildQGroup(document.getElementById('qGroup1'), 0, 5);
+updateProgress();
+</script>
+</body>
+</html>
