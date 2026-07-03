@@ -148,7 +148,8 @@
 
     <!-- ผังองค์กรสายบังคับบัญชา (compact) -->
     <div class="card p-4" id="orgChartCard"></div>
-    <input type="file" id="orgPhotoInput" accept="image/*" class="hidden" onchange="handleOrgPhotoUpload(event)">
+    <input type="file" id="orgPhotoInput"   accept="image/*" class="hidden" onchange="handleOrgPhotoUpload(event)">
+    <input type="file" id="nursePhotoInput" accept="image/*" class="hidden" onchange="handleNursePhotoUpload(event)">
 
     <!-- Position filter pills — horizontal scroll on mobile -->
     <div class="pills-row">
@@ -538,6 +539,31 @@ async function handleOrgPhotoUpload(e) {
     cache.orgChart = cache.orgChart.filter(r => r.id !== _uploadingOrgId);
     cache.orgChart.push({ id: _uploadingOrgId, photo_url: url });
     renderOrgChart();
+    sbUtils.toast('อัปโหลดรูปสำเร็จ ✅', 'success');
+  } catch(err) { sbUtils.toast(err.message, 'error'); }
+}
+
+// ===== NURSE PHOTO UPLOAD =====
+let _uploadingNurseId = null;
+function triggerNursePhoto(id) {
+  _uploadingNurseId = id;
+  document.getElementById('nursePhotoInput').value = '';
+  document.getElementById('nursePhotoInput').click();
+}
+async function handleNursePhotoUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file || !_uploadingNurseId) return;
+  sbUtils.toast('กำลังอัปโหลด...', 'info');
+  try {
+    const ext = file.name.split('.').pop();
+    const name = `nurse-${_uploadingNurseId}-${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from('equipment-photos').upload(name, file, { upsert: true });
+    if (error) throw error;
+    const url = sb.storage.from('equipment-photos').getPublicUrl(name).data.publicUrl;
+    await sbDB.update('nurses', _uploadingNurseId, { photo_url: url });
+    const nurse = cache.nurses.find(n => n.id === _uploadingNurseId);
+    if (nurse) nurse.photo_url = url;
+    renderNursesList();
     sbUtils.toast('อัปโหลดรูปสำเร็จ ✅', 'success');
   } catch(err) { sbUtils.toast(err.message, 'error'); }
 }
@@ -1038,8 +1064,16 @@ function renderNursesList() {
           <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             ${arr.map(n => {
               const init = (n.nickname || n.name || '?').charAt(0).toUpperCase();
+              const canEdit = !!currentUser;
               return `<div class="nurse-card">
-                <div class="nurse-avatar" style="background:${s.av}">${init}</div>
+                <div class="relative flex-shrink-0">
+                  ${n.photo_url
+                    ? `<img src="${n.photo_url}" class="nurse-avatar object-cover" style="background:${s.av}">`
+                    : `<div class="nurse-avatar" style="background:${s.av}">${init}</div>`
+                  }
+                  ${canEdit ? `<button onclick="triggerNursePhoto(${n.id})" title="อัปโหลดรูป"
+                    class="absolute -bottom-1 -right-1 w-5 h-5 bg-white border border-slate-200 rounded-full flex items-center justify-center text-xs hover:bg-purple-100 shadow">📷</button>` : ''}
+                </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold text-slate-800 truncate">${n.name || '-'}</div>
                   ${n.nickname ? `<div class="text-xs text-slate-400">"${n.nickname}"</div>` : `<div class="text-xs text-slate-400">#${n.id}</div>`}
