@@ -39,6 +39,7 @@
   .nurse-card { display:flex; align-items:center; gap:12px; padding:11px 14px; background:#fff; border:1.5px solid #f3e8ff; border-radius:12px; transition:all .15s; }
   .nurse-card:hover { border-color:#c084fc; background:#faf5ff; box-shadow:0 4px 16px rgba(139,92,246,.1); transform:translateY(-1px); }
   .nurse-avatar { width:42px; height:42px; border-radius:999px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,.2); }
+  @media (hover: none) { .sm-touch-show { opacity:1 !important; } }
   .pills-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
   .pills-row::-webkit-scrollbar { display:none; }
 </style>
@@ -516,14 +517,14 @@ function renderOrgChart() {
               : `<div class="w-14 h-14 rounded-full bg-${p.color}-100 flex items-center justify-center text-${p.color}-600 font-bold text-xs shadow" style="border:3px solid ${p.border}">${p.initials}</div>`
             }
             ${canEdit ? `<button onclick="triggerOrgPhoto('${p.id}')" title="อัปโหลดรูป"
-              class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer">📷</button>` : ''}
+              class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 sm-touch-show transition-opacity cursor-pointer">📷</button>` : ''}
           </div>
           <div class="relative group/label ${p.bg} text-white rounded-lg px-4 py-1.5 text-center shadow text-xs min-w-[200px]">
             <div class="font-semibold">${name}</div>
             <div class="opacity-85 mt-0.5">${pos}</div>
             ${canEdit ? `<button onclick="openOrgEdit('${p.id}','${name.replace(/'/g,"\\'")}','${pos.replace(/'/g,"\\'")}','${p.bg}')"
               title="แก้ไขชื่อ/ตำแหน่ง"
-              class="absolute inset-0 rounded-lg flex items-center justify-center bg-black/20 text-white text-base opacity-0 group-hover/label:opacity-100 transition-opacity cursor-pointer">✏️</button>` : ''}
+              class="absolute inset-0 rounded-lg flex items-center justify-center bg-black/20 text-white text-base opacity-0 group-hover/label:opacity-100 sm-touch-show transition-opacity cursor-pointer">✏️</button>` : ''}
           </div>
         </div>`;
       }).join('')}
@@ -1100,21 +1101,20 @@ function renderNursesList() {
             ${arr.map(n => {
               const init = (n.nickname || n.name || '?').charAt(0).toUpperCase();
               const canEdit = !!currentUser;
-              return `<div class="nurse-card">
-                <div class="relative flex-shrink-0 group/photo">
+              const isTouch = `'ontouchstart' in window`;
+              return `<div class="nurse-card group/card ${canEdit ? 'cursor-pointer' : ''}" ${canEdit ? `onclick="openNurseForm(${n.id})"` : ''}>
+                <div class="relative flex-shrink-0 group/photo" onclick="${canEdit ? `event.stopPropagation();triggerNursePhoto(${n.id})` : ''}">
                   ${n.photo_url
                     ? `<img src="${n.photo_url}" class="nurse-avatar object-cover" style="background:${s.av}">`
                     : `<div class="nurse-avatar" style="background:${s.av}">${init}</div>`
                   }
-                  ${canEdit ? `<button onclick="triggerNursePhoto(${n.id})" title="อัปโหลดรูป"
-                    class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer">📷</button>` : ''}
+                  ${canEdit ? `<div class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 sm-touch-show transition-opacity pointer-events-none">📷</div>` : ''}
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold text-slate-800 truncate">${n.name || '-'}</div>
-                  ${n.nickname ? `<div class="text-xs text-slate-400">"${n.nickname}"</div>` : `<div class="text-xs text-slate-400">#${n.id}</div>`}
+                  ${n.nickname ? `<div class="text-xs text-purple-400 font-medium">"${n.nickname}"</div>` : ''}
                 </div>
-                <button class="flex-shrink-0 text-xs px-2.5 py-1 rounded-lg font-medium transition"
-                  style="${s.badge}" onclick="openNurseForm(${n.id})">แก้ไข</button>
+                ${canEdit ? `<div class="flex-shrink-0 opacity-0 group-hover/card:opacity-100 sm-touch-show transition-opacity text-xs text-slate-400">✏️</div>` : ''}
               </div>`;
             }).join('')}
           </div>
