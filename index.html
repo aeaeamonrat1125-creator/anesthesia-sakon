@@ -35,6 +35,12 @@
   .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .stat-card { background:linear-gradient(135deg,#7c3aed,#9333ea); border-radius:16px; color:#fff; }
   .about-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; }
+  @keyframes fadeSlideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  section[data-page]:not(.hidden) { animation: fadeSlideIn 0.22s ease; }
+  .card { transition: box-shadow 0.15s, transform 0.15s; }
+  .act-card img { transition: transform 0.3s ease; }
+  .act-card:hover img { transform: scale(1.04); }
+  .act-card { overflow:hidden; }
 </style>
 </head>
 <body class="text-slate-800">
@@ -103,6 +109,7 @@
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi">📊 KPI 15 ตัว</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="reports">📑 รายงาน & Export</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="news">📣 ประกาศ</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="activities">🎯 กิจกรรมหน่วยงาน</button>
       </div>
     </div>
   </div>
@@ -954,6 +961,18 @@
 
   <section data-page="news" class="hidden space-y-3" id="newsList"></section>
 
+  <!-- กิจกรรมหน่วยงาน -->
+  <section data-page="activities" class="hidden space-y-4">
+    <div class="card p-4 flex items-center justify-between">
+      <div>
+        <div class="font-semibold text-slate-700">🎯 กิจกรรมหน่วยงาน</div>
+        <div class="text-xs text-slate-500 mt-0.5">กิจกรรมและผลงานของหน่วยงานวิสัญญีพยาบาล</div>
+      </div>
+      <a href="staff.html#activities" class="text-sm bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg">+ เพิ่มกิจกรรม</a>
+    </div>
+    <div id="actGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </section>
+
 </main>
 
 <div id="kpiModal" class="fixed inset-0 bg-black/50 z-40 hidden items-center justify-center p-3">
@@ -1000,7 +1019,7 @@
 <script src="supabase-client.js"></script>
 <script>
 const state = { kpis: [], history: [], ops: [], announcements: [], currentFY: 2568,
-  serviceLogs: [], inspections: [], equipment: [], nurses: [] };
+  serviceLogs: [], inspections: [], equipment: [], nurses: [], activities: [] };
 
 function toggleIdxMenu() {
   document.getElementById('idx-dropdown').classList.toggle('hidden');
@@ -1027,6 +1046,7 @@ document.querySelectorAll('.tab-btn').forEach(b => {
     if (tab === 'prepost') renderPrePost();
     if (tab === 'inspect') renderInspect();
     if (tab === 'equipment') renderEquipment();
+    if (tab === 'activities') renderActivities();
   });
 });
 
@@ -1039,7 +1059,7 @@ try { if (localStorage.getItem('anes_fs') === '1') toggleFullscreen(true); } cat
 
 async function loadAll() {
   try {
-    const [kpis, hist, ops, ann, cfg, logs, inspections, equipment, nurses] = await Promise.all([
+    const [kpis, hist, ops, ann, cfg, logs, inspections, equipment, nurses, acts] = await Promise.all([
       sbDB.list('kpis', { order:'sort_order', asc:true }),
       sbDB.list('kpi_history'),
       sbDB.list('operation_stats', { order:'fiscal_year', asc:true }),
@@ -1048,11 +1068,12 @@ async function loadAll() {
       sbDB.list('service_logs', { order:'date', asc:false, limit:100 }),
       sbDB.list('daily_inspections', { order:'created_at', asc:false, limit:50 }),
       sbDB.list('equipment', { order:'name', asc:true }),
-      sbDB.list('nurses', { eq:{active:true} }).catch(() => [])
+      sbDB.list('nurses', { eq:{active:true} }).catch(() => []),
+      sbDB.list('activities', { order:'date', asc:false }).catch(() => [])
     ]);
     state.kpis = kpis; state.history = hist; state.ops = ops; state.announcements = ann;
     state.serviceLogs = logs; state.inspections = inspections; state.equipment = equipment;
-    state.nurses = nurses;
+    state.nurses = nurses; state.activities = acts;
     // อัปเดตสถิติบุคลากร — แยกผู้ช่วยพยาบาล / ผู้ช่วยเหลือคนไข้
     const nurseCount     = nurses.filter(n => n.role === 'พยาบาลวิสัญญี').length;
     const asstNurseCount = nurses.filter(n => n.role === 'ผู้ช่วยพยาบาล').length;
@@ -1360,6 +1381,33 @@ function readUrgent() {
 function dismissUrgent() {
   document.getElementById('urgentBanner').classList.add('hidden');
   // ไม่บันทึก read — จะกลับมาขึ้นวันรุ่งขึ้น
+}
+
+function renderActivities() {
+  const grid = document.getElementById('actGrid');
+  if (!grid) return;
+  if (!state.activities.length) {
+    grid.innerHTML = '<div class="col-span-3 card p-12 text-center text-slate-400"><div class="text-5xl mb-3">🎯</div><div>ยังไม่มีกิจกรรม</div></div>';
+    return;
+  }
+  grid.innerHTML = state.activities.map(a => `
+    <div class="card act-card cursor-default group">
+      <div class="overflow-hidden h-48 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+        ${a.image_url
+          ? `<img src="${a.image_url}" class="w-full h-full object-cover">`
+          : `<span class="text-5xl">🎯</span>`}
+      </div>
+      <div class="p-4">
+        <div class="font-semibold text-slate-800 text-sm">${a.name||'-'}</div>
+        <div class="text-xs text-slate-500 mt-1 flex items-center gap-2">
+          <span>📅 ${sbUtils.fmtDate(a.date)}</span>
+          ${a.location ? `<span>📍 ${a.location}</span>` : ''}
+        </div>
+        ${a.notes ? `<div class="text-xs text-slate-600 mt-2 line-clamp-2">${a.notes}</div>` : ''}
+        ${a.link ? `<a href="${a.link}" target="_blank" class="text-purple-600 text-xs mt-1 inline-block hover:underline">🔗 ดูเพิ่มเติม</a>` : ''}
+      </div>
+    </div>
+  `).join('');
 }
 
 function renderNews() {

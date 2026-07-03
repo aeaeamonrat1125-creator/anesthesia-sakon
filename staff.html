@@ -41,6 +41,13 @@
   .nurse-avatar { width:42px; height:42px; border-radius:999px; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,.2); }
   .pills-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
   .pills-row::-webkit-scrollbar { display:none; }
+  @keyframes fadeSlideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  section[data-page]:not(.hidden) { animation: fadeSlideIn 0.2s ease; }
+  .card { transition: box-shadow 0.15s, transform 0.15s; }
+  #eqBody { transition: opacity 0.15s; }
+  .act-img-wrap { overflow:hidden; border-radius:12px 12px 0 0; }
+  .act-img-wrap img { transition: transform 0.3s ease; width:100%; height:160px; object-fit:cover; }
+  .act-img-wrap:hover img { transform: scale(1.04); }
 </style>
 </head>
 <body class="text-slate-800">
@@ -262,10 +269,13 @@
   <!-- ACTIVITIES -->
   <section data-page="activities" class="space-y-4 hidden">
     <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div class="font-semibold">🎯 คิวกิจกรรม</div>
+      <div>
+        <div class="font-semibold">🎯 กิจกรรมหน่วยงาน</div>
+        <div class="text-xs text-slate-500 mt-0.5">เพิ่มรูปและหัวข้อกิจกรรม แสดงในหน้าหลัก</div>
+      </div>
       <button class="btn btn-primary" onclick="openActivityForm()">+ เพิ่มกิจกรรม</button>
     </div>
-    <div class="space-y-2" id="activityList"></div>
+    <div class="grid sm:grid-cols-2 gap-4" id="activityList"></div>
   </section>
 
   <!-- REFERS -->
@@ -712,7 +722,10 @@ function renderEquipment() {
   );
 
   document.getElementById('eq-count').textContent = filtered.length;
-  document.getElementById('eqBody').innerHTML = filtered.map(e => {
+  const tbody = document.getElementById('eqBody');
+  tbody.style.opacity = '0';
+  setTimeout(() => { tbody.style.opacity = '1'; }, 80);
+  tbody.innerHTML = filtered.map(e => {
     const cls = e.status === 'ใช้งานได้' ? 'status-ok' : e.status === 'รอซ่อม' ? 'status-bad' : 'status-warn';
     return `<tr class="border-b last:border-0">
       <td class="py-2 font-medium">${e.name||'-'}</td>
@@ -893,13 +906,17 @@ async function delMeeting(id) { if (confirm('ลบ?')) { await sbDB.remove('mee
 // ===== ACTIVITIES =====
 function renderActivities() {
   document.getElementById('activityList').innerHTML = cache.activities.map(a => `
-    <div class="card p-4 flex justify-between items-start gap-3">
-      <div class="flex-1">
-        <div class="font-semibold">${a.name||'-'}</div>
-        <div class="text-xs text-slate-500 mt-1">${sbUtils.fmtDate(a.date)} · ${a.location||''} · ${a.organizer||''}</div>
-        ${a.link ? `<a href="${a.link}" target="_blank" class="text-blue-600 text-xs">🔗 ลิงก์</a>` : ''}
+    <div class="card overflow-hidden">
+      ${a.image_url ? `<div class="act-img-wrap"><img src="${a.image_url}" alt="${a.name||''}"></div>` : ''}
+      <div class="p-4 flex justify-between items-start gap-3">
+        <div class="flex-1">
+          <div class="font-semibold">${a.name||'-'}</div>
+          <div class="text-xs text-slate-500 mt-1">${sbUtils.fmtDate(a.date)}${a.location ? ' · '+a.location : ''}${a.organizer ? ' · '+a.organizer : ''}</div>
+          ${a.notes ? `<div class="text-xs text-slate-600 mt-1 line-clamp-2">${a.notes}</div>` : ''}
+          ${a.link ? `<a href="${a.link}" target="_blank" class="text-blue-600 text-xs">🔗 ลิงก์</a>` : ''}
+        </div>
+        <button class="text-blue-600 text-sm flex-shrink-0" onclick="openActivityForm('${a.id}')">แก้</button>
       </div>
-      <button class="text-blue-600 text-sm" onclick="openActivityForm('${a.id}')">แก้</button>
     </div>
   `).join('') || '<div class="text-center text-slate-500 py-6">ยังไม่มีกิจกรรม</div>';
 }
@@ -914,13 +931,27 @@ function openActivityForm(id) {
       <input id="f-loc" class="input" placeholder="สถานที่" value="${a.location||''}">
       <input id="f-org" class="input" placeholder="ผู้จัด" value="${a.organizer||''}">
       <input id="f-link" class="input" placeholder="ลิงก์" value="${a.link||''}">
-      <textarea id="f-notes" class="input" rows="2" placeholder="หมายเหตุ">${a.notes||''}</textarea>
+      <textarea id="f-notes" class="input" rows="2" placeholder="รายละเอียด">${a.notes||''}</textarea>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">📸 รูปกิจกรรม</label>
+        <input type="file" id="f-act-image" accept="image/*" class="input">
+        ${a.image_url ? `<img src="${a.image_url}" class="w-full h-32 object-cover rounded-lg mt-1">` : ''}
+      </div>
     </div>
     ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="delActivity('${id}')">🗑 ลบ</button>` : ''}
   `;
   document.getElementById('modalSaveBtn').onclick = async () => {
+    let image_url = a.image_url || null;
+    const file = document.getElementById('f-act-image')?.files?.[0];
+    if (file) {
+      try {
+        const name = `act-${Date.now()}-${file.name.replace(/[^\w.-]/g,'_')}`;
+        const { error } = await sb.storage.from('equipment-photos').upload(name, file, { upsert: false });
+        if (!error) image_url = sb.storage.from('equipment-photos').getPublicUrl(name).data.publicUrl;
+      } catch(e) { console.warn(e); }
+    }
     const row = { name: val('f-name'), date: val('f-date')||null, location: val('f-loc'),
-      organizer: val('f-org'), link: val('f-link'), notes: val('f-notes') };
+      organizer: val('f-org'), link: val('f-link'), notes: val('f-notes'), image_url };
     if (id) await sbDB.update('activities', id, row); else await sbDB.insert('activities', row);
     closeModal(); loadAll();
   };
