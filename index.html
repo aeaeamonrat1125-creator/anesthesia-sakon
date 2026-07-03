@@ -65,19 +65,17 @@
 </div>
 
 <header class="grad-hero text-white">
-  <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
     <div>
-      <div class="text-lg sm:text-xl font-bold">หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</div>
-      <div class="text-white/80 text-xs sm:text-sm flex items-center gap-2">
+      <div class="text-base sm:text-xl font-bold">หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</div>
+      <div class="text-white/80 text-xs flex items-center gap-2 mt-0.5">
         <span id="live-dot" class="w-2 h-2 rounded-full bg-emerald-400 pulse"></span>
         <span id="live-text">เชื่อมต่อแบบ Real-time</span>
         <span class="opacity-60">•</span>
         <span id="header-staff-count">-- บุคลากร</span>
       </div>
     </div>
-    <div class="flex gap-2 items-center flex-wrap">
-      <a href="service-log.html" class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">📋 ยอดบริการ</a>
-      <a href="inspection.html"  class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center gap-1">🔧 ตรวจเครื่อง</a>
+    <div class="flex gap-2 items-center">
       <button onclick="toggleFullscreen(true)" class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center">⛶</button>
     </div>
   </div>
@@ -85,17 +83,12 @@
 
 <nav class="main-nav bg-slate-900/95 text-white sticky top-0 z-30 shadow">
   <div class="max-w-7xl mx-auto px-2 py-2 flex items-center gap-1">
-    <!-- 3 main tabs — scrollable on narrow screens -->
     <div class="flex items-center gap-1 flex-1 overflow-x-auto" style="-webkit-overflow-scrolling:touch;scrollbar-width:none">
-      <button class="tab-btn active whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium flex-shrink-0" data-tab="about">ℹ️ เกี่ยวกับหน่วยงาน</button>
-      <button class="tab-btn whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0" data-tab="results">📈 ผลลัพธ์การทำงาน</button>
+      <button class="tab-btn active whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium flex-shrink-0" data-tab="about">ℹ️ เกี่ยวกับ</button>
+      <button class="tab-btn whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0" data-tab="results">📈 ผลลัพธ์</button>
       <button class="tab-btn whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0" data-tab="satisfaction">😊 ความพึงพอใจ</button>
-      <div class="w-px h-5 bg-white/20 flex-shrink-0 self-center"></div>
-      <a href="staff.html" class="whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0 text-white/80 hover:text-white flex items-center gap-1">👥 บุคลากร</a>
       <a href="signup.html" class="whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0 text-white/80 hover:text-white flex items-center gap-1">✨ สมัครสมาชิก</a>
-      <a href="sheets.html" class="whitespace-nowrap px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 flex-shrink-0 text-white/80 hover:text-white flex items-center gap-1">📊 G-Sheets</a>
     </div>
-    <!-- hamburger — pinned right -->
     <div class="relative flex-shrink-0 ml-1">
       <button id="idx-menu-btn" onclick="toggleIdxMenu()"
         class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/20 text-sm font-medium">
@@ -110,10 +103,34 @@
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="reports">📑 รายงาน & Export</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="news">📣 ประกาศ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="activities">🎯 กิจกรรมหน่วยงาน</button>
+        <div class="border-t border-white/10 my-1"></div>
+        <a href="sheets.html" class="w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none flex items-center gap-2">📊 G-Sheets</a>
       </div>
     </div>
   </div>
 </nav>
+
+<!-- Quick Access — ปุ่มลัดขนาดใหญ่ เหมาะมือถือและผู้สูงอายุ -->
+<div class="bg-white border-b shadow-sm">
+  <div class="max-w-7xl mx-auto px-3 py-3 grid grid-cols-4 gap-2">
+    <a href="service-log.html" class="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl hover:bg-purple-50 active:bg-purple-100 transition border border-slate-100 hover:border-purple-300">
+      <span class="text-3xl sm:text-4xl">📋</span>
+      <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">ลงยอด<br>บริการ</span>
+    </a>
+    <a href="staff.html" class="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl hover:bg-purple-50 active:bg-purple-100 transition border border-slate-100 hover:border-purple-300">
+      <span class="text-3xl sm:text-4xl">👥</span>
+      <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">บุคลากร</span>
+    </a>
+    <a href="inspection.html" class="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl hover:bg-purple-50 active:bg-purple-100 transition border border-slate-100 hover:border-purple-300">
+      <span class="text-3xl sm:text-4xl">🔧</span>
+      <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">ตรวจ<br>เครื่อง</span>
+    </a>
+    <a href="sheets.html" class="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl hover:bg-purple-50 active:bg-purple-100 transition border border-slate-100 hover:border-purple-300">
+      <span class="text-3xl sm:text-4xl">📊</span>
+      <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">G-Sheets</span>
+    </a>
+  </div>
+</div>
 
 <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-6">
 
