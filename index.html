@@ -979,9 +979,12 @@
 
   <!-- QR Code -->
   <section data-page="qrcode" class="hidden space-y-4">
-    <div class="card p-4">
-      <div class="font-semibold text-slate-700">📱 QR Code แบบประเมินความพึงพอใจ</div>
-      <div class="text-xs text-slate-500 mt-1">สแกนเพื่อเปิดแบบประเมิน หรือกดดาวน์โหลดเพื่อพิมพ์ติดป้าย</div>
+    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <div class="font-semibold text-slate-700">📱 QR Code แบบประเมินความพึงพอใจ</div>
+        <div class="text-xs text-slate-500 mt-1">สแกนเพื่อเปิดแบบประเมิน หรือกดดาวน์โหลดเพื่อพิมพ์ติดป้าย</div>
+      </div>
+      <button id="qrAddBtn" onclick="openQRForm()" class="hidden bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-lg font-semibold">+ เพิ่ม QR</button>
     </div>
     <div class="grid sm:grid-cols-2 gap-4" id="qrGrid"></div>
   </section>
@@ -1410,62 +1413,94 @@ function dismissUrgent() {
 }
 
 // ===== QR CODES =====
-const QR_FORMS = [
-  {
-    id: 'qr-staff',
-    title: '📋 แบบประเมินหน่วยงาน',
-    subtitle: 'สำหรับบุคลากรในโรงพยาบาล',
-    url: 'https://script.google.com/macros/s/AKfycbzRUXZEm0Fi07JTMePUYG9N8nszZiqSl7nDciQZqblzhoXuzis-5WDqy0MEULo4BX0zPA/exec',
-    color: '#6d28d9'
-  },
-  {
-    id: 'qr-patient',
-    title: '🏥 แบบประเมินผู้ป่วย',
-    subtitle: 'สำหรับผู้ป่วยที่รับบริการวิสัญญี',
-    url: 'https://script.google.com/macros/s/AKfycbxk0YK0xKAbKkzoxSoF2KfeTi9D6-AdlZ79cL_CchMI1n1LG6x9nDLUaoK40yDGAiCwkQ/exec',
-    color: '#059669'
-  }
-];
+let _qrLinks = [];
 let _qrRendered = false;
-function renderQRCodes() {
-  if (_qrRendered) return;
-  _qrRendered = true;
+
+async function renderQRCodes() {
+  const canEdit = await checkAuth();
   const grid = document.getElementById('qrGrid');
-  grid.innerHTML = QR_FORMS.map(f => `
-    <div class="card p-5 text-center">
+
+  // โหลดจาก Supabase
+  try {
+    const { data } = await sb.from('qr_links').select('*').order('created_at', { ascending: true });
+    _qrLinks = data || [];
+  } catch(e) { _qrLinks = []; }
+
+  const addBtn = document.getElementById('qrAddBtn');
+  if (addBtn) addBtn.classList.toggle('hidden', !canEdit);
+
+  grid.innerHTML = _qrLinks.map(f => `
+    <div class="card p-5 text-center relative">
+      ${canEdit ? `<button onclick="deleteQR(${f.id})" title="ลบ"
+        class="absolute top-3 right-3 w-7 h-7 rounded-full bg-rose-100 text-rose-500 hover:bg-rose-200 text-sm flex items-center justify-center">×</button>` : ''}
       <div class="font-bold text-slate-800 text-base mb-0.5">${f.title}</div>
-      <div class="text-xs text-slate-500 mb-4">${f.subtitle}</div>
-      <div id="${f.id}" class="flex justify-center mb-4"></div>
+      <div class="text-xs text-slate-500 mb-4">${f.subtitle||''}</div>
+      <div id="qrdiv-${f.id}" class="flex justify-center mb-4"></div>
       <div class="text-xs text-slate-400 font-mono break-all mb-4 bg-slate-50 rounded-lg p-2">${f.url}</div>
       <div class="flex gap-2 justify-center flex-wrap">
-        <button onclick="downloadQR('${f.id}','${f.title}')"
+        <button onclick="downloadQR('qrdiv-${f.id}','${f.title.replace(/'/g,"\\'")}${f.id}')"
           class="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-          style="background:${f.color}">⬇️ ดาวน์โหลด PNG</button>
+          style="background:${f.color||'#6d28d9'}">⬇️ ดาวน์โหลด PNG</button>
         <a href="${f.url}" target="_blank"
           class="px-4 py-2 rounded-lg text-sm font-semibold border-2 text-slate-600 hover:bg-slate-50"
-          style="border-color:${f.color}">🔗 เปิดลิ้งก์</a>
+          style="border-color:${f.color||'#6d28d9'}">🔗 เปิดลิ้งก์</a>
       </div>
     </div>
-  `).join('');
-  QR_FORMS.forEach(f => {
-    if (f.url === 'PATIENT_FORM_URL') {
-      document.getElementById(f.id).innerHTML = '<div class="text-xs text-slate-400 py-8">ยังไม่ได้ตั้งค่า URL<br>กรุณาอัปเดตในโค้ด</div>';
-      return;
-    }
-    new QRCode(document.getElementById(f.id), {
+  `).join('') || '<div class="col-span-2 text-center text-slate-400 py-10">ยังไม่มี QR Code — กด + เพิ่ม</div>';
+
+  // สร้าง QR
+  _qrLinks.forEach(f => {
+    const el = document.getElementById('qrdiv-'+f.id);
+    if (!el) return;
+    new QRCode(el, {
       text: f.url, width: 200, height: 200,
-      colorDark: f.color, colorLight: '#ffffff',
+      colorDark: f.color||'#6d28d9', colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
   });
+  _qrRendered = true;
 }
+
 function downloadQR(id, title) {
   const canvas = document.querySelector('#'+id+' canvas');
   if (!canvas) return;
   const link = document.createElement('a');
-  link.download = 'QR-'+title.replace(/[^฀-๿a-z0-9]/gi,'_')+'.png';
+  link.download = 'QR-'+title.replace(/\s+/g,'_')+'.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
+}
+
+function openQRForm() {
+  document.getElementById('qrModal').classList.remove('hidden');
+  document.getElementById('qrModal').classList.add('flex');
+}
+function closeQRForm() {
+  document.getElementById('qrModal').classList.add('hidden');
+  document.getElementById('qrModal').classList.remove('flex');
+  document.getElementById('qr-title').value='';
+  document.getElementById('qr-subtitle').value='';
+  document.getElementById('qr-url').value='';
+  document.getElementById('qr-color').value='#6d28d9';
+}
+async function saveQR() {
+  const title = document.getElementById('qr-title').value.trim();
+  const url   = document.getElementById('qr-url').value.trim();
+  if (!title||!url) { alert('กรุณากรอกชื่อและ URL'); return; }
+  try {
+    await sb.from('qr_links').insert({
+      title, subtitle: document.getElementById('qr-subtitle').value.trim(),
+      url, color: document.getElementById('qr-color').value
+    });
+    closeQRForm();
+    _qrRendered = false;
+    renderQRCodes();
+  } catch(e) { alert(e.message); }
+}
+async function deleteQR(id) {
+  if (!confirm('ลบ QR นี้?')) return;
+  await sb.from('qr_links').delete().eq('id', id);
+  _qrRendered = false;
+  renderQRCodes();
 }
 
 function renderActivities() {
@@ -1632,6 +1667,7 @@ async function applyAuthUI() {
   const ok = await checkAuth();
   document.getElementById('kpi-summary-box')?.classList.toggle('hidden', !ok);
   document.getElementById('kpi-edit-btn')?.classList.toggle('hidden', !ok);
+  document.getElementById('qrAddBtn')?.classList.toggle('hidden', !ok);
 }
 function openKpiEditLink() {
   window.location.href = 'staff.html#kpi-edit';
@@ -2854,6 +2890,47 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
   <img id="lb-img" src="" alt="" class="max-w-full object-contain rounded-xl shadow-2xl" style="max-height:85vh" onclick="event.stopPropagation()">
   <div id="lb-caption" class="text-white/80 text-sm text-center"></div>
   <button onclick="closeLightbox()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white text-2xl flex items-center justify-center transition">×</button>
+</div>
+
+<!-- Modal: เพิ่ม QR Code -->
+<div id="qrModal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="font-bold text-lg">📱 เพิ่ม QR Code</div>
+      <button onclick="closeQRForm()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">ชื่อแบบประเมิน <span class="text-red-500">*</span></label>
+        <input id="qr-title" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="เช่น แบบประเมินความพึงพอใจ">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">คำอธิบาย</label>
+        <input id="qr-subtitle" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="เช่น สำหรับผู้ป่วย OPD">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">URL ลิ้งก์ <span class="text-red-500">*</span></label>
+        <input id="qr-url" class="w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="https://...">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">สี QR</label>
+        <div class="flex gap-2 items-center">
+          <input id="qr-color" type="color" value="#6d28d9" class="w-10 h-10 rounded cursor-pointer border">
+          <div class="flex gap-2">
+            <button onclick="document.getElementById('qr-color').value='#6d28d9'" class="w-6 h-6 rounded-full bg-purple-700 border-2 border-white shadow"></button>
+            <button onclick="document.getElementById('qr-color').value='#059669'" class="w-6 h-6 rounded-full bg-emerald-600 border-2 border-white shadow"></button>
+            <button onclick="document.getElementById('qr-color').value='#2563eb'" class="w-6 h-6 rounded-full bg-blue-600 border-2 border-white shadow"></button>
+            <button onclick="document.getElementById('qr-color').value='#dc2626'" class="w-6 h-6 rounded-full bg-red-600 border-2 border-white shadow"></button>
+            <button onclick="document.getElementById('qr-color').value='#0f172a'" class="w-6 h-6 rounded-full bg-slate-900 border-2 border-white shadow"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button onclick="closeQRForm()" class="flex-1 px-4 py-2 bg-slate-100 rounded-lg text-sm">ยกเลิก</button>
+      <button onclick="saveQR()" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold">💾 บันทึก</button>
+    </div>
+  </div>
 </div>
 </body>
 </html>
