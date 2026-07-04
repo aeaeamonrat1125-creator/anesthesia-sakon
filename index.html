@@ -105,7 +105,7 @@
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="news">📣 ประกาศ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="activities">🎯 กิจกรรมหน่วยงาน</button>
         <div class="border-t border-white/10 my-1"></div>
-        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="qrcode">📱 QR Code แบบประเมิน</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="qrcode">📱 QR Code</button>
         <div class="border-t border-white/10 my-1"></div>
         <a href="sheets.html" class="w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none flex items-center gap-2">📊 G-Sheets</a>
       </div>
@@ -981,8 +981,8 @@
   <section data-page="qrcode" class="hidden space-y-4">
     <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
       <div>
-        <div class="font-semibold text-slate-700">📱 QR Code แบบประเมินความพึงพอใจ</div>
-        <div class="text-xs text-slate-500 mt-1">สแกนเพื่อเปิดแบบประเมิน หรือกดดาวน์โหลดเพื่อพิมพ์ติดป้าย</div>
+        <div class="font-semibold text-slate-700">📱 QR Code</div>
+        <div class="text-xs text-slate-500 mt-1">สแกนเพื่อเปิดลิ้งก์ หรือกดดาวน์โหลดเพื่อพิมพ์ติดป้าย</div>
       </div>
       <button id="qrAddBtn" onclick="openQRForm()" class="hidden bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-lg font-semibold">+ เพิ่ม QR</button>
     </div>
@@ -2896,7 +2896,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
 <div id="qrModal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
     <div class="flex items-center justify-between mb-4">
-      <div class="font-bold text-lg">📱 เพิ่ม QR Code</div>
+      <div class="font-bold text-lg">📱 เพิ่ม QR Code ใหม่</div>
       <button onclick="closeQRForm()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
     </div>
     <div class="space-y-3">
