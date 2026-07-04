@@ -59,7 +59,12 @@
   }
   .unanswered { border-color:#ef4444 !important; animation:shake .3s ease; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-  select.input-field { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:40px; }
+  .ac-wrap { position:relative; }
+  .ac-list { position:absolute; top:100%; left:0; right:0; background:#fff; border:2px solid #7c3aed; border-radius:12px; max-height:220px; overflow-y:auto; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.12); display:none; }
+  .ac-item { padding:12px 16px; font-size:15px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+  .ac-item:last-child { border-bottom:none; }
+  .ac-item:hover,.ac-item.active { background:#ede9fe; color:#6d28d9; }
+  .ac-item .ac-short { font-size:12px; color:#94a3b8; margin-left:6px; }
 </style>
 </head>
 <body class="min-h-screen">
@@ -93,7 +98,10 @@
 <div class="step active" id="step1">
   <div class="q-card">
     <div class="q-title">📍 หน่วยงานผู้ประเมิน <span class="text-red-500">*</span></div>
-    <input id="dept" class="input-field" type="text" placeholder="กรอกชื่อหน่วยงาน เช่น OR1, RR2 ...">
+    <div class="ac-wrap">
+      <input id="dept" class="input-field" type="text" placeholder="พิมพ์ชื่อหรือชื่อย่อหน่วยงาน..." autocomplete="off" oninput="acFilter()" onfocus="acFilter()" onblur="setTimeout(acHide,200)">
+      <div class="ac-list" id="acList"></div>
+    </div>
   </div>
 
   <div class="q-card">
@@ -195,6 +203,68 @@
 </div><!-- /max-w -->
 
 <script>
+// ===== WARD LIST =====
+const WARDS = [
+  {n:'อายุรกรรมชาย1',s:'อช1'},{n:'อายุรกรรมชาย2',s:'อช2'},
+  {n:'อายุรกรรมหญิง1',s:'อญ1'},{n:'อายุรกรรมหญิง2',s:'อญ2'},
+  {n:'ศัลยกรรมหญิง1',s:'ศญ1'},{n:'ศัลยกรรมชาย1',s:'ศช1'},{n:'ศัลยกรรมชาย2',s:'ศช2'},
+  {n:'ศัลยกรรมระบบประสาท',s:'ศป'},{n:'สูติกรรมห้องคลอด',s:'LR'},
+  {n:'สูติกรรมหลังคลอด',s:'PP'},{n:'นรีเวชกรรม',s:'นรีเวชกรรม'},
+  {n:'กุมารเวชกรรม1',s:'กุมาร1'},{n:'กุมารเวชกรรม2',s:'กุมาร2'},{n:'กุมารเวชกรรม3',s:'กุมาร3'},
+  {n:'ICU เด็ก',s:'PICU'},{n:'ICU ทารกแรกเกิด 1',s:'NICU1'},{n:'ICU ทารกแรกเกิด 2',s:'NICU2'},
+  {n:'หู คอ จมูก',s:'ENT'},{n:'ตา',s:'ตา'},
+  {n:'ศัลยกรรมกระดูกหญิง',s:'ศกญ'},{n:'ศัลยกรรมกระดูกชาย1',s:'ศกช1'},{n:'ศัลยกรรมกระดูกชาย2',s:'ศกช2'},
+  {n:'ICU ศัลยกรรม',s:'SICU'},{n:'ICU อายุรกรรม',s:'MICU'},
+  {n:'ICU ศัลยกรรมระบบประสาท',s:'NSICU'},
+  {n:'ร่มฟ้า1',s:'ร่มฟ้า1'},{n:'ร่มฟ้า2',s:'ร่มฟ้า2'},{n:'ร่มฟ้า3',s:'ร่มฟ้า3'},
+  {n:'รังสีชั้น 5',s:'รังสีชั้น 5'},
+  {n:'ร่มมิตร1',s:'ร่มมิตร1'},{n:'ร่มมิตร2',s:'ร่มมิตร2'},{n:'ร่มมิตร3',s:'ร่มมิตร3'},
+  {n:'ร่มโพธิ์2',s:'ร่มโพธิ์2'},{n:'ร่มโพธิ์3',s:'ร่มโพธิ์3'},{n:'ร่มโพธิ์4',s:'ร่มโพธิ์4'},{n:'ร่มโพธิ์5',s:'ร่มโพธิ์5'},
+  {n:'กลุ่มการพยาบาล',s:'กลุ่มการ'},{n:'ผู้ป่วยนอก',s:'OPD'},
+  {n:'ฝากครรภ์และวางแผนครอบครัว',s:'ANC'},{n:'อุบัติเหตุ-ฉุกเฉิน',s:'ER'},
+  {n:'ห้องผ่าตัด',s:'OR'},{n:'ควบคุมการติดเชื้อภายในรพ.',s:'IC'},
+  {n:'ศูนย์จ่ายกลาง',s:'จ่ายกลาง'},{n:'สัญญาบัพยาบาล',s:'วิสัญญี'},
+  {n:'ฟอกเลือดด้วยเครื่องไตเทียม',s:'HD'},{n:'เปล',s:'ศูนย์เปล'},
+  {n:'บริการปรึกษาทางสุขภาพ',s:'Csg.'},{n:'เคมีบำบัด',s:'เคมีบำบัด'},
+  {n:'ตรวจพิเศษโรคหัวใจ',s:'ECHO'},{n:'ส่องกล้องระบบทางเดินอาหาร',s:'GIEU'},
+  {n:'ศูนย์ประสานงานโรคมะเร็ง',s:'ศ.มะเร็ง'},{n:'อายุรกรรม3',s:'a3'},
+  {n:'อายุรกรรมประสาทและโรคหลอดเลือดสมอง',s:'Stroke Unit'},
+  {n:'ศัลยกรรมหญิง2',s:'ศญ2'},{n:'วิกฤตโรคหัวใจ',s:'CICU'},
+  {n:'ศัลยกรรมอุบัติเหตุ',s:'ศอ'},{n:'อายุรกรรมโรคเลือด',s:'อล'},
+  {n:'พิเศษหัวใจ',s:'พ.หัวใจ'},{n:'พิเศษรังสีรักษาชั้น 4',s:'พ.รังสีชั้น4'},
+  {n:'กิ่วรักษาโรคหัวใจ',s:'ICCU'},{n:'ห้องตรวจสวนหัวใจ',s:'Cath Lab'},
+  {n:'พิเศษรวมอายุรกรรม',s:'พ.รวม'},{n:'การพยาบาลรังสีรักษา',s:'พยาบาลรังสีรักษา'},
+  {n:'ล้างไตทางช่องท้อง',s:'CAPD'},{n:'รักษาศัลยกรรมหัวใจและทรวงอก',s:'CVTICU'},
+  {n:'รักษาระบบทางเดินหายใจ',s:'RICU'},{n:'รักษากรรมหัวใจและทรวงอก',s:'CVT SDU'},
+  {n:'ดูแลผู้ป่วยแบบประคับประคอง',s:'PC'},{n:'ตรวจสุขภาพ',s:'ศ.ตรวจสุขภาพ'},
+  {n:'รักษาศัลยกรรมอุบัติเหตุ',s:'TICU'},{n:'ใจสว่าง/จิตเวช',s:'ใจสว่าง'},
+  {n:'รักษาอายุรกรรมโรคติดเชื้อ',s:'IDICU'},{n:'รักษาโรคติดเชื้ออุบัติใหม่',s:'EIDICU'},
+  {n:'ผ่าตัดแผลเล็ก',s:'ODS'},{n:'ศูนย์ฝึกปฏิบัติการช่วยฟื้นคืนชีพ',s:'ศ.CPR'},
+  {n:'ศูนย์ประสานงานโรคหัวใจ',s:'HDC'},{n:'กลุ่มงานวิจัยและพัฒนาการพยาบาล',s:'R&D'},
+  {n:'ใจภักดี',s:'ใจภักดี'}
+];
+
+function acFilter() {
+  const q = document.getElementById('dept').value.toLowerCase();
+  const list = document.getElementById('acList');
+  const matches = q.length === 0
+    ? WARDS
+    : WARDS.filter(w => w.n.toLowerCase().includes(q) || w.s.toLowerCase().includes(q));
+  if (matches.length === 0) { list.style.display='none'; return; }
+  list.innerHTML = matches.slice(0,10).map(w =>
+    `<div class="ac-item" onmousedown="acSelect('${w.n.replace(/'/g,"\\'")} (${w.s.replace(/'/g,"\\'")})')">
+      ${w.n}<span class="ac-short">${w.s}</span>
+    </div>`
+  ).join('');
+  list.style.display = 'block';
+}
+function acSelect(val) {
+  document.getElementById('dept').value = val;
+  document.getElementById('acList').style.display = 'none';
+  answers.dept = val;
+}
+function acHide() { document.getElementById('acList').style.display = 'none'; }
+
 // ===== CONFIG =====
 // วาง Web App URL ที่นี่หลังจาก Deploy ใน Apps Script
 const WEBAPP_URL = 'YOUR_WEBAPP_URL_HERE';

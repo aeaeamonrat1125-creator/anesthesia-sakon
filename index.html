@@ -11,6 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { font-family: 'Sarabun', system-ui, sans-serif; background:#f5f3ff; }
   .grad-hero { background: linear-gradient(135deg, #6d28d9 0%, #9333ea 55%, #c026d3 100%); }
@@ -103,6 +104,8 @@
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="reports">📑 รายงาน & Export</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="news">📣 ประกาศ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="activities">🎯 กิจกรรมหน่วยงาน</button>
+        <div class="border-t border-white/10 my-1"></div>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="qrcode">📱 QR Code แบบประเมิน</button>
         <div class="border-t border-white/10 my-1"></div>
         <a href="sheets.html" class="w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none flex items-center gap-2">📊 G-Sheets</a>
       </div>
@@ -974,6 +977,15 @@
 
   <section data-page="news" class="hidden space-y-3" id="newsList"></section>
 
+  <!-- QR Code -->
+  <section data-page="qrcode" class="hidden space-y-4">
+    <div class="card p-4">
+      <div class="font-semibold text-slate-700">📱 QR Code แบบประเมินความพึงพอใจ</div>
+      <div class="text-xs text-slate-500 mt-1">สแกนเพื่อเปิดแบบประเมิน หรือกดดาวน์โหลดเพื่อพิมพ์ติดป้าย</div>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-4" id="qrGrid"></div>
+  </section>
+
   <!-- กิจกรรมหน่วยงาน -->
   <section data-page="activities" class="hidden space-y-4">
     <div class="card p-4 flex items-center justify-between">
@@ -1060,6 +1072,7 @@ document.querySelectorAll('.tab-btn').forEach(b => {
     if (tab === 'inspect') renderInspect();
     if (tab === 'equipment') renderEquipment();
     if (tab === 'activities') renderActivities();
+    if (tab === 'qrcode') renderQRCodes();
   });
 });
 
@@ -1394,6 +1407,65 @@ function readUrgent() {
 function dismissUrgent() {
   document.getElementById('urgentBanner').classList.add('hidden');
   // ไม่บันทึก read — จะกลับมาขึ้นวันรุ่งขึ้น
+}
+
+// ===== QR CODES =====
+const QR_FORMS = [
+  {
+    id: 'qr-staff',
+    title: '📋 แบบประเมินหน่วยงาน',
+    subtitle: 'สำหรับบุคลากรในโรงพยาบาล',
+    url: 'https://script.google.com/macros/s/AKfycbzRUXZEm0Fi07JTMePUYG9N8nszZiqSl7nDciQZqblzhoXuzis-5WDqy0MEULo4BX0zPA/exec',
+    color: '#6d28d9'
+  },
+  {
+    id: 'qr-patient',
+    title: '🏥 แบบประเมินผู้ป่วย',
+    subtitle: 'สำหรับผู้ป่วยที่รับบริการวิสัญญี',
+    url: 'PATIENT_FORM_URL',
+    color: '#059669'
+  }
+];
+let _qrRendered = false;
+function renderQRCodes() {
+  if (_qrRendered) return;
+  _qrRendered = true;
+  const grid = document.getElementById('qrGrid');
+  grid.innerHTML = QR_FORMS.map(f => `
+    <div class="card p-5 text-center">
+      <div class="font-bold text-slate-800 text-base mb-0.5">${f.title}</div>
+      <div class="text-xs text-slate-500 mb-4">${f.subtitle}</div>
+      <div id="${f.id}" class="flex justify-center mb-4"></div>
+      <div class="text-xs text-slate-400 font-mono break-all mb-4 bg-slate-50 rounded-lg p-2">${f.url}</div>
+      <div class="flex gap-2 justify-center flex-wrap">
+        <button onclick="downloadQR('${f.id}','${f.title}')"
+          class="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+          style="background:${f.color}">⬇️ ดาวน์โหลด PNG</button>
+        <a href="${f.url}" target="_blank"
+          class="px-4 py-2 rounded-lg text-sm font-semibold border-2 text-slate-600 hover:bg-slate-50"
+          style="border-color:${f.color}">🔗 เปิดลิ้งก์</a>
+      </div>
+    </div>
+  `).join('');
+  QR_FORMS.forEach(f => {
+    if (f.url === 'PATIENT_FORM_URL') {
+      document.getElementById(f.id).innerHTML = '<div class="text-xs text-slate-400 py-8">ยังไม่ได้ตั้งค่า URL<br>กรุณาอัปเดตในโค้ด</div>';
+      return;
+    }
+    new QRCode(document.getElementById(f.id), {
+      text: f.url, width: 200, height: 200,
+      colorDark: f.color, colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  });
+}
+function downloadQR(id, title) {
+  const canvas = document.querySelector('#'+id+' canvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = 'QR-'+title.replace(/[^฀-๿a-z0-9]/gi,'_')+'.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
 }
 
 function renderActivities() {
