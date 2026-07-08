@@ -52,6 +52,7 @@
     </div>
     <div class="flex gap-1">
       <a href="index.html" class="bg-white/15 text-white text-xs px-3 py-1.5 rounded-lg">🏠</a>
+      <a href="inspection-summary.html" class="bg-white/15 text-white text-xs px-3 py-1.5 rounded-lg">📋 สรุป</a>
       <button onclick="toggleFullscreen(true)" class="bg-white/15 text-white text-xs px-3 py-1.5 rounded-lg">⛶</button>
       <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 text-white text-xs px-3 py-1.5 rounded-lg">ออก</button>
     </div>
@@ -134,7 +135,10 @@
   </div>
 
   <div class="card p-4">
-    <div class="font-semibold mb-2">📋 ประวัติวันนี้</div>
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-semibold">📋 ประวัติวันนี้</div>
+      <a href="inspection-summary.html" class="text-xs text-blue-400 hover:text-blue-300">ดูทั้งหมด →</a>
+    </div>
     <div id="historyList" class="space-y-1 text-sm"></div>
   </div>
 
@@ -143,6 +147,21 @@
 <div class="fixed bottom-0 left-0 right-0 p-3 bg-slate-900/95 backdrop-blur border-t border-slate-700 z-20">
   <div class="max-w-3xl mx-auto">
     <button class="btn btn-primary" onclick="saveInspection()" id="saveBtn">💾 บันทึกการตรวจสอบ</button>
+  </div>
+</div>
+
+<!-- Edit Inspection Modal -->
+<div id="editModal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
+  <div class="card p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div class="flex items-start justify-between mb-3">
+      <div class="font-bold text-base" id="editTitle">รายละเอียดการตรวจ</div>
+      <button onclick="closeInspEdit()" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
+    </div>
+    <div id="editBody"></div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="closeInspEdit()" class="btn btn-ghost flex-1">ปิด</button>
+      <button onclick="saveInspEdit()" class="btn btn-primary flex-1" id="saveEditBtn">💾 บันทึก</button>
+    </div>
   </div>
 </div>
 
@@ -333,15 +352,19 @@ async function loadHistory() {
   const hist = await sbDB.list('daily_inspections', { eq:{date: today}, order:'created_at', asc:false });
   const el = document.getElementById('historyList');
   if (hist.length === 0) { el.innerHTML = '<div class="text-slate-400">ยังไม่มีบันทึกวันนี้</div>'; return; }
+  _histCache = {};
   el.innerHTML = hist.map(h => {
+    _histCache[h.id] = h;
     const m = (h.items?.machine || []).filter(i => i.state === 'yes').length;
     const mb = (h.items?.machine || []).filter(i => i.state === 'no').length;
     const v = (h.items?.monitor || []).filter(i => i.state === 'yes').length;
     const vb = (h.items?.monitor || []).filter(i => i.state === 'no').length;
-    return `<div class="bg-slate-800 p-3 rounded-lg">
+    const hasIssue = mb > 0 || vb > 0;
+    return `<div class="bg-slate-800 p-3 rounded-lg cursor-pointer hover:bg-slate-700 transition"
+      onclick="openInspEditById('${h.id}')">
       <div class="flex justify-between items-center">
         <div class="font-medium">${h.room||'-'} · ${h.items?.nurse||''} · ${new Date(h.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
-        <div class="text-xs text-slate-400">${h.items?.check||''}</div>
+        <div class="text-xs ${hasIssue?'text-rose-400 font-semibold':'text-slate-400'}">${hasIssue?'⚠️ พบปัญหา':h.items?.check||''}</div>
       </div>
       <div class="text-xs text-slate-400 mt-1">
         ${m||mb ? `Machine: ${m} พร้อม · ${mb} ไม่พร้อม` : ''}
@@ -352,6 +375,105 @@ async function loadHistory() {
 }
 
 function subscribeRT() { sbRT.subscribe('daily_inspections', loadHistory); }
+
+// ===== EDIT INSPECTION MODAL =====
+let _editStates = { machine:{}, monitor:{} };
+let _editId = null;
+let _histCache = {};
+
+function openInspEditById(id) {
+  const h = _histCache[id];
+  if (h) openInspEdit(h);
+}
+
+function openInspEdit(h) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  _editId = h.id;
+  _editStates = { machine:{}, monitor:{} };
+  const items = h.items || {};
+  (items.machine||[]).forEach(it => { _editStates.machine[it.code] = it.state; });
+  (items.monitor||[]).forEach(it => { _editStates.monitor[it.code] = it.state; });
+
+  const renderEditList = (section, arr, yLbl, nLbl) =>
+    arr.map(it => {
+      const st = _editStates[section][it.code] || '';
+      return `<div class="flex items-center gap-2 py-2 border-b border-slate-700 last:border-0">
+        <div class="flex-1 text-sm">${it.name}</div>
+        <div class="flex gap-1">
+          <button data-s="${section}" data-c="${it.code}" data-v="yes"
+            class="edit-pill text-xs px-3 py-1 rounded-full border font-medium transition"
+            style="${st==='yes'?'background:#10b981;color:#fff;border-color:#10b981':'background:#1e293b;color:#94a3b8;border-color:#475569'}"
+            onclick="setEditPill(this)">${yLbl}</button>
+          <button data-s="${section}" data-c="${it.code}" data-v="no"
+            class="edit-pill text-xs px-3 py-1 rounded-full border font-medium transition"
+            style="${st==='no'?'background:#ef4444;color:#fff;border-color:#ef4444':'background:#1e293b;color:#94a3b8;border-color:#475569'}"
+            onclick="setEditPill(this)">${nLbl}</button>
+        </div>
+      </div>`;
+    }).join('');
+
+  document.getElementById('editTitle').textContent =
+    `${h.room||'-'} · ${new Date(h.date||h.created_at).toLocaleDateString('th-TH')}`;
+  document.getElementById('editBody').innerHTML = `
+    <div class="text-xs text-slate-400 mb-2">วิสัญญี: ${items.nurse||'-'}</div>
+    ${items.machine?.length ? `<div class="text-sm font-semibold text-emerald-400 mb-1">Machine</div>
+    ${renderEditList('machine', MACHINE_ITEMS, 'พร้อม','ไม่พร้อม')}` : ''}
+    ${items.monitor?.length ? `<div class="text-sm font-semibold text-blue-400 mb-1 mt-3">Monitor</div>
+    ${renderEditList('monitor', MONITOR_ITEMS, 'มี','ไม่มี')}` : ''}
+    <div class="mt-3">
+      <label class="text-xs text-slate-400 block mb-1">หมายเหตุ</label>
+      <textarea id="editNotes" class="input" rows="2">${h.notes||''}</textarea>
+    </div>
+  `;
+  document.getElementById('editModal').classList.remove('hidden');
+  document.getElementById('editModal').classList.add('flex');
+}
+
+function setEditPill(btn) {
+  const s = btn.dataset.s, c = btn.dataset.c, v = btn.dataset.v;
+  if (_editStates[s][c] === v) {
+    _editStates[s][c] = 'pending';
+  } else {
+    _editStates[s][c] = v;
+  }
+  document.querySelectorAll(`.edit-pill[data-s="${s}"][data-c="${c}"]`).forEach(b => {
+    const active = _editStates[s][c] === b.dataset.v;
+    b.style.background = active ? (b.dataset.v==='yes'?'#10b981':'#ef4444') : '#1e293b';
+    b.style.color = active ? '#fff' : '#94a3b8';
+    b.style.borderColor = active ? (b.dataset.v==='yes'?'#10b981':'#ef4444') : '#475569';
+  });
+}
+
+async function saveInspEdit() {
+  if (!_editId || !currentUser) return;
+  const btn = document.getElementById('saveEditBtn');
+  btn.disabled = true;
+  try {
+    const { data: orig } = await sb.from('daily_inspections').select('*').eq('id',_editId).single();
+    if (!orig) throw new Error('ไม่พบข้อมูล');
+    const updItems = { ...orig.items };
+    updItems.machine = MACHINE_ITEMS.map(it => ({
+      code:it.code, name:it.name, state: _editStates.machine[it.code] || 'pending'
+    }));
+    updItems.monitor = MONITOR_ITEMS.map(it => ({
+      code:it.code, name:it.name, state: _editStates.monitor[it.code] || 'pending'
+    }));
+    await sbDB.update('daily_inspections', _editId, {
+      items: updItems,
+      notes: document.getElementById('editNotes').value
+    });
+    sbUtils.toast('แก้ไขแล้ว ✓','success');
+    closeInspEdit();
+    loadHistory();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+  finally { btn.disabled = false; }
+}
+
+function closeInspEdit() {
+  document.getElementById('editModal').classList.add('hidden');
+  document.getElementById('editModal').classList.remove('flex');
+  _editId = null;
+}
 
 (async () => {
   populateRooms();

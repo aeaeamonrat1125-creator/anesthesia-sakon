@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>สรุปการตรวจเครื่องมือ — วิสัญญี</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family:'Sarabun',system-ui,sans-serif; background:#0f172a; color:#f1f5f9; }
+  .grad-hero { background:linear-gradient(135deg,#0ea5e9,#2563eb 60%,#7c3aed); }
+  .card { background:#1e293b; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.25); border:1px solid #334155; }
+  .input { width:100%; padding:10px 12px; border:1px solid #334155; border-radius:10px;
+    font-size:15px; background:#0f172a; color:#f1f5f9; }
+  .input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.2); }
+  .btn { padding:10px 16px; border-radius:10px; font-weight:600; font-size:14px; cursor:pointer; transition:all .15s; }
+  .btn-primary { background:#2563eb; color:#fff; } .btn-primary:hover { background:#1d4ed8; }
+  .btn-ghost { background:#334155; color:#f1f5f9; } .btn-ghost:hover { background:#475569; }
+  .pill { padding:5px 10px; border-radius:999px; font-size:12px; font-weight:600;
+    background:#334155; color:#cbd5e1; border:1px solid #475569; cursor:pointer; transition:all .12s; }
+  .pill[data-active="yes"] { background:#10b981; color:#fff; border-color:#10b981; }
+  .pill[data-active="no"]  { background:#ef4444; color:#fff; border-color:#ef4444; }
+  .insp-row { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:12px 14px;
+    cursor:pointer; transition:all .12s; }
+  .insp-row:hover { border-color:#60a5fa; background:#1e3a5f; }
+  .insp-row.has-issue { border-color:#f87171; background:#3b1f1f; }
+  @media (min-width: 768px) { main { max-width: 900px; margin: 0 auto; } }
+</style>
+</head>
+<body>
+<header class="grad-hero text-white px-4 py-4 sticky top-0 z-30 shadow-lg">
+  <div class="flex items-center justify-between gap-2">
+    <div>
+      <div class="font-bold text-lg">📋 สรุปการตรวจเครื่องมือ</div>
+      <div class="text-white/80 text-xs" id="user-info">กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="flex gap-1">
+      <a href="inspection.html" class="bg-white/15 text-white text-xs px-3 py-1.5 rounded-lg">← ตรวจ</a>
+      <a href="index.html" class="bg-white/15 text-white text-xs px-3 py-1.5 rounded-lg">🏠</a>
+      <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 text-white text-xs px-3 py-1.5 rounded-lg">ออก</button>
+    </div>
+  </div>
+</header>
+
+<div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/80 z-40 items-center justify-center p-4">
+  <div class="card p-6 max-w-sm w-full">
+    <div class="text-xl font-bold mb-1">เข้าสู่ระบบ</div>
+    <div class="text-sm text-slate-400 mb-4">เพื่อดูและแก้ไขข้อมูลการตรวจ</div>
+    <div class="space-y-3 mb-3">
+      <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
+      <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+    </div>
+    <div id="loginError" class="text-xs text-rose-400 mb-2 hidden"></div>
+    <button onclick="signIn()" class="btn btn-primary w-full mb-2">เข้าสู่ระบบ</button>
+    <a href="index.html" class="block text-center text-xs text-blue-400">กลับหน้าหลัก</a>
+  </div>
+</div>
+
+<main class="px-4 py-4 pb-8 space-y-4">
+
+  <!-- Filters -->
+  <div class="card p-4 space-y-3">
+    <div class="font-semibold text-sm">🔍 ค้นหา/กรอง</div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">จากวันที่</label>
+        <input id="dateFrom" type="date" class="input">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">ถึงวันที่</label>
+        <input id="dateTo" type="date" class="input">
+      </div>
+    </div>
+    <div>
+      <label class="text-xs text-slate-400 block mb-1">ห้อง/จุดบริการ</label>
+      <select id="roomFilter" class="input">
+        <option value="">— ทุกห้อง —</option>
+      </select>
+    </div>
+    <button onclick="loadSummary()" class="btn btn-primary w-full">โหลดข้อมูล</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-3 gap-3" id="statsRow"></div>
+
+  <!-- List -->
+  <div class="space-y-2" id="inspList">
+    <div class="text-center text-slate-400 py-10">เลือกช่วงวันที่แล้วกด "โหลดข้อมูล"</div>
+  </div>
+</main>
+
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
+  <div class="card p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div class="flex items-start justify-between mb-3">
+      <div class="font-bold text-base" id="editTitle">รายละเอียดการตรวจ</div>
+      <button onclick="closeEdit()" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
+    </div>
+    <div id="editBody"></div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="closeEdit()" class="btn btn-ghost flex-1">ปิด</button>
+      <button onclick="saveEdit()" class="btn btn-primary flex-1" id="saveEditBtn">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+let currentUser = null;
+const ROOMS = [
+  'OR1','OR2','OR3','OR4','OR5','OR6','OR7','OR8','OR9','OR10','OR11','OR12',
+  'OR41','OR42','OR43','OR44','OR45',
+  'OR CVT1','OR CVT2','ESWL','Cath Lab',
+  'RR2','RR3','RR ตึกหัวใจ','PACU','ส่วนกลาง'
+];
+const MACHINE_ITEMS = [
+  { code:'M01', name:'N2O, O2 มีปริมาณเพียงพอ' },
+  { code:'M02', name:'ถัง O2 มีปริมาณเพียงพอ' },
+  { code:'M03', name:'การทำงานของ Vaporizer พร้อมใช้งาน' },
+  { code:'M04', name:'Breathing system พร้อมใช้' },
+  { code:'M05', name:'Pop off valve ทำงานได้ดี' },
+  { code:'M06', name:'Scavenging ใช้งานได้ดี' },
+  { code:'M07', name:'Ventilator พร้อมใช้งาน' },
+  { code:'M08', name:'ทำความสะอาด Water trap CO2' },
+  { code:'M09', name:'ตรวจสอบความพร้อมใช้ Water trap (Pipeline)' },
+  { code:'M10', name:'Desflurane, Sevoflurane (1,1)' },
+  { code:'M11', name:'Laryngoscope No 0,1,2,3,4 (1,1,1,1,1)' },
+  { code:'M12', name:'Face mask No.3,4,5 (2,2,1)' },
+  { code:'M13', name:'Stylet เด็ก, ผู้ใหญ่ (1,1)' },
+  { code:'M14', name:'Syringe 10 ml' },
+  { code:'M15', name:'Stethoscope' },
+  { code:'M16', name:'Magill forceps' },
+  { code:'M17', name:'Ambu bag + สายต่อ' },
+];
+const MONITOR_ITEMS = [
+  { code:'V01', name:'NIBP (1)' },
+  { code:'V02', name:'SpO₂ (Adult=1, Ped=1, Neo=1)' },
+  { code:'V03', name:'EKG (1)' },
+  { code:'V04', name:'Temp (Adult=1, Ped=1)' },
+  { code:'V05', name:'Cable A-line (2)' },
+  { code:'V06', name:'Cuff BP Adult (M=1, L=1)' },
+  { code:'V07', name:'Cuff BP Ped (S=1, M=1)' },
+  { code:'V08', name:'EtCO₂ (side=1)' },
+];
+
+// init date defaults (last 7 days)
+const today = new Date();
+const week = new Date(today); week.setDate(today.getDate() - 6);
+document.getElementById('dateTo').value   = today.toISOString().slice(0,10);
+document.getElementById('dateFrom').value = week.toISOString().slice(0,10);
+
+// populate rooms
+document.getElementById('roomFilter').innerHTML =
+  '<option value="">— ทุกห้อง —</option>' + ROOMS.map(r => `<option>${r}</option>`).join('');
+
+async function ensureAuth() {
+  try {
+    const u = await sbAuth.getUser();
+    if (u) {
+      currentUser = u;
+      const p = await sbAuth.getProfile().catch(() => null);
+      document.getElementById('user-info').textContent = p?.full_name || u.email;
+      document.getElementById('signOutBtn').classList.remove('hidden');
+      document.getElementById('loginOverlay').style.display = 'none';
+      return true;
+    }
+  } catch(e) { console.warn(e); }
+  document.getElementById('loginOverlay').style.display = 'flex';
+  return false;
+}
+async function signIn() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  err.classList.add('hidden');
+  try { await sbAuth.signIn(email, pwd); location.reload(); }
+  catch(e) { err.textContent = e.message; err.classList.remove('hidden'); }
+}
+async function signOut() { await sbAuth.signOut(); location.reload(); }
+
+let _allInsp = [];
+
+async function loadSummary() {
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  const room = document.getElementById('roomFilter').value;
+  if (!from || !to) { sbUtils.toast('กรุณาเลือกช่วงวันที่','error'); return; }
+
+  document.getElementById('inspList').innerHTML = '<div class="text-center text-slate-400 py-8">⏳ กำลังโหลด...</div>';
+  try {
+    let q = sb.from('daily_inspections').select('*')
+      .gte('date', from).lte('date', to).order('date', { ascending: false }).order('created_at', { ascending: false });
+    if (room) q = q.eq('room', room);
+    const { data, error } = await q;
+    if (error) throw error;
+    _allInsp = data || [];
+    renderList();
+    renderStats();
+  } catch(e) { sbUtils.toast(e.message,'error'); document.getElementById('inspList').innerHTML = ''; }
+}
+
+function renderStats() {
+  const total = _allInsp.length;
+  const hasIssue = _allInsp.filter(h => {
+    const mb = (h.items?.machine||[]).filter(i=>i.state==='no').length;
+    const vb = (h.items?.monitor||[]).filter(i=>i.state==='no').length;
+    return mb > 0 || vb > 0;
+  }).length;
+  const rooms = new Set(_allInsp.map(h=>h.room)).size;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="card p-3 text-center"><div class="text-2xl font-bold text-blue-400">${total}</div><div class="text-xs text-slate-400 mt-1">รายการทั้งหมด</div></div>
+    <div class="card p-3 text-center"><div class="text-2xl font-bold text-rose-400">${hasIssue}</div><div class="text-xs text-slate-400 mt-1">พบปัญหา</div></div>
+    <div class="card p-3 text-center"><div class="text-2xl font-bold text-emerald-400">${rooms}</div><div class="text-xs text-slate-400 mt-1">ห้องที่ตรวจ</div></div>
+  `;
+}
+
+function renderList() {
+  if (_allInsp.length === 0) {
+    document.getElementById('inspList').innerHTML = '<div class="text-center text-slate-400 py-8">ไม่พบข้อมูลในช่วงที่เลือก</div>';
+    return;
+  }
+  document.getElementById('inspList').innerHTML = _allInsp.map(h => {
+    const m  = (h.items?.machine||[]).filter(i=>i.state==='yes').length;
+    const mb = (h.items?.machine||[]).filter(i=>i.state==='no').length;
+    const v  = (h.items?.monitor||[]).filter(i=>i.state==='yes').length;
+    const vb = (h.items?.monitor||[]).filter(i=>i.state==='no').length;
+    const hasIssue = mb > 0 || vb > 0;
+    const dateStr = new Date(h.date).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric',weekday:'short'});
+    const timeStr = new Date(h.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="insp-row ${hasIssue?'has-issue':''}" onclick="openEdit('${h.id}')">
+      <div class="flex justify-between items-start gap-2">
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold">${h.room||'-'} <span class="text-slate-400 font-normal text-sm">· ${h.items?.nurse||'-'}</span></div>
+          <div class="text-xs text-slate-400 mt-0.5">${dateStr} · ${timeStr}</div>
+        </div>
+        <div class="text-xs ${hasIssue?'text-rose-400 font-semibold':'text-emerald-400'} flex-shrink-0">
+          ${hasIssue ? `⚠️ ปัญหา ${mb+vb} จุด` : '✓ ผ่านทั้งหมด'}
+        </div>
+      </div>
+      <div class="text-xs text-slate-400 mt-1.5 flex gap-3 flex-wrap">
+        ${m||mb ? `<span>Machine: <span class="text-emerald-400">${m} พร้อม</span>${mb?` · <span class="text-rose-400">${mb} ไม่พร้อม</span>`:''}</span>` : ''}
+        ${v||vb ? `<span>Monitor: <span class="text-emerald-400">${v} มี</span>${vb?` · <span class="text-rose-400">${vb} ไม่มี</span>`:''}</span>` : ''}
+      </div>
+      ${h.notes ? `<div class="text-xs text-slate-500 mt-1 truncate">${h.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ===== EDIT =====
+let _editId = null, _editStates = {};
+
+async function openEdit(id) {
+  const h = _allInsp.find(x => x.id === id);
+  if (!h) return;
+  _editId = id;
+  _editStates = { machine:{}, monitor:{} };
+  (h.items?.machine||[]).forEach(it => { _editStates.machine[it.code] = it.state; });
+  (h.items?.monitor||[]).forEach(it => { _editStates.monitor[it.code] = it.state; });
+
+  const renderPills = (section, arr, yLbl, nLbl) => arr.map(it => {
+    const st = _editStates[section][it.code] || '';
+    return `<div class="flex items-center gap-2 py-2 border-b border-slate-700 last:border-0">
+      <div class="flex-1 text-sm">${it.name}</div>
+      <div class="flex gap-1">
+        <button data-s="${section}" data-c="${it.code}" data-v="yes"
+          class="ep text-xs px-3 py-1 rounded-full border font-medium transition"
+          style="${st==='yes'?'background:#10b981;color:#fff;border-color:#10b981':'background:#0f172a;color:#94a3b8;border-color:#475569'}"
+          onclick="setEP(this)">${yLbl}</button>
+        <button data-s="${section}" data-c="${it.code}" data-v="no"
+          class="ep text-xs px-3 py-1 rounded-full border font-medium transition"
+          style="${st==='no'?'background:#ef4444;color:#fff;border-color:#ef4444':'background:#0f172a;color:#94a3b8;border-color:#475569'}"
+          onclick="setEP(this)">${nLbl}</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const dateStr = new Date(h.date).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('editTitle').textContent = `${h.room||'-'} · ${dateStr}`;
+  document.getElementById('editBody').innerHTML = `
+    <div class="text-xs text-slate-400 mb-3">วิสัญญี: ${h.items?.nurse||'-'}</div>
+    ${h.items?.machine?.length ? `<div class="text-sm font-semibold text-emerald-400 mb-2">Machine (17 รายการ)</div>${renderPills('machine',MACHINE_ITEMS,'พร้อม','ไม่พร้อม')}` : ''}
+    ${h.items?.monitor?.length ? `<div class="text-sm font-semibold text-blue-400 mb-2 mt-4">Monitor (8 รายการ)</div>${renderPills('monitor',MONITOR_ITEMS,'มี','ไม่มี')}` : ''}
+    <div class="mt-3">
+      <label class="text-xs text-slate-400 block mb-1">หมายเหตุ</label>
+      <textarea id="editNotes" class="input" rows="2">${h.notes||''}</textarea>
+    </div>
+  `;
+  document.getElementById('editModal').classList.remove('hidden');
+  document.getElementById('editModal').classList.add('flex');
+}
+
+function setEP(btn) {
+  const s = btn.dataset.s, c = btn.dataset.c, v = btn.dataset.v;
+  _editStates[s][c] = _editStates[s][c] === v ? 'pending' : v;
+  document.querySelectorAll(`.ep[data-s="${s}"][data-c="${c}"]`).forEach(b => {
+    const on = _editStates[s][c] === b.dataset.v;
+    b.style.background = on ? (b.dataset.v==='yes'?'#10b981':'#ef4444') : '#0f172a';
+    b.style.color = on ? '#fff' : '#94a3b8';
+    b.style.borderColor = on ? (b.dataset.v==='yes'?'#10b981':'#ef4444') : '#475569';
+  });
+}
+
+async function saveEdit() {
+  if (!_editId || !currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const btn = document.getElementById('saveEditBtn');
+  btn.disabled = true;
+  try {
+    const h = _allInsp.find(x => x.id === _editId);
+    if (!h) throw new Error('ไม่พบข้อมูล');
+    const updItems = { ...h.items };
+    updItems.machine = MACHINE_ITEMS.map(it => ({
+      code:it.code, name:it.name, state: _editStates.machine[it.code] || 'pending'
+    }));
+    updItems.monitor = MONITOR_ITEMS.map(it => ({
+      code:it.code, name:it.name, state: _editStates.monitor[it.code] || 'pending'
+    }));
+    const notes = document.getElementById('editNotes').value;
+    await sbDB.update('daily_inspections', _editId, { items: updItems, notes });
+    // update local cache
+    const idx = _allInsp.findIndex(x => x.id === _editId);
+    if (idx >= 0) { _allInsp[idx].items = updItems; _allInsp[idx].notes = notes; }
+    sbUtils.toast('แก้ไขแล้ว ✓','success');
+    closeEdit();
+    renderList();
+    renderStats();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+  finally { btn.disabled = false; }
+}
+
+function closeEdit() {
+  document.getElementById('editModal').classList.add('hidden');
+  document.getElementById('editModal').classList.remove('flex');
+  _editId = null;
+}
+
+(async () => {
+  await ensureAuth();
+  await loadSummary();
+})();
+</script>
+</body>
+</html>

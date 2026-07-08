@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   body { font-family:'Sarabun', system-ui, sans-serif; background:#f1f5f9; }
   .grad-hero { background: linear-gradient(135deg, #0ea5e9, #2563eb 60%, #7c3aed); }
@@ -80,6 +81,7 @@
       <div id="nav-dropdown" class="hidden absolute right-0 top-full mt-1 bg-slate-800 rounded-xl shadow-2xl py-2 min-w-[220px] z-50 border border-white/10">
         <button class="tab-btn active w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="announce">📣 ประกาศ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi-edit">📝 ลงข้อมูล KPI</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi-dashboard">📊 Dashboard KPI</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="equipment">🔧 เครื่องมือ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="schedule">📅 ตารางเวร</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="meetings">📚 ประชุมวิชาการ</button>
@@ -178,6 +180,30 @@
     </div>
 
     <div id="nursesGroups" class="space-y-5"></div>
+  </section>
+
+  <!-- KPI DASHBOARD -->
+  <section data-page="kpi-dashboard" class="space-y-4 hidden">
+    <div class="card p-4">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div class="font-semibold">📊 Dashboard KPI</div>
+          <div class="text-xs text-slate-500 mt-1">คลิกที่การ์ด KPI ใดก็ได้เพื่อดูกราฟรายเดือน</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-slate-500">ปีงบฯ:</label>
+          <select id="kd-year" class="input w-28" onchange="renderKpiDashboard()"></select>
+        </div>
+      </div>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" id="kpiCards"></div>
+    <div class="card p-4 hidden" id="kpiChartCard">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold text-sm" id="kpiChartTitle">กราฟ KPI</div>
+        <button onclick="document.getElementById('kpiChartCard').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
+      </div>
+      <canvas id="kpiChart"></canvas>
+    </div>
   </section>
 
   <!-- KPI MONTHLY EDIT -->
@@ -419,6 +445,7 @@ function switchTab(tab) {
   document.getElementById('nav-dropdown')?.classList.add('hidden');
   if (tab === 'staff') renderStaff();
   if (tab === 'kpi-edit') renderKpiPicker();
+  if (tab === 'kpi-dashboard') renderKpiDashboard();
   if (tab === 'equipment') renderEquipment();
   if (tab === 'schedule') loadSchedule();
   if (tab === 'meetings') renderMeetings();
@@ -733,7 +760,7 @@ function renderEquipment() {
   setTimeout(() => { tbody.style.opacity = '1'; }, 80);
   tbody.innerHTML = filtered.map(e => {
     const cls = e.status === 'ใช้งานได้' ? 'status-ok' : e.status === 'รอซ่อม' ? 'status-bad' : 'status-warn';
-    return `<tr class="border-b last:border-0">
+    return `<tr class="border-b last:border-0 hover:bg-slate-50 cursor-pointer transition" onclick="openEqForm('${e.id}')">
       <td class="py-2 font-medium">${e.name||'-'}</td>
       <td class="text-xs">${e.kind||''}</td>
       <td class="text-xs">${e.location||''}</td>
@@ -743,7 +770,11 @@ function renderEquipment() {
       <td class="text-xs font-mono">${e.skh||''}</td>
       <td><span class="text-xs px-2 py-1 rounded-full ${cls}">${e.status||'-'}</span></td>
       <td class="text-xs">${e.received_date||''}</td>
-      <td><button class="text-blue-600 text-sm" onclick="openEqForm('${e.id}')">แก้</button></td>
+      <td onclick="event.stopPropagation()">
+        <button class="text-blue-600 text-xs hover:underline" onclick="openEqForm('${e.id}')">แก้ไข</button>
+        <span class="text-slate-300 mx-1">|</span>
+        <button class="text-purple-600 text-xs hover:underline" onclick="openEqHistory('${e.id}')">📋 ประวัติ</button>
+      </td>
     </tr>`;
   }).join('') || '<tr><td colspan="10" class="text-center text-slate-500 py-4">ไม่พบเครื่องมือ</td></tr>';
 }
@@ -1109,7 +1140,10 @@ function openOpsForm(fy) {
 // ===== Helpers =====
 function val(id) { return document.getElementById(id)?.value || ''; }
 function openModal() { const m = document.getElementById('modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
-function closeModal() { const m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+function closeModal() {
+  const m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('flex');
+  document.getElementById('modalSaveBtn').style.display = '';
+}
 
 // ===== NURSES LIST (ทะเบียนบุคลากร) =====
 const ROLE_GROUPS = [
@@ -1636,6 +1670,118 @@ async function saveAllKpiInfo() {
     closeModal();
     loadAll();
   } catch(e) { sbUtils.toast(e.message, 'error'); }
+}
+
+// ===== KPI DASHBOARD =====
+function renderKpiDashboard() {
+  const now = new Date();
+  const curFy = now.getFullYear() + 543 + (now.getMonth() >= 9 ? 1 : 0);
+  const yearSel = document.getElementById('kd-year');
+  if (!yearSel.options.length) {
+    const years = [curFy-4, curFy-3, curFy-2, curFy-1, curFy];
+    yearSel.innerHTML = years.map(y => `<option value="${y}" ${y===curFy?'selected':''}>${y}</option>`).join('');
+  }
+  const fy = parseInt(yearSel.value) || curFy;
+  document.getElementById('kpiCards').innerHTML = cache.kpis.map(k => {
+    const h = cache.kpiHistory.find(x => x.kpi_id === k.id && x.fiscal_year === fy);
+    const avg = h?.value ?? null;
+    const cnt = h ? Object.keys(h.month_data || {}).length : 0;
+    const onTarget = avg !== null && (k.direction === 'higher' ? avg >= k.target : avg <= k.target);
+    const brdCls = avg === null ? 'border-slate-200' : onTarget ? 'border-emerald-400' : 'border-rose-400';
+    const badgeCls = avg === null ? 'bg-slate-100 text-slate-500' : onTarget ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
+    const pct = avg !== null && k.target ? Math.round(avg/k.target*100) : null;
+    return `<div class="card p-4 border-l-4 ${brdCls} cursor-pointer hover:shadow-md transition" onclick="showKpiChart('${k.id}')">
+      <div class="text-[10px] text-slate-400 mb-1 font-mono">${k.code}</div>
+      <div class="font-semibold text-slate-800 text-sm leading-snug mb-3">${k.name}</div>
+      <div class="flex items-end justify-between gap-2">
+        <div>
+          <div class="text-2xl font-bold ${avg===null?'text-slate-400':'text-slate-800'}">
+            ${avg !== null ? avg.toFixed(2) : '—'}
+            <span class="text-xs font-normal text-slate-500">${k.unit||''}</span>
+          </div>
+          <div class="text-xs text-slate-500 mt-0.5">เป้า ${k.target}${k.unit||''} · ${cnt}/12 เดือน</div>
+        </div>
+        <span class="text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${badgeCls}">
+          ${avg === null ? 'ยังไม่มีข้อมูล' : (onTarget ? `✓ บรรลุ${pct?` (${pct}%)`:''}` : `✗ ไม่บรรลุ${pct?` (${pct}%)`:''}`) }
+        </span>
+      </div>
+    </div>`;
+  }).join('') || '<div class="col-span-3 text-center text-slate-500 py-8">ยังไม่มีข้อมูล KPI</div>';
+}
+
+let _kpiChart = null;
+function showKpiChart(kid) {
+  const k = cache.kpis.find(x => x.id === kid);
+  if (!k) return;
+  const card = document.getElementById('kpiChartCard');
+  card.classList.remove('hidden');
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('kpiChartTitle').textContent = `${k.code} — ${k.name} (เป้า ${k.target}${k.unit||''})`;
+  const now = new Date();
+  const curFy = parseInt(document.getElementById('kd-year')?.value) || (now.getFullYear() + 543 + (now.getMonth() >= 9 ? 1 : 0));
+  const years = [curFy-4, curFy-3, curFy-2, curFy-1, curFy];
+  const labels = ['ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.'];
+  const MONTHS = [10,11,12,1,2,3,4,5,6,7,8,9];
+  const datasets = [];
+  const palette = ['#818cf8','#a78bfa','#c084fc','#e879f9','#f472b6'];
+  years.forEach((fy, fi) => {
+    const h = cache.kpiHistory.find(x => x.kpi_id === kid && x.fiscal_year === fy);
+    if (!h) return;
+    const data = MONTHS.map(m => h.month_data?.[m] ?? null);
+    if (data.some(v => v !== null)) {
+      datasets.push({ label:`ปี ${fy}`, data, borderColor:palette[fi], backgroundColor:palette[fi]+'20',
+        tension:0.3, spanGaps:true, pointRadius:4 });
+    }
+  });
+  datasets.push({ label:`เป้าหมาย ${k.target}${k.unit||''}`, data:Array(12).fill(k.target),
+    borderColor:'#10b981', borderDash:[6,4], pointRadius:0, tension:0 });
+  if (_kpiChart) _kpiChart.destroy();
+  _kpiChart = new Chart(document.getElementById('kpiChart'), {
+    type:'line',
+    data:{ labels, datasets },
+    options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{ font:{ family:'Sarabun' } } } },
+      scales:{ y:{ title:{ display:true, text:k.unit||'ค่า' } } } }
+  });
+}
+
+// ===== EQUIPMENT INSPECTION HISTORY =====
+async function openEqHistory(eqId) {
+  const eq = cache.equipment.find(x => x.id === eqId);
+  if (!eq) return;
+  document.getElementById('modalTitle').textContent = `📋 ประวัติตรวจ: ${eq.name}`;
+  document.getElementById('modalBody').innerHTML = '<div class="text-center text-slate-400 py-4">⏳ กำลังโหลด...</div>';
+  document.getElementById('modalSaveBtn').style.display = 'none';
+  openModal();
+  try {
+    const hist = await sbDB.list('daily_inspections', { eq:{ room: eq.location }, order:'date', asc:false, limit:30 });
+    if (hist.length === 0) {
+      document.getElementById('modalBody').innerHTML = `<div class="text-center text-slate-500 py-6">ยังไม่มีประวัติตรวจในห้อง <b>${eq.location}</b></div>`;
+      return;
+    }
+    document.getElementById('modalBody').innerHTML = `
+      <div class="text-xs text-slate-500 mb-3">ที่ตั้ง: ${eq.location} · แสดง ${hist.length} รายการล่าสุด · คลิกแถวเพื่อดูรายละเอียด</div>
+      <div class="space-y-2">
+        ${hist.map(h => {
+          const mb = (h.items?.machine||[]).filter(i=>i.state==='no').length;
+          const vb = (h.items?.monitor||[]).filter(i=>i.state==='no').length;
+          const hasIssue = mb > 0 || vb > 0;
+          return `<div class="p-3 rounded-lg border cursor-pointer transition hover:border-purple-400 ${hasIssue?'bg-rose-50 border-rose-200':'bg-slate-50 border-slate-200'}"
+            onclick="window.open('inspection-summary.html','_blank')">
+            <div class="flex justify-between items-center">
+              <div class="font-medium text-sm">${new Date(h.date).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'})}</div>
+              <div class="text-xs ${hasIssue?'text-rose-600 font-semibold':'text-emerald-600'}">${hasIssue?`⚠️ พบปัญหา ${mb+vb} จุด`:'✓ ผ่านทั้งหมด'}</div>
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5">วิสัญญี: ${h.items?.nurse||'-'}</div>
+            ${h.notes ? `<div class="text-xs text-slate-600 mt-1">${h.notes}</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="mt-3 text-center">
+        <a href="inspection-summary.html" target="_blank" class="text-xs text-purple-600 hover:underline">→ เปิดหน้าสรุปการตรวจทั้งหมด</a>
+      </div>`;
+  } catch(e) {
+    document.getElementById('modalBody').innerHTML = `<div class="text-rose-500 py-4">${e.message}</div>`;
+  }
 }
 
 // ===== REALTIME =====

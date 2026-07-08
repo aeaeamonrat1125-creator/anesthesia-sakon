@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <style>
   body { font-family:'Sarabun', system-ui, sans-serif; background:#f1f5f9; }
   .grad-hero { background: linear-gradient(135deg, #0ea5e9, #2563eb 60%, #7c3aed); }
@@ -116,12 +117,17 @@
 
     <div class="section-h">ASA Classification</div>
     <div class="grid-4">
-      <div><span class="lbl">ASA1</span><input id="asa-1" type="number" class="input"></div>
-      <div><span class="lbl">ASA2</span><input id="asa-2" type="number" class="input"></div>
-      <div><span class="lbl">ASA3</span><input id="asa-3" type="number" class="input"></div>
-      <div><span class="lbl">ASA4</span><input id="asa-4" type="number" class="input"></div>
-      <div><span class="lbl">ASA5</span><input id="asa-5" type="number" class="input"></div>
-      <div><span class="lbl">ASA6</span><input id="asa-6" type="number" class="input"></div>
+      <div><span class="lbl">ASA 1</span><input id="asa-1" type="number" class="input"></div>
+      <div><span class="lbl">ASA 2</span><input id="asa-2" type="number" class="input"></div>
+      <div><span class="lbl">ASA 3</span><input id="asa-3" type="number" class="input"></div>
+      <div><span class="lbl">ASA 4</span><input id="asa-4" type="number" class="input"></div>
+      <div><span class="lbl">ASA 5</span><input id="asa-5" type="number" class="input"></div>
+      <div><span class="lbl">ASA 6</span><input id="asa-6" type="number" class="input"></div>
+      <div><span class="lbl">ASA 1E</span><input id="asa-1e" type="number" class="input"></div>
+      <div><span class="lbl">ASA 2E</span><input id="asa-2e" type="number" class="input"></div>
+      <div><span class="lbl">ASA 3E</span><input id="asa-3e" type="number" class="input"></div>
+      <div><span class="lbl">ASA 4E</span><input id="asa-4e" type="number" class="input"></div>
+      <div><span class="lbl">ASA 5E</span><input id="asa-5e" type="number" class="input"></div>
     </div>
 
     <div class="section-h">อุบัติการณ์ / ภาวะแทรกซ้อน</div>
@@ -529,10 +535,55 @@ function collectTeams() {
   })).filter(t => t.n1 || t.n2);
 }
 
-document.getElementById('photoFile').addEventListener('change', (e) => {
+document.getElementById('photoFile').addEventListener('change', async (e) => {
   const f = e.target.files[0];
-  document.getElementById('photoPreview').textContent = f ? `เลือกแล้ว: ${f.name} (${(f.size/1024).toFixed(0)} KB)` : 'ยังไม่ได้เลือกรูป';
+  const prev = document.getElementById('photoPreview');
+  if (!f) { prev.textContent = 'ยังไม่ได้เลือกรูป'; return; }
+  prev.innerHTML = `เลือกแล้ว: ${f.name} (${(f.size/1024).toFixed(0)} KB) · <span class="text-blue-600">⏳ กำลังอ่านข้อมูล...</span>`;
+  try {
+    const { data: { text } } = await Tesseract.recognize(f, 'tha+eng', { logger: () => {} });
+    const filled = autoFillFromOCR(text);
+    prev.innerHTML = filled.length
+      ? `<span class="text-emerald-600">✓ อ่านข้อมูลได้ ${filled.length} ช่อง (${filled.join(', ')}) — ตรวจสอบก่อนบันทึก</span>`
+      : `${f.name} · <span class="text-slate-400">ไม่พบข้อมูลที่อ่านได้อัตโนมัติ — กรอกเองด้านบน</span>`;
+  } catch(err) {
+    prev.textContent = `${f.name} · OCR ไม่สำเร็จ — กรอกเองด้านบน`;
+    console.warn('OCR:', err);
+  }
 });
+
+function autoFillFromOCR(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const filled = [];
+  function tryFill(elId, label, ...patterns) {
+    const el = document.getElementById(elId);
+    if (!el || el.value) return;
+    for (const line of lines) {
+      for (const pat of patterns) {
+        const m = line.match(new RegExp(pat + '[\\s:=\\-]*([\\d]+)', 'i'));
+        if (m) { el.value = m[1]; filled.push(label); return; }
+      }
+    }
+  }
+  tryFill('m-total',   'Pt รวม',   'รวม', 'total', 'ทั้งหมด', 'Pt\\s*ทั้งหมด');
+  tryFill('m-ga',      'GA',        'GA', 'General');
+  tryFill('m-ra',      'RA',        'RA', 'Regional', 'Spinal');
+  tryFill('m-mac',     'MAC',       'MAC');
+  tryFill('m-pass',    'ผ่าน RR',  'ผ่าน\\s*RR', 'Pass\\s*RR');
+  tryFill('m-fail',    'ไม่ผ่าน', 'ไม่ผ่าน', 'Fail\\s*RR');
+  tryFill('m-ett',     'ETT',       'ETT\\s*กลับ', 'ใส่\\s*ETT');
+  tryFill('asa-1',     'ASA1',      'ASA\\s*1(?!E)', 'ASA1(?!E)');
+  tryFill('asa-2',     'ASA2',      'ASA\\s*2(?!E)', 'ASA2(?!E)');
+  tryFill('asa-3',     'ASA3',      'ASA\\s*3(?!E)', 'ASA3(?!E)');
+  tryFill('asa-4',     'ASA4',      'ASA\\s*4(?!E)', 'ASA4(?!E)');
+  tryFill('asa-5',     'ASA5',      'ASA\\s*5(?!E)', 'ASA5(?!E)');
+  tryFill('asa-1e',    'ASA1E',     'ASA\\s*1E', 'ASA1E');
+  tryFill('asa-2e',    'ASA2E',     'ASA\\s*2E', 'ASA2E');
+  tryFill('asa-3e',    'ASA3E',     'ASA\\s*3E', 'ASA3E');
+  tryFill('asa-4e',    'ASA4E',     'ASA\\s*4E', 'ASA4E');
+  tryFill('asa-5e',    'ASA5E',     'ASA\\s*5E', 'ASA5E');
+  return filled;
+}
 
 async function uploadPhoto() {
   const f = document.getElementById('photoFile').files[0];
@@ -567,7 +618,9 @@ async function saveLog() {
     set_dept: txt('set-dept')
   };
   const asa = { ASA1:num('asa-1'), ASA2:num('asa-2'), ASA3:num('asa-3'),
-                ASA4:num('asa-4'), ASA5:num('asa-5'), ASA6:num('asa-6') };
+                ASA4:num('asa-4'), ASA5:num('asa-5'), ASA6:num('asa-6'),
+                ASA1E:num('asa-1e'), ASA2E:num('asa-2e'), ASA3E:num('asa-3e'),
+                ASA4E:num('asa-4e'), ASA5E:num('asa-5e') };
   const complications = {
     DOT: { state: getRadio('cx-dot'), detail: txt('cx-dot-detail') },
     CPR: { state: getRadio('cx-cpr'), detail: txt('cx-cpr-detail') },
