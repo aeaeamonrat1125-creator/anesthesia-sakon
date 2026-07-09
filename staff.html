@@ -772,8 +772,6 @@ function renderEquipment() {
       <td class="text-xs">${e.received_date||''}</td>
       <td onclick="event.stopPropagation()">
         <button class="text-blue-600 text-xs hover:underline" onclick="openEqForm('${e.id}')">แก้ไข</button>
-        <span class="text-slate-300 mx-1">|</span>
-        <button class="text-purple-600 text-xs hover:underline" onclick="openEqHistory('${e.id}')">📋 ประวัติ</button>
       </td>
     </tr>`;
   }).join('') || '<tr><td colspan="10" class="text-center text-slate-500 py-4">ไม่พบเครื่องมือ</td></tr>';
@@ -1744,7 +1742,7 @@ function showKpiChart(kid) {
   });
 }
 
-// ===== EQUIPMENT INSPECTION HISTORY =====
+// ===== EQUIPMENT INSPECTION HISTORY (ย้ายไป index.html แล้ว) =====
 async function openEqHistory(eqId) {
   const eq = cache.equipment.find(x => x.id === eqId);
   if (!eq) return;

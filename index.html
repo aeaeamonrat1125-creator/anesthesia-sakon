@@ -927,16 +927,33 @@
 <!-- Modal: แสดงเครื่องในห้อง -->
   <div id="roomModal" class="fixed inset-0 bg-black/60 z-40 hidden items-center justify-center p-3">
     <div class="card max-w-4xl w-full max-h-[92vh] overflow-y-auto p-5">
-      <div class="flex items-center justify-between gap-3 mb-4">
+      <div class="flex items-center justify-between gap-3 mb-3">
         <div>
-          <div class="text-xs text-slate-500">ห้อง</div>
+          <div class="text-xs text-slate-500">ห้อง / จุดบริการ</div>
           <div class="font-bold text-2xl" id="rm-name">--</div>
         </div>
-        <button onclick="closeRoom()" class="text-slate-500 hover:text-slate-800 text-3xl leading-none">×</button>
+        <div class="flex gap-2 items-center">
+          <button onclick="printRoomAll()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg">🖨️ พิมพ์ทั้งห้อง</button>
+          <button onclick="closeRoom()" class="text-slate-500 hover:text-slate-800 text-3xl leading-none">×</button>
+        </div>
       </div>
 
-      <div id="rm-filters" class="hidden flex gap-2 flex-wrap mb-4"></div>
-      <div id="rm-groups" class="space-y-5"></div>
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-4 border-b border-slate-100 pb-3">
+        <button class="rm-tab px-4 py-1.5 rounded-lg text-sm font-semibold bg-purple-600 text-white transition" data-rmtab="equip" onclick="switchRmTab('equip')">📦 เครื่องมือ</button>
+        <button class="rm-tab px-4 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition" data-rmtab="history" onclick="switchRmTab('history')">📋 ประวัติตรวจ</button>
+      </div>
+
+      <!-- Equipment section -->
+      <div id="rm-equip-section">
+        <div id="rm-filters" class="hidden flex gap-2 flex-wrap mb-4"></div>
+        <div id="rm-groups" class="space-y-5"></div>
+      </div>
+
+      <!-- History section -->
+      <div id="rm-history-section" class="hidden">
+        <div id="rm-history-content" class="space-y-2"></div>
+      </div>
     </div>
   </div>
 
@@ -2781,6 +2798,9 @@ function eqCard(e) {
       ${e.repair_date ? `<div>🔧 ซ่อม ${sbUtils.fmtDate(e.repair_date)}</div>` : ''}
       ${e.notes ? `<div class="text-slate-500 italic mt-1">📝 ${e.notes}</div>` : ''}
     </div>
+    <div class="mt-2 pt-2 border-t border-slate-200 flex justify-end">
+      <button onclick="printEq('${e.id}')" class="text-xs text-slate-500 hover:text-purple-600 flex items-center gap-1 transition">🖨️ พิมพ์ข้อมูลเครื่อง</button>
+    </div>
   </div>`;
 }
 let _roomGroups = {};
@@ -2788,9 +2808,13 @@ const _KIND_ORDER = ['Machine','Monitor'];
 const _colorMap = { 'Machine':'emerald','Monitor':'blue','Defibrillator':'rose','Ventilator':'amber','Infusion Pump':'purple' };
 const _icoMap   = { 'Machine':'⚙️','Monitor':'📊','Defibrillator':'⚡','Ventilator':'🫁','Infusion Pump':'💧' };
 
+let _currentRoom = '';
 function openRoom(room) {
+  _currentRoom = room;
   const inRoom = state.equipment.filter(e => e.location === room);
   document.getElementById('rm-name').textContent = '🏥 ' + room;
+  // reset tabs
+  switchRmTab('equip');
   const groups = {};
   inRoom.forEach(e => {
     const k = e.kind || 'อื่นๆ';
@@ -2851,6 +2875,211 @@ function renderRoomGroups(kindFilter) {
           <div class="grid sm:grid-cols-2 gap-3">${items.map(eqCard).join('')}</div>
         </div>`;
       }).join('');
+}
+
+function switchRmTab(tab) {
+  document.querySelectorAll('.rm-tab').forEach(b => {
+    const on = b.dataset.rmtab === tab;
+    b.className = `rm-tab px-4 py-1.5 rounded-lg text-sm font-semibold transition ${on ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+  });
+  document.getElementById('rm-equip-section').classList.toggle('hidden', tab !== 'equip');
+  document.getElementById('rm-history-section').classList.toggle('hidden', tab !== 'history');
+  if (tab === 'history') loadRoomHistory(_currentRoom);
+}
+
+let _roomHistCache = [];
+async function loadRoomHistory(room) {
+  const el = document.getElementById('rm-history-content');
+  el.innerHTML = '<div class="text-center text-slate-400 py-8">⏳ กำลังโหลด...</div>';
+  try {
+    const { data: hist, error } = await sb.from('daily_inspections')
+      .select('*').eq('room', room)
+      .order('date', { ascending: false }).order('created_at', { ascending: false }).limit(30);
+    if (error) throw error;
+    _roomHistCache = hist || [];
+    if (!_roomHistCache.length) {
+      el.innerHTML = '<div class="text-center text-slate-400 py-8">ยังไม่มีประวัติการตรวจห้องนี้</div>'; return;
+    }
+    el.innerHTML = `
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm text-slate-500">${_roomHistCache.length} รายการล่าสุด · คลิกเพื่อดูรายละเอียด</div>
+        <button onclick="printRoomHistory()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg">🖨️ พิมพ์ประวัติ</button>
+      </div>
+      ${_roomHistCache.map(h => {
+        const m  = (h.items?.machine||[]).filter(i=>i.state==='yes').length;
+        const mb = (h.items?.machine||[]).filter(i=>i.state==='no').length;
+        const v  = (h.items?.monitor||[]).filter(i=>i.state==='yes').length;
+        const vb = (h.items?.monitor||[]).filter(i=>i.state==='no').length;
+        const hasIssue = mb>0||vb>0;
+        return `<div class="border rounded-xl p-3 cursor-pointer transition hover:border-purple-400
+          ${hasIssue ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}"
+          onclick="openRoomHistDetail('${h.id}')">
+          <div class="flex justify-between items-center">
+            <div class="font-semibold text-sm">${sbUtils.fmtDate(h.date)} · ${h.items?.nurse||'-'}</div>
+            <div class="text-xs ${hasIssue?'text-rose-600 font-semibold':'text-emerald-600'}">
+              ${hasIssue ? `⚠️ พบปัญหา ${mb+vb} จุด` : '✓ ผ่านทั้งหมด'}
+            </div>
+          </div>
+          <div class="text-xs text-slate-500 mt-1 flex gap-3 flex-wrap">
+            <span>Machine: <span class="text-emerald-600">${m} พร้อม</span>${mb?` · <span class="text-rose-500">${mb} ไม่พร้อม</span>`:''}</span>
+            <span>Monitor: <span class="text-emerald-600">${v} มี</span>${vb?` · <span class="text-rose-500">${vb} ไม่มี</span>`:''}</span>
+          </div>
+          ${h.notes ? `<div class="text-xs text-slate-500 mt-1 truncate">${h.notes}</div>` : ''}
+        </div>`;
+      }).join('')}`;
+  } catch(e) { el.innerHTML = `<div class="text-rose-500 py-4 text-sm">${e.message}</div>`; }
+}
+
+function openRoomHistDetail(id) {
+  const h = _roomHistCache.find(x => x.id === id);
+  if (!h) return;
+  const mItems = h.items?.machine || [];
+  const vItems = h.items?.monitor || [];
+  const issues = [...mItems.filter(i=>i.state==='no'), ...vItems.filter(i=>i.state==='no')];
+  const dateStr = sbUtils.fmtDate(h.date);
+  const timeStr = new Date(h.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
+    <title>ตรวจเครื่อง ${h.room} ${dateStr}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      body{font-family:Sarabun,sans-serif;padding:20px;color:#1e293b;font-size:13px}
+      h1{font-size:18px;color:#1d4ed8;border-bottom:2px solid #3b82f6;padding-bottom:6px;margin-bottom:10px}
+      h2{font-size:13px;font-weight:700;color:#334155;margin:12px 0 4px}
+      table{width:100%;border-collapse:collapse;margin-bottom:10px}
+      th,td{border:1px solid #cbd5e1;padding:4px 8px;text-align:left;font-size:12px}
+      th{background:#f1f5f9;font-weight:600;width:60%}
+      .ok{color:#15803d;font-weight:600} .bad{color:#b91c1c;font-weight:600} .pen{color:#78716c}
+      @media print{@page{margin:12mm}button{display:none}}
+    </style></head><body>
+    <h1>📋 ตรวจเครื่อง ${h.room}</h1>
+    <table><tr><th>วันที่</th><td>${dateStr} เวลา ${timeStr}</td></tr>
+    <tr><th>วิสัญญีประจำห้อง</th><td>${h.items?.nurse||'-'}</td></tr>
+    ${h.notes ? `<tr><th>หมายเหตุ</th><td>${h.notes}</td></tr>` : ''}
+    </table>
+    ${mItems.length ? `<h2>⚙️ Machine (${mItems.filter(i=>i.state==='yes').length} พร้อม · ${mItems.filter(i=>i.state==='no').length} ไม่พร้อม · ${mItems.filter(i=>i.state==='pending').length} ไม่ได้ตรวจ)</h2>
+    <table><tr><th style="width:60%">รายการ</th><th>ผล</th></tr>
+    ${mItems.map(i=>`<tr><td>${i.name}</td><td class="${i.state==='yes'?'ok':i.state==='no'?'bad':'pen'}">${i.state==='yes'?'✓ พร้อม':i.state==='no'?'✗ ไม่พร้อม':'—'}</td></tr>`).join('')}
+    </table>` : ''}
+    ${vItems.length ? `<h2>📊 Monitor (${vItems.filter(i=>i.state==='yes').length} มี · ${vItems.filter(i=>i.state==='no').length} ไม่มี)</h2>
+    <table><tr><th style="width:60%">รายการ</th><th>ผล</th></tr>
+    ${vItems.map(i=>`<tr><td>${i.name}</td><td class="${i.state==='yes'?'ok':i.state==='no'?'bad':'pen'}">${i.state==='yes'?'✓ มี':i.state==='no'?'✗ ไม่มี':'—'}</td></tr>`).join('')}
+    </table>` : ''}
+    ${issues.length ? `<h2 style="color:#b91c1c">⚠️ รายการที่พบปัญหา</h2><ul style="font-size:12px;color:#b91c1c;padding-left:16px">
+    ${issues.map(i=>`<li>${i.name}</li>`).join('')}</ul>` : ''}
+    <div style="font-size:10px;color:#94a3b8;margin-top:16px;text-align:right">พิมพ์: ${new Date().toLocaleDateString('th-TH')} · ระบบวิสัญญีพยาบาล รพ.สกลนคร</div>
+    <div style="margin-top:8px;text-align:center"><button onclick="window.print()" style="padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-family:Sarabun;cursor:pointer">🖨️ พิมพ์</button></div>
+  </body></html>`;
+  const w = window.open('','_blank','width=700,height=600');
+  w.document.write(html); w.document.close();
+}
+
+async function printEq(eqId) {
+  const eq = state.equipment.find(e => e.id === eqId);
+  if (!eq) return;
+  let hist = [];
+  try {
+    const { data } = await sb.from('daily_inspections').select('*')
+      .eq('room', eq.location).order('date',{ascending:false}).limit(10);
+    hist = data || [];
+  } catch(e) {}
+  const rows = hist.map(h => {
+    const m  = (h.items?.machine||[]).filter(i=>i.state==='yes').length;
+    const mb = (h.items?.machine||[]).filter(i=>i.state==='no').length;
+    const v  = (h.items?.monitor||[]).filter(i=>i.state==='yes').length;
+    const vb = (h.items?.monitor||[]).filter(i=>i.state==='no').length;
+    const ok = mb===0&&vb===0;
+    return `<tr><td>${h.date||''}</td><td>${h.items?.nurse||'-'}</td>
+      <td>${m} พร้อม${mb?` / <span style="color:#b91c1c">${mb} ไม่พร้อม</span>`:''}</td>
+      <td>${v} มี${vb?` / <span style="color:#b91c1c">${vb} ไม่มี</span>`:''}</td>
+      <td style="color:${ok?'#15803d':'#b91c1c'};font-weight:600">${ok?'✓ ผ่าน':'⚠️ พบปัญหา'}</td>
+      <td style="font-size:11px">${(h.notes||'').replace(/</g,'&lt;')}</td></tr>`;
+  }).join('');
+  const statusColor = eq.status==='ใช้งานได้'?'#15803d':eq.status==='รอซ่อม'?'#b91c1c':'#a16207';
+  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
+    <title>${eq.name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>body{font-family:Sarabun,sans-serif;padding:20px;color:#1e293b;font-size:13px}
+    h1{font-size:18px;color:#4c1d95;border-bottom:2px solid #7c3aed;padding-bottom:8px;margin-bottom:12px}
+    h2{font-size:13px;font-weight:700;color:#334155;margin:14px 0 6px}
+    table{width:100%;border-collapse:collapse;margin-bottom:12px}
+    th,td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;font-size:12px}
+    th{background:#f1f5f9;font-weight:600}
+    @media print{@page{margin:12mm}button{display:none}}</style>
+  </head><body>
+    <h1>${eq.kind||'เครื่องมือ'}: ${eq.name||'-'}</h1>
+    <table>
+      <tr><th>ที่ตั้ง</th><td>${eq.location||'-'}</td><th>ชนิด</th><td>${eq.kind||'-'}</td></tr>
+      <tr><th>ยี่ห้อ / รุ่น</th><td>${[eq.brand,eq.model].filter(Boolean).join(' / ')||'-'}</td><th>Serial</th><td>${eq.serial||'-'}</td></tr>
+      <tr><th>เลขคุรุภัณฑ์</th><td>${eq.asset_no||'-'}</td><th>SKH</th><td>${eq.skh||'-'}</td></tr>
+      <tr><th>สถานะ</th><td style="color:${statusColor};font-weight:700">${eq.status||'-'}</td>
+          <th>วันที่รับเข้า</th><td>${eq.received_date||'-'}</td></tr>
+      ${eq.notes ? `<tr><th>หมายเหตุ</th><td colspan="3">${eq.notes}</td></tr>` : ''}
+    </table>
+    <h2>📋 ประวัติการตรวจ — ห้อง ${eq.location} (10 รายการล่าสุด)</h2>
+    ${rows ? `<table><tr><th>วันที่</th><th>วิสัญญี</th><th>Machine</th><th>Monitor</th><th>ผล</th><th>หมายเหตุ</th></tr>${rows}</table>`
+           : '<p style="color:#64748b;font-size:12px">ยังไม่มีประวัติการตรวจ</p>'}
+    <div style="font-size:10px;color:#94a3b8;margin-top:16px;text-align:right">พิมพ์: ${new Date().toLocaleDateString('th-TH')} · ระบบวิสัญญีพยาบาล รพ.สกลนคร</div>
+    <div style="margin-top:8px;text-align:center"><button onclick="window.print()" style="padding:8px 20px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-family:Sarabun;cursor:pointer">🖨️ พิมพ์</button></div>
+  </body></html>`;
+  const w = window.open('','_blank','width=750,height=600');
+  w.document.write(html); w.document.close();
+}
+
+async function printRoomAll() {
+  const room = _currentRoom;
+  if (!room) return;
+  const items = state.equipment.filter(e => e.location === room);
+  let hist = [];
+  try {
+    const { data } = await sb.from('daily_inspections').select('*')
+      .eq('room', room).order('date',{ascending:false}).limit(10);
+    hist = data || [];
+  } catch(e) {}
+  const eqRows = items.map(e => {
+    const sc = e.status==='ใช้งานได้'?'#15803d':e.status==='รอซ่อม'?'#b91c1c':'#a16207';
+    return `<tr><td>${e.kind||'-'}</td><td><b>${e.name||'-'}</b></td>
+      <td>${[e.brand,e.model].filter(Boolean).join(' / ')||'-'}</td>
+      <td style="font-family:monospace">${e.serial||'-'}</td>
+      <td style="font-family:monospace">${e.asset_no||'-'}</td>
+      <td style="font-family:monospace">${e.skh||'-'}</td>
+      <td style="color:${sc};font-weight:600">${e.status||'-'}</td></tr>`;
+  }).join('');
+  const histRows = hist.map(h => {
+    const mb = (h.items?.machine||[]).filter(i=>i.state==='no').length;
+    const vb = (h.items?.monitor||[]).filter(i=>i.state==='no').length;
+    const ok = mb===0&&vb===0;
+    return `<tr><td>${h.date||''}</td><td>${h.items?.nurse||'-'}</td>
+      <td style="color:${ok?'#15803d':'#b91c1c'};font-weight:600">${ok?'✓ ผ่าน':`⚠️ ปัญหา ${mb+vb} จุด`}</td>
+      <td style="font-size:11px">${(h.notes||'').replace(/</g,'&lt;')}</td></tr>`;
+  }).join('');
+  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
+    <title>ทะเบียนเครื่องมือ ${room}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>body{font-family:Sarabun,sans-serif;padding:20px;color:#1e293b;font-size:12px}
+    h1{font-size:18px;color:#1d4ed8;border-bottom:2px solid #3b82f6;padding-bottom:8px;margin-bottom:12px}
+    h2{font-size:13px;font-weight:700;color:#334155;margin:14px 0 6px}
+    table{width:100%;border-collapse:collapse;margin-bottom:12px}
+    th,td{border:1px solid #cbd5e1;padding:4px 7px;text-align:left}
+    th{background:#f1f5f9;font-weight:600}
+    @media print{@page{margin:10mm;size:A4 landscape}button{display:none}}</style>
+  </head><body>
+    <h1>📦 ทะเบียนเครื่องมือ — ห้อง ${room}</h1>
+    <h2>เครื่องมือทั้งหมด (${items.length} รายการ)</h2>
+    <table><tr><th>ชนิด</th><th>ชื่อ</th><th>ยี่ห้อ/รุ่น</th><th>Serial</th><th>เลขคุรุภัณฑ์</th><th>SKH</th><th>สถานะ</th></tr>${eqRows}</table>
+    <h2>📋 ประวัติการตรวจล่าสุด (${hist.length} รายการ)</h2>
+    ${histRows ? `<table><tr><th>วันที่</th><th>วิสัญญี</th><th>ผล</th><th>หมายเหตุ</th></tr>${histRows}</table>`
+              : '<p style="color:#64748b">ยังไม่มีประวัติการตรวจ</p>'}
+    <div style="font-size:10px;color:#94a3b8;margin-top:16px;text-align:right">พิมพ์: ${new Date().toLocaleDateString('th-TH')} · ระบบวิสัญญีพยาบาล รพ.สกลนคร</div>
+    <div style="margin-top:8px;text-align:center"><button onclick="window.print()" style="padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-family:Sarabun;cursor:pointer">🖨️ พิมพ์</button></div>
+  </body></html>`;
+  const w = window.open('','_blank','width=900,height=600');
+  w.document.write(html); w.document.close();
+}
+
+async function printRoomHistory() {
+  const room = _currentRoom;
+  if (!room) return;
+  await printRoomAll(); // รวม history อยู่แล้ว
 }
 
 function closeRoom() {
