@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  body { font-family:'Sarabun', system-ui, sans-serif; background:#f1f5f9; }
+  body { font-family:'Sarabun', system-ui, sans-serif; background:#f0f4ff; }
   .grad-hero { background: linear-gradient(135deg, #0ea5e9, #2563eb 60%, #7c3aed); }
   .card { background:#fff; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06); }
   .scroll-x { overflow-x:auto; -webkit-overflow-scrolling: touch; }
@@ -21,12 +21,52 @@
   .btn-primary { background:#2563eb; color:#fff; } .btn-primary:hover { background:#1d4ed8; }
   .btn-ghost { background:#f1f5f9; color:#334155; } .btn-ghost:hover { background:#e2e8f0; }
   .btn-danger { background:#ef4444; color:#fff; } .btn-danger:hover { background:#dc2626; }
+  /* ===== APP SHELL ===== */
+  .app-shell { display:flex; min-height:100vh; }
+  .app-content { flex:1; min-width:0; display:flex; flex-direction:column; min-height:100vh; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar { width:240px; flex-shrink:0; background:#fff; border-right:1px solid #ede9fe; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; box-shadow:4px 0 16px rgba(109,40,217,.06); }
+  .sidebar-logo { padding:20px 16px 16px; border-bottom:1px solid #f3e8ff; }
+  .sidebar-logo .logo-icon { width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg,#7c3aed,#c026d3); display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:10px; box-shadow:0 4px 12px rgba(124,58,237,.35); }
+  .sidebar-logo .name { font-weight:700; font-size:14px; color:#1e1b4b; line-height:1.3; }
+  .sidebar-logo .sub { font-size:11px; color:#7c3aed; margin-top:1px; }
+  .sidebar-section-label { font-size:10px; font-weight:700; color:#a78bfa; letter-spacing:.08em; padding:14px 16px 4px; text-transform:uppercase; }
+  .sidebar-item { display:flex; align-items:center; gap:10px; padding:9px 14px; border-radius:10px; margin:1px 8px; font-size:13.5px; color:#475569; cursor:pointer; transition:all .14s; text-decoration:none; border:none; background:none; width:calc(100% - 16px); text-align:left; }
+  .sidebar-item:hover { background:#faf5ff; color:#7c3aed; }
+  .sidebar-item.active { background:linear-gradient(135deg,#7c3aed,#9333ea); color:#fff; box-shadow:0 4px 14px rgba(124,58,237,.32); font-weight:600; }
+  .sidebar-item .si-icon { width:22px; text-align:center; font-size:15px; flex-shrink:0; }
+  .sidebar-footer { padding:12px 8px; border-top:1px solid #f3e8ff; margin-top:auto; }
+  .sidebar-user { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:#faf5ff; }
+  .sidebar-avatar { width:34px; height:34px; border-radius:999px; background:linear-gradient(135deg,#7c3aed,#c026d3); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px; flex-shrink:0; }
+
+  /* ===== TOPBAR (desktop) ===== */
+  .topbar { background:#fff; border-bottom:1px solid #ede9fe; padding:12px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 1px 4px rgba(109,40,217,.06); position:sticky; top:0; z-index:20; }
+  .topbar-title { font-size:16px; font-weight:700; color:#1e1b4b; }
+
+  /* ===== MOBILE BOTTOM NAV ===== */
+  .mobile-bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:40; background:#fff; border-top:1px solid #ede9fe; box-shadow:0 -4px 20px rgba(109,40,217,.1); display:flex; padding-bottom:env(safe-area-inset-bottom); }
+  .mobile-bottom-nav a, .mobile-bottom-nav button { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 4px; font-size:10px; color:#94a3b8; background:none; border:none; cursor:pointer; text-decoration:none; transition:color .12s; }
+  .mobile-bottom-nav .active-bn { color:#7c3aed; }
+  .mobile-bottom-nav .bn-icon { font-size:20px; line-height:1; }
+
+  body.fs-mode .sidebar, body.fs-mode .topbar { display:none !important; }
   body.fs-mode header, body.fs-mode nav.main-nav { display:none !important; }
-  .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:50;
-    background:#2563eb; color:#fff; padding:8px 12px; border-radius:999px;
-    box-shadow:0 6px 16px rgba(0,0,0,.18); font-size:13px; }
+  .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:50; background:#2563eb; color:#fff; padding:8px 12px; border-radius:999px; box-shadow:0 6px 16px rgba(0,0,0,.18); font-size:13px; }
   body.fs-mode .show-menu-btn { display:inline-flex; gap:6px; align-items:center; }
   .tab-btn.active { background: rgba(255,255,255,.18); }
+
+  @media (min-width:768px) {
+    nav.main-nav { display:none !important; }
+    header.grad-hero { display:none !important; }
+    .mobile-bottom-nav { display:none !important; }
+    main { padding-bottom:0 !important; }
+  }
+  @media (max-width:767px) {
+    .sidebar { display:none !important; }
+    .topbar { display:none !important; }
+    main { padding-bottom:72px !important; }
+  }
   .status-ok { background:#dcfce7; color:#15803d; }
   .status-warn { background:#fef3c7; color:#a16207; }
   .status-bad { background:#fee2e2; color:#b91c1c; }
@@ -55,31 +95,77 @@
 
 <button class="show-menu-btn" onclick="toggleFullscreen(false)">▼ แสดงเมนู</button>
 
-<header class="grad-hero text-white">
-  <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-    <div>
-      <div class="text-lg sm:text-xl font-bold">👥 ระบบบุคลากร — วิสัญญี รพ.สกลนคร</div>
-      <div class="text-white/80 text-xs sm:text-sm" id="user-info">กรุณาเข้าสู่ระบบ</div>
+<!-- ===== APP SHELL ===== -->
+<div class="app-shell">
+
+<!-- SIDEBAR (desktop/iPad) -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">👥</div>
+    <div class="name">ระบบบุคลากร</div>
+    <div class="sub">วิสัญญี รพ.สกลนคร</div>
+  </div>
+  <div class="py-2 flex-1">
+    <div class="sidebar-section-label">ข้อมูลหน่วยงาน</div>
+    <button class="tab-btn sidebar-item active" data-tab="announce" onclick="switchTab('announce')"><span class="si-icon">📣</span> ประกาศ</button>
+    <button class="tab-btn sidebar-item" data-tab="nurses" onclick="switchTab('nurses')"><span class="si-icon">📒</span> รายชื่อบุคลากร</button>
+    <button class="tab-btn sidebar-item" data-tab="activities" onclick="switchTab('activities')"><span class="si-icon">🎯</span> กิจกรรม</button>
+    <button class="tab-btn sidebar-item" data-tab="meetings" onclick="switchTab('meetings')"><span class="si-icon">📚</span> ประชุมวิชาการ</button>
+    <button class="tab-btn sidebar-item" data-tab="schedule" onclick="switchTab('schedule')"><span class="si-icon">📅</span> ตารางเวร</button>
+    <button class="tab-btn sidebar-item" data-tab="refers" onclick="switchTab('refers')"><span class="si-icon">↪</span> Refer</button>
+    <button class="tab-btn sidebar-item" data-tab="docs" onclick="switchTab('docs')"><span class="si-icon">📄</span> เอกสารวิชาการ</button>
+    <div class="sidebar-section-label">KPI & ข้อมูล</div>
+    <button class="tab-btn sidebar-item" data-tab="kpi-edit" onclick="switchTab('kpi-edit')"><span class="si-icon">📝</span> ลงข้อมูล KPI</button>
+    <button class="tab-btn sidebar-item" data-tab="kpi-dashboard" onclick="switchTab('kpi-dashboard')"><span class="si-icon">📊</span> Dashboard KPI</button>
+    <button class="tab-btn sidebar-item" data-tab="ops" onclick="switchTab('ops')"><span class="si-icon">📈</span> สถิติบริการ</button>
+    <div class="sidebar-section-label">เครื่องมือ & ระบบ</div>
+    <button class="tab-btn sidebar-item" data-tab="equipment" onclick="switchTab('equipment')"><span class="si-icon">🔧</span> เครื่องมือ</button>
+    <button class="tab-btn sidebar-item" data-tab="staff" onclick="switchTab('staff')"><span class="si-icon">👤</span> บัญชี Login</button>
+    <button id="auditTabBtn" class="tab-btn sidebar-item hidden" data-tab="audit" onclick="switchTab('audit')"><span class="si-icon">🔍</span> ประวัติการใช้งาน</button>
+    <div class="sidebar-section-label">ลิงก์ด่วน</div>
+    <a href="index.html" class="sidebar-item"><span class="si-icon">🏠</span> หน้าหลัก</a>
+    <a href="service-log.html" class="sidebar-item"><span class="si-icon">📋</span> ลงยอดบริการ</a>
+    <a href="inspection.html" class="sidebar-item"><span class="si-icon">🔬</span> ตรวจเครื่อง</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">⚕</div>
+      <div class="min-w-0 flex-1">
+        <div class="text-xs font-semibold text-slate-700 truncate" id="user-info">กรุณาเข้าสู่ระบบ</div>
+        <button id="signOutBtn" onclick="signOut()" class="hidden text-[10px] text-rose-500 hover:text-rose-700 mt-0.5">ออกจากระบบ</button>
+      </div>
     </div>
-    <div class="flex gap-2 items-center flex-wrap">
-      <a href="index.html" class="flex items-center gap-1 bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 <span class="hidden sm:inline">หน้าหลัก</span></a>
-      <button onclick="toggleFullscreen(true)" class="hidden sm:flex items-center bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">⛶</button>
-      <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออกจากระบบ</button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT AREA -->
+<div class="app-content">
+
+<!-- Mobile Header -->
+<header class="grad-hero text-white md:hidden">
+  <div class="px-4 py-3 flex items-center justify-between gap-2">
+    <div>
+      <div class="text-base font-bold">👥 ระบบบุคลากร — วิสัญญี รพ.สกลนคร</div>
+      <div class="text-white/80 text-xs" id="user-info-mobile">กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="flex gap-1">
+      <a href="index.html" class="bg-white/15 text-white text-xs px-2.5 py-1.5 rounded-lg">🏠</a>
+      <button id="signOutBtnMobile" onclick="signOut()" class="hidden bg-rose-500 text-white text-xs px-2.5 py-1.5 rounded-lg">ออก</button>
     </div>
   </div>
 </header>
 
-<nav class="main-nav bg-slate-900/95 text-white sticky top-0 z-30 shadow">
-  <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
+<!-- Mobile Nav (hamburger - keep for mobile) -->
+<nav class="main-nav md:hidden bg-slate-900/95 text-white sticky top-0 z-30 shadow">
+  <div class="px-4 py-2 flex items-center justify-between gap-2">
     <span id="nav-current-label" class="text-sm font-semibold truncate">📣 ประกาศ</span>
     <div class="relative">
-      <button id="nav-menu-btn" onclick="toggleNavMenu()"
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/20 text-sm font-medium">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect y="2" width="16" height="2" rx="1" fill="white"/><rect y="7" width="16" height="2" rx="1" fill="white"/><rect y="12" width="16" height="2" rx="1" fill="white"/></svg>
-        เมนู
+      <button id="nav-menu-btn" onclick="toggleNavMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 border border-white/20 text-sm font-medium">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect y="2" width="16" height="2" rx="1" fill="white"/><rect y="7" width="16" height="2" rx="1" fill="white"/><rect y="12" width="16" height="2" rx="1" fill="white"/></svg>เมนู
       </button>
       <div id="nav-dropdown" class="hidden absolute right-0 top-full mt-1 bg-slate-800 rounded-xl shadow-2xl py-2 min-w-[220px] z-50 border border-white/10">
         <button class="tab-btn active w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="announce">📣 ประกาศ</button>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="nurses">📒 รายชื่อทั้งหมด</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi-edit">📝 ลงข้อมูล KPI</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi-dashboard">📊 Dashboard KPI</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="equipment">🔧 เครื่องมือ</button>
@@ -90,14 +176,20 @@
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="docs">📄 เอกสารวิชาการ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="ops">📊 สถิติบริการ</button>
         <div class="border-t border-white/10 my-1"></div>
-        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="nurses">📒 รายชื่อทั้งหมด</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="staff">👤 บัญชี Login</button>
-        <div class="border-t border-white/10 my-1"></div>
-        <button id="auditTabBtn" class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none hidden" data-tab="audit">🔍 ประวัติการใช้งาน</button>
+        <button id="auditTabBtnMobile" class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none hidden" data-tab="audit">🔍 ประวัติการใช้งาน</button>
       </div>
     </div>
   </div>
 </nav>
+
+<!-- Desktop Topbar -->
+<div class="topbar hidden md:flex">
+  <div class="topbar-title" id="topbar-staff-title">📣 ประกาศ</div>
+  <div class="flex items-center gap-3">
+    <button onclick="toggleFullscreen(true)" class="text-slate-400 hover:text-slate-700 text-lg">⛶</button>
+  </div>
+</div>
 
 <!-- ===================== LOGIN OVERLAY ===================== -->
 <div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/60 z-40 items-center justify-center p-4">
@@ -119,7 +211,7 @@
   </div>
 </div>
 
-<main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+<main class="flex-1 px-3 sm:px-5 py-4 sm:py-5">
 
   <!-- STAFF -->
   <section data-page="staff" class="space-y-4 hidden">
@@ -545,6 +637,27 @@
   </section>
 
 </main>
+</div><!-- /app-content -->
+</div><!-- /app-shell -->
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav md:hidden">
+  <button class="tab-btn active-bn" data-tab="announce" onclick="switchTab('announce')">
+    <span class="bn-icon">📣</span>ประกาศ
+  </button>
+  <button class="tab-btn" data-tab="nurses" onclick="switchTab('nurses')">
+    <span class="bn-icon">👥</span>บุคลากร
+  </button>
+  <button class="tab-btn" data-tab="kpi-dashboard" onclick="switchTab('kpi-dashboard')">
+    <span class="bn-icon">📊</span>KPI
+  </button>
+  <button class="tab-btn" data-tab="equipment" onclick="switchTab('equipment')">
+    <span class="bn-icon">🔧</span>เครื่องมือ
+  </button>
+  <button onclick="document.getElementById('nav-menu-btn').click()">
+    <span class="bn-icon">☰</span>เพิ่มเติม
+  </button>
+</nav>
 
 <!-- ===================== GENERIC MODAL ===================== -->
 <div id="modal" class="fixed inset-0 bg-black/50 z-40 hidden items-center justify-center p-3">
@@ -590,11 +703,27 @@ document.addEventListener('click', e => {
 });
 
 // ===== TABS =====
+const _STAFF_TAB_LABELS = {
+  announce:'📣 ประกาศ', nurses:'📒 รายชื่อบุคลากร', kpi_edit:'📝 ลงข้อมูล KPI',
+  'kpi-dashboard':'📊 Dashboard KPI', equipment:'🔧 เครื่องมือ', schedule:'📅 ตารางเวร',
+  meetings:'📚 ประชุมวิชาการ', activities:'🎯 กิจกรรม', refers:'↪ Refer',
+  docs:'📄 เอกสารวิชาการ', ops:'📊 สถิติบริการ', staff:'👤 บัญชี Login', audit:'🔍 ประวัติ'
+};
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(x => x.classList.toggle('active', x.dataset.tab === tab));
+  document.querySelectorAll('.tab-btn').forEach(x => {
+    const on = x.dataset.tab === tab;
+    x.classList.toggle('active', on);
+    if (x.classList.contains('sidebar-item')) {
+      if (on) { x.style.background='linear-gradient(135deg,#7c3aed,#9333ea)'; x.style.color='#fff'; x.style.boxShadow='0 4px 14px rgba(124,58,237,.32)'; x.style.fontWeight='600'; }
+      else { x.style.background=''; x.style.color=''; x.style.boxShadow=''; x.style.fontWeight=''; }
+    }
+  });
   document.querySelectorAll('section[data-page]').forEach(s => s.classList.toggle('hidden', s.dataset.page !== tab));
-  const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
-  if (btn) document.getElementById('nav-current-label').textContent = btn.textContent.trim();
+  const label = _STAFF_TAB_LABELS[tab] || '';
+  const navLbl = document.getElementById('nav-current-label');
+  if (navLbl && label) navLbl.textContent = label;
+  const topLbl = document.getElementById('topbar-staff-title');
+  if (topLbl && label) topLbl.textContent = label;
   document.getElementById('nav-dropdown')?.classList.add('hidden');
   if (tab === 'staff') renderStaff();
   if (tab === 'kpi-edit') renderKpiPicker();
@@ -628,12 +757,12 @@ async function ensureAuth() {
     if (u) {
       currentUser = u;
       currentProfile = await sbAuth.getProfile().catch(() => null);
-      document.getElementById('user-info').textContent =
-        `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
-      document.getElementById('signOutBtn').classList.remove('hidden');
+      const uLabel = `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
+      ['user-info','user-info-mobile'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=uLabel; });
+      ['signOutBtn','signOutBtnMobile'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
       // แสดงเมนู Audit เฉพาะ Admin
       if (currentProfile?.role === 'admin') {
-        document.getElementById('auditTabBtn').classList.remove('hidden');
+        ['auditTabBtn','auditTabBtnMobile'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
       }
       document.getElementById('loginOverlay').style.display = 'none';
       return true;
