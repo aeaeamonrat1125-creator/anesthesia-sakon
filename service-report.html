@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>รายงานสรุปยอดบริการ — วิสัญญี รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  body{font-family:'Sarabun',sans-serif;background:#f1f5f9;}
+  .card{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .input{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;background:#fff;}
+  .input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15);}
+  .btn{padding:8px 14px;border-radius:8px;font-weight:500;font-size:14px;cursor:pointer;transition:all .15s;}
+  .btn-primary{background:#2563eb;color:#fff;}.btn-primary:hover{background:#1d4ed8;}
+  .btn-ghost{background:#f1f5f9;color:#334155;}.btn-ghost:hover{background:#e2e8f0;}
+  .btn-green{background:#16a34a;color:#fff;}.btn-green:hover{background:#15803d;}
+  .grad-hero{background:linear-gradient(135deg,#0ea5e9,#2563eb 60%,#7c3aed);}
+  th{background:#f8fafc;font-weight:600;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;}
+  td{font-size:13px;}
+  tr:hover td{background:#f8fafc;}
+  .badge{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;}
+  .tag-morning{background:#dbeafe;color:#1d4ed8;}
+  .tag-evening{background:#fef3c7;color:#b45309;}
+  .tag-night{background:#ede9fe;color:#5b21b6;}
+  .tag-in{background:#dcfce7;color:#15803d;}
+  .tag-out{background:#fce7f3;color:#9d174d;}
+</style>
+</head>
+<body class="text-slate-800">
+
+<header class="grad-hero text-white">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-2 flex-wrap">
+    <div>
+      <div class="text-lg sm:text-xl font-bold">📊 รายงานสรุปยอดบริการ</div>
+      <div class="text-white/80 text-xs" id="user-info">กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <a href="service-log.html" class="bg-white/15 text-white text-sm px-3 py-1.5 rounded-lg">📋 บันทึกยอด</a>
+      <a href="index.html" class="bg-white/15 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
+      <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
+    </div>
+  </div>
+</header>
+
+<div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/60 z-40 items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-6">
+    <div class="text-xl font-bold mb-3">เข้าสู่ระบบ</div>
+    <div class="space-y-2 mb-3">
+      <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
+      <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+    </div>
+    <div id="loginError" class="text-xs text-rose-500 mb-2 hidden"></div>
+    <button onclick="signIn()" class="btn btn-primary w-full">เข้าสู่ระบบ</button>
+  </div>
+</div>
+
+<main class="max-w-7xl mx-auto px-3 sm:px-4 py-5 space-y-4">
+
+  <!-- Filter -->
+  <div class="card p-4">
+    <div class="font-semibold mb-3">🔍 เลือกช่วงเวลา</div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">จากวันที่</label>
+        <input id="rpt-from" type="date" class="input">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">ถึงวันที่</label>
+        <input id="rpt-to" type="date" class="input">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">ประเภท</label>
+        <select id="rpt-type" class="input">
+          <option value="">— ทั้งหมด —</option>
+          <option value="ในเวลา">ในเวลาราชการ</option>
+          <option value="นอกเวลา">นอกเวลาราชการ</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">เวร (นอกเวลา)</label>
+        <select id="rpt-shift" class="input">
+          <option value="">— ทั้งหมด —</option>
+          <option>เช้า</option><option>บ่าย</option><option>ดึก</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <button onclick="loadReport()" class="btn btn-primary">🔍 โหลดรายงาน</button>
+      <button onclick="exportExcel()" class="btn btn-green">📥 Export Excel</button>
+    </div>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="summaryCards"></div>
+
+  <!-- Per-day table -->
+  <div class="card p-4">
+    <div class="flex items-center justify-between mb-3">
+      <div class="font-semibold" id="rptTableTitle">ตารางรายวัน</div>
+      <div class="text-xs text-slate-400">คลิกแถวเพื่อแก้ไข</div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full" id="rptTable">
+        <thead>
+          <tr>
+            <th class="text-left p-2 whitespace-nowrap">วันที่</th>
+            <th class="text-left p-2 whitespace-nowrap">ประเภท</th>
+            <th class="text-left p-2 whitespace-nowrap">เวร</th>
+            <th class="text-left p-2 whitespace-nowrap">จุดบริการ</th>
+            <th class="text-center p-2">Pt</th>
+            <th class="text-center p-2">GA</th>
+            <th class="text-center p-2">RA</th>
+            <th class="text-center p-2">MAC</th>
+            <th class="text-center p-2">ASA1</th>
+            <th class="text-center p-2">ASA2</th>
+            <th class="text-center p-2">ASA3</th>
+            <th class="text-center p-2">ASA4</th>
+            <th class="text-center p-2">ASA5</th>
+            <th class="text-center p-2">1E</th>
+            <th class="text-center p-2">2E</th>
+            <th class="text-center p-2">3E</th>
+            <th class="text-center p-2">4E</th>
+            <th class="text-center p-2">5E</th>
+            <th class="text-center p-2">Tube นอก</th>
+            <th class="text-center p-2">CPR</th>
+            <th class="text-center p-2">DOT</th>
+            <th class="text-center p-2">Re-intub</th>
+            <th class="text-center p-2">ทีม</th>
+          </tr>
+        </thead>
+        <tbody id="rptBody">
+          <tr><td colspan="23" class="text-center text-slate-400 py-8">กด "โหลดรายงาน" เพื่อดูข้อมูล</td></tr>
+        </tbody>
+        <tfoot id="rptFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 bg-black/50 z-40 hidden items-center justify-center p-4">
+  <div class="card max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5">
+    <div class="flex items-start justify-between mb-4">
+      <div class="font-bold text-lg" id="editModalTitle">แก้ไขข้อมูล</div>
+      <button onclick="closeEdit()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+    </div>
+    <div id="editModalBody" class="space-y-3"></div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="closeEdit()" class="btn btn-ghost flex-1">ยกเลิก</button>
+      <button onclick="saveEdit()" class="btn btn-primary flex-1">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+let currentUser = null, _logs = [], _editId = null;
+
+async function ensureAuth() {
+  try {
+    const u = await sbAuth.getUser();
+    if (u) {
+      currentUser = u;
+      const p = await sbAuth.getProfile().catch(()=>null);
+      document.getElementById('user-info').textContent = p?.full_name || u.email;
+      document.getElementById('signOutBtn').classList.remove('hidden');
+      document.getElementById('loginOverlay').style.display = 'none';
+      return true;
+    }
+  } catch(e){}
+  document.getElementById('loginOverlay').style.display = 'flex';
+  return false;
+}
+async function signIn() {
+  const err = document.getElementById('loginError');
+  err.classList.add('hidden');
+  try {
+    await sbAuth.signIn(document.getElementById('loginEmail').value.trim(),
+                        document.getElementById('loginPassword').value);
+    location.reload();
+  } catch(e){ err.textContent=e.message; err.classList.remove('hidden'); }
+}
+async function signOut() { await sbAuth.signOut(); location.reload(); }
+
+// ===== FILTER INIT =====
+(function() {
+  const today = new Date();
+  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('rpt-to').value   = today.toISOString().slice(0,10);
+  document.getElementById('rpt-from').value = first.toISOString().slice(0,10);
+})();
+
+// ===== LOAD =====
+async function loadReport() {
+  const from  = document.getElementById('rpt-from').value;
+  const to    = document.getElementById('rpt-to').value;
+  const type  = document.getElementById('rpt-type').value;
+  const shift = document.getElementById('rpt-shift').value;
+  document.getElementById('rptBody').innerHTML =
+    '<tr><td colspan="23" class="text-center text-slate-400 py-6">⏳ กำลังโหลด...</td></tr>';
+  try {
+    let q = sb.from('service_logs').select('*')
+      .gte('date', from).lte('date', to).order('date', {ascending:true}).order('created_at',{ascending:true});
+    if (type)  q = q.eq('type', type);
+    if (shift) q = q.eq('shift', shift);
+    const { data, error } = await q;
+    if (error) throw error;
+    _logs = data || [];
+    renderTable();
+    renderSummary();
+  } catch(e) {
+    document.getElementById('rptBody').innerHTML =
+      `<tr><td colspan="23" class="text-rose-500 py-4 text-center">${e.message}</td></tr>`;
+  }
+}
+
+function n(v) { return Number(v)||0; }
+
+function renderTable() {
+  document.getElementById('rptTableTitle').textContent = `ตารางรายวัน (${_logs.length} รายการ)`;
+  if (!_logs.length) {
+    document.getElementById('rptBody').innerHTML =
+      '<tr><td colspan="23" class="text-center text-slate-400 py-8">ไม่พบข้อมูลในช่วงที่เลือก</td></tr>';
+    document.getElementById('rptFoot').innerHTML = '';
+    return;
+  }
+
+  // totals
+  const tot = { pt:0,ga:0,ra:0,mac:0,a1:0,a2:0,a3:0,a4:0,a5:0,a1e:0,a2e:0,a3e:0,a4e:0,a5e:0,extTube:0,cpr:0,dot:0,reint:0,teams:0 };
+
+  document.getElementById('rptBody').innerHTML = _logs.map(h => {
+    const m = h.metrics || {};
+    const a = h.asa    || {};
+    const cx = h.complications || {};
+    const teams = h.notes ? (h.notes.match(/"team":"([^"]+)"/g)||[]).length : 0;
+    const extTube = (h.metrics?.ext_ett_details||[]).length || n(m.ext_ett);
+    const cprY = cx.CPR?.state === 'มี' ? 1 : 0;
+    const dotY = cx.DOT?.state === 'มี' ? 1 : 0;
+    const reY  = (cx.ReIntubation?.state === 'มี' || cx.ReIntube?.state === 'มี') ? 1 : 0;
+
+    tot.pt+=n(m.total); tot.ga+=n(m.ga); tot.ra+=n(m.ra); tot.mac+=n(m.mac);
+    tot.a1+=n(a.ASA1); tot.a2+=n(a.ASA2); tot.a3+=n(a.ASA3); tot.a4+=n(a.ASA4); tot.a5+=n(a.ASA5);
+    tot.a1e+=n(a.ASA1E); tot.a2e+=n(a.ASA2E); tot.a3e+=n(a.ASA3E); tot.a4e+=n(a.ASA4E); tot.a5e+=n(a.ASA5E);
+    tot.extTube+=extTube; tot.cpr+=cprY; tot.dot+=dotY; tot.reint+=reY;
+    tot.teams+=teams;
+
+    const typeTag = h.type==='ในเวลา'
+      ? `<span class="badge tag-in">ในเวลา</span>`
+      : `<span class="badge tag-out">นอกเวลา</span>`;
+    const shiftTag = h.shift==='เช้า' ? `<span class="badge tag-morning">เช้า</span>`
+                   : h.shift==='บ่าย' ? `<span class="badge tag-evening">บ่าย</span>`
+                   : h.shift==='ดึก'  ? `<span class="badge tag-night">ดึก</span>` : '';
+    const flagCpr = cprY ? '🔴' : '';
+    const flagDot = dotY ? '⚠️' : '';
+
+    return `<tr class="border-b last:border-0 cursor-pointer hover:bg-blue-50 transition" onclick="openEdit('${h.id}')">
+      <td class="p-2 whitespace-nowrap font-medium">${sbUtils.fmtDate(h.date)}</td>
+      <td class="p-2">${typeTag}</td>
+      <td class="p-2">${shiftTag}</td>
+      <td class="p-2 text-xs max-w-[100px] truncate">${h.service_point||'-'}</td>
+      <td class="p-2 text-center font-semibold">${n(m.total)||''}</td>
+      <td class="p-2 text-center">${n(m.ga)||''}</td>
+      <td class="p-2 text-center">${n(m.ra)||''}</td>
+      <td class="p-2 text-center">${n(m.mac)||''}</td>
+      <td class="p-2 text-center text-slate-500">${n(a.ASA1)||''}</td>
+      <td class="p-2 text-center text-slate-500">${n(a.ASA2)||''}</td>
+      <td class="p-2 text-center text-slate-500">${n(a.ASA3)||''}</td>
+      <td class="p-2 text-center text-slate-500">${n(a.ASA4)||''}</td>
+      <td class="p-2 text-center text-slate-500">${n(a.ASA5)||''}</td>
+      <td class="p-2 text-center text-amber-500">${n(a.ASA1E)||''}</td>
+      <td class="p-2 text-center text-amber-500">${n(a.ASA2E)||''}</td>
+      <td class="p-2 text-center text-amber-500">${n(a.ASA3E)||''}</td>
+      <td class="p-2 text-center text-amber-500">${n(a.ASA4E)||''}</td>
+      <td class="p-2 text-center text-amber-500">${n(a.ASA5E)||''}</td>
+      <td class="p-2 text-center">${extTube||''}</td>
+      <td class="p-2 text-center">${cprY ? `<span class="text-rose-600 font-bold">🔴${cprY}</span>` : ''}</td>
+      <td class="p-2 text-center">${dotY ? `<span class="text-amber-600 font-bold">⚠️${dotY}</span>` : ''}</td>
+      <td class="p-2 text-center">${reY  ? `<span class="text-orange-600 font-bold">🔁${reY}</span>`  : ''}</td>
+      <td class="p-2 text-center text-xs text-slate-400">${teams||''}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('rptFoot').innerHTML = `
+    <tr class="border-t-2 border-slate-300 bg-blue-50 font-bold">
+      <td class="p-2" colspan="4">รวม ${_logs.length} รายการ</td>
+      <td class="p-2 text-center">${tot.pt}</td>
+      <td class="p-2 text-center">${tot.ga}</td>
+      <td class="p-2 text-center">${tot.ra}</td>
+      <td class="p-2 text-center">${tot.mac}</td>
+      <td class="p-2 text-center">${tot.a1}</td>
+      <td class="p-2 text-center">${tot.a2}</td>
+      <td class="p-2 text-center">${tot.a3}</td>
+      <td class="p-2 text-center">${tot.a4}</td>
+      <td class="p-2 text-center">${tot.a5}</td>
+      <td class="p-2 text-center text-amber-600">${tot.a1e}</td>
+      <td class="p-2 text-center text-amber-600">${tot.a2e}</td>
+      <td class="p-2 text-center text-amber-600">${tot.a3e}</td>
+      <td class="p-2 text-center text-amber-600">${tot.a4e}</td>
+      <td class="p-2 text-center text-amber-600">${tot.a5e}</td>
+      <td class="p-2 text-center">${tot.extTube}</td>
+      <td class="p-2 text-center text-rose-600">${tot.cpr||''}</td>
+      <td class="p-2 text-center text-amber-600">${tot.dot||''}</td>
+      <td class="p-2 text-center text-orange-600">${tot.reint||''}</td>
+      <td class="p-2 text-center">${tot.teams}</td>
+    </tr>`;
+}
+
+function renderSummary() {
+  const total = _logs.length;
+  const inTime  = _logs.filter(h=>h.type==='ในเวลา').length;
+  const outTime = _logs.filter(h=>h.type==='นอกเวลา').length;
+  const totalPt = _logs.reduce((s,h)=>s+n(h.metrics?.total),0);
+  const totalCpr = _logs.filter(h=>h.complications?.CPR?.state==='มี').length;
+  document.getElementById('summaryCards').innerHTML = `
+    <div class="card p-3 text-center"><div class="text-2xl font-bold text-blue-600">${total}</div><div class="text-xs text-slate-500 mt-1">รายการทั้งหมด</div></div>
+    <div class="card p-3 text-center"><div class="text-2xl font-bold text-slate-700">${totalPt}</div><div class="text-xs text-slate-500 mt-1">ผู้ป่วยรวม</div></div>
+    <div class="card p-3 text-center"><div class="text-2xl font-bold text-emerald-600">${inTime}</div><div class="text-xs text-slate-500 mt-1">ในเวลา</div></div>
+    <div class="card p-3 text-center"><div class="text-2xl font-bold text-purple-600">${outTime}</div><div class="text-xs text-slate-500 mt-1">นอกเวลา</div></div>`;
+}
+
+// ===== EDIT =====
+function openEdit(id) {
+  const h = _logs.find(x=>x.id===id);
+  if (!h) return;
+  _editId = id;
+  const m = h.metrics||{}, a = h.asa||{}, cx = h.complications||{};
+  document.getElementById('editModalTitle').textContent = `✏️ แก้ไข ${sbUtils.fmtDate(h.date)} · ${h.type}`;
+  document.getElementById('editModalBody').innerHTML = `
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="text-xs text-slate-500">วันที่</label><input id="e-date" type="date" class="input" value="${h.date||''}"></div>
+      <div><label class="text-xs text-slate-500">จุดบริการ</label><input id="e-point" class="input" value="${h.service_point||''}"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mt-2">
+      <div><label class="text-xs text-slate-500">ประเภท</label>
+        <select id="e-type" class="input">
+          <option ${h.type==='ในเวลา'?'selected':''}>ในเวลา</option>
+          <option ${h.type==='นอกเวลา'?'selected':''}>นอกเวลา</option>
+        </select>
+      </div>
+      <div><label class="text-xs text-slate-500">เวร</label>
+        <select id="e-shift" class="input">
+          <option value="">—</option>
+          <option ${h.shift==='เช้า'?'selected':''}>เช้า</option>
+          <option ${h.shift==='บ่าย'?'selected':''}>บ่าย</option>
+          <option ${h.shift==='ดึก'?'selected':''}>ดึก</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-cols-4 gap-2 mt-2">
+      <div><label class="text-xs text-slate-500">Pt รวม</label><input id="e-total" type="number" class="input" value="${n(m.total)||''}"></div>
+      <div><label class="text-xs text-slate-500">GA</label><input id="e-ga" type="number" class="input" value="${n(m.ga)||''}"></div>
+      <div><label class="text-xs text-slate-500">RA</label><input id="e-ra" type="number" class="input" value="${n(m.ra)||''}"></div>
+      <div><label class="text-xs text-slate-500">MAC</label><input id="e-mac" type="number" class="input" value="${n(m.mac)||''}"></div>
+    </div>
+    <div class="grid grid-cols-5 gap-2 mt-2">
+      ${['ASA1','ASA2','ASA3','ASA4','ASA5'].map(k=>`<div><label class="text-xs text-slate-500">${k}</label><input id="e-${k.toLowerCase()}" type="number" class="input" value="${n(a[k])||''}"></div>`).join('')}
+    </div>
+    <div class="grid grid-cols-5 gap-2 mt-2">
+      ${['ASA1E','ASA2E','ASA3E','ASA4E','ASA5E'].map(k=>`<div><label class="text-xs text-amber-500">${k}</label><input id="e-${k.toLowerCase()}" type="number" class="input" value="${n(a[k])||''}"></div>`).join('')}
+    </div>
+    <div class="mt-2"><label class="text-xs text-slate-500">หมายเหตุ</label><textarea id="e-notes" class="input" rows="2">${h.notes||''}</textarea></div>
+    <div class="text-xs text-slate-400 mt-1">* บันทึก CPR / DOT / Re-intub จะอัปเดตจาก JSON complications โดยตรง — แก้ได้ผ่าน Supabase Table Editor ถ้าต้องการ</div>`;
+  const modal = document.getElementById('editModal');
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+}
+
+async function saveEdit() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const h = _logs.find(x=>x.id===_editId);
+  if (!h) return;
+  const patch = {
+    date: document.getElementById('e-date').value,
+    service_point: document.getElementById('e-point').value,
+    location: document.getElementById('e-point').value,
+    type: document.getElementById('e-type').value,
+    shift: document.getElementById('e-shift').value || null,
+    notes: document.getElementById('e-notes').value,
+    metrics: { ...h.metrics,
+      total: parseInt(document.getElementById('e-total').value)||0,
+      ga:    parseInt(document.getElementById('e-ga').value)||0,
+      ra:    parseInt(document.getElementById('e-ra').value)||0,
+      mac:   parseInt(document.getElementById('e-mac').value)||0,
+    },
+    asa: {
+      ASA1:  parseInt(document.getElementById('e-asa1').value)||0,
+      ASA2:  parseInt(document.getElementById('e-asa2').value)||0,
+      ASA3:  parseInt(document.getElementById('e-asa3').value)||0,
+      ASA4:  parseInt(document.getElementById('e-asa4').value)||0,
+      ASA5:  parseInt(document.getElementById('e-asa5').value)||0,
+      ASA1E: parseInt(document.getElementById('e-asa1e').value)||0,
+      ASA2E: parseInt(document.getElementById('e-asa2e').value)||0,
+      ASA3E: parseInt(document.getElementById('e-asa3e').value)||0,
+      ASA4E: parseInt(document.getElementById('e-asa4e').value)||0,
+      ASA5E: parseInt(document.getElementById('e-asa5e').value)||0,
+    }
+  };
+  try {
+    await sbDB.update('service_logs', _editId, patch);
+    Object.assign(h, patch);
+    sbUtils.toast('แก้ไขแล้ว ✓','success');
+    closeEdit();
+    renderTable();
+    renderSummary();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+function closeEdit() {
+  document.getElementById('editModal').classList.add('hidden');
+  document.getElementById('editModal').classList.remove('flex');
+  _editId = null;
+}
+
+// ===== EXPORT EXCEL =====
+function exportExcel() {
+  if (!_logs.length) { sbUtils.toast('โหลดข้อมูลก่อนครับ','error'); return; }
+  const rows = [['วันที่','ประเภท','เวร','จุดบริการ',
+    'Pt รวม','GA','RA','MAC',
+    'ASA1','ASA2','ASA3','ASA4','ASA5',
+    'ASA1E','ASA2E','ASA3E','ASA4E','ASA5E',
+    'Tube นอก','CPR','DOT','Re-intub','ทีม','หมายเหตุ']];
+  _logs.forEach(h => {
+    const m=h.metrics||{}, a=h.asa||{}, cx=h.complications||{};
+    const extTube = (m.ext_ett_details||[]).length || n(m.ext_ett);
+    rows.push([
+      h.date, h.type||'', h.shift||'', h.service_point||'',
+      n(m.total),n(m.ga),n(m.ra),n(m.mac),
+      n(a.ASA1),n(a.ASA2),n(a.ASA3),n(a.ASA4),n(a.ASA5),
+      n(a.ASA1E),n(a.ASA2E),n(a.ASA3E),n(a.ASA4E),n(a.ASA5E),
+      extTube,
+      cx.CPR?.state==='มี'?1:0,
+      cx.DOT?.state==='มี'?1:0,
+      (cx.ReIntubation?.state==='มี'||cx.ReIntube?.state==='มี')?1:0,
+      '', h.notes||''
+    ]);
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  // ปรับ column width
+  ws['!cols'] = [{wch:12},{wch:10},{wch:8},{wch:14},...Array(19).fill({wch:7}),{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'ยอดบริการ');
+  const from = document.getElementById('rpt-from').value;
+  const to   = document.getElementById('rpt-to').value;
+  XLSX.writeFile(wb, `ยอดบริการ_${from}_ถึง_${to}.xlsx`);
+  sbUtils.toast('Export สำเร็จ ✓','success');
+}
+
+(async () => {
+  await ensureAuth();
+  await loadReport();
+})();
+</script>
+</body>
+</html>

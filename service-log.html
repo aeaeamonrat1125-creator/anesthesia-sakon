@@ -42,6 +42,7 @@
     </div>
     <div class="flex gap-2">
       <a href="index.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
+      <a href="service-report.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">📊 รายงาน</a>
       <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
     </div>
   </div>
@@ -67,6 +68,13 @@
       <button class="tab-pill active" data-type="ในเวลา" onclick="switchType('ในเวลา')">🕐 ในเวลาราชการ</button>
       <button class="tab-pill" data-type="นอกเวลา" onclick="switchType('นอกเวลา')">🌙 นอกเวลาราชการ</button>
       <button class="tab-pill" data-type="preop" onclick="switchType('preop')">📋 Pre/Post op</button>
+    </div>
+  </div>
+  <div id="draftBanner" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3">
+    <div class="text-sm text-amber-800">📝 มีข้อมูลค้างอยู่ — กรอกไว้แล้วแต่ยังไม่ได้บันทึก</div>
+    <div class="flex gap-2">
+      <button onclick="restoreDraft()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg">โหลดข้อมูลค้าง</button>
+      <button onclick="clearDraft()" class="text-xs text-amber-600 hover:text-amber-800">ลบทิ้ง</button>
     </div>
   </div>
 
@@ -174,10 +182,20 @@
       </div>
     </div>
 
-    <div class="section-h">การบริการนอก OR / จำนวน Set</div>
-    <div class="grid-3">
-      <div><span class="lbl">ETT นอกสถานที่ (ราย)</span><input id="ext-ett" type="number" class="input"></div>
-      <div><span class="lbl">ที่ไหน / ตึก</span><input id="ext-where" class="input"></div>
+    <div class="section-h">การใส่ Tube นอกสถานที่ / Set</div>
+    <div class="flex items-center gap-3 flex-wrap mb-2">
+      <span class="text-sm font-medium">มีการใส่ Tube นอกสถานที่ไหม?</span>
+      <div class="radio-row" data-group="ext-tube-yn">
+        <button class="radio-pill active" onclick="setRadio(this);toggleSection('extTubeDetail',false)">ไม่มี</button>
+        <button class="radio-pill" onclick="setRadio(this);toggleSection('extTubeDetail',true)">มี</button>
+      </div>
+    </div>
+    <div id="extTubeDetail" class="hidden space-y-2 mb-3">
+      <div class="text-xs text-slate-500">กรอกรายละเอียดแต่ละราย</div>
+      <div id="extTubeList" class="space-y-2"></div>
+      <button type="button" onclick="addExtTubeRow('extTubeList')" class="text-xs text-blue-600 hover:underline">+ เพิ่มราย</button>
+    </div>
+    <div class="grid-2">
       <div><span class="lbl">จำนวน Set มาจาก (แผนก)</span><input id="set-dept" class="input"></div>
     </div>
 
@@ -299,7 +317,17 @@
         </div>
         <div>
           <span class="lbl">ประจำเดือน</span>
-          <select id="ot-month" class="input"></select>
+          <select id="ot-month" class="input">
+            <option value="">— เลือกเดือน —</option>
+            <option>มกราคม</option><option>กุมภาพันธ์</option><option>มีนาคม</option>
+            <option>เมษายน</option><option>พฤษภาคม</option><option>มิถุนายน</option>
+            <option>กรกฎาคม</option><option>สิงหาคม</option><option>กันยายน</option>
+            <option>ตุลาคม</option><option>พฤศจิกายน</option><option>ธันวาคม</option>
+          </select>
+        </div>
+        <div>
+          <span class="lbl">ปีงบประมาณ</span>
+          <select id="ot-fiscal-year" class="input"></select>
         </div>
       </div>
 
@@ -327,11 +355,18 @@
 
     <!-- ETT นอกสถานที่ -->
     <div class="card p-4 space-y-2">
-      <div class="section-h">การบริการใช้ ETT นอกสถานที่</div>
-      <div class="grid-3">
-        <div><span class="lbl">จำนวน (ราย)</span><input id="ot-ext-ett" type="number" class="input"></div>
-        <div><span class="lbl">ทีม</span><input id="ot-ext-team" class="input" placeholder="ระบุทีม"></div>
-        <div><span class="lbl">ตึก / สถานที่</span><input id="ot-ext-where" class="input" placeholder="ระบุสถานที่"></div>
+      <div class="section-h">การใส่ Tube นอกสถานที่</div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-sm font-medium">มีการใส่ Tube นอกสถานที่ไหม?</span>
+        <div class="radio-row" data-group="ot-ext-tube-yn">
+          <button class="radio-pill active" onclick="setRadio(this);toggleSection('otExtTubeDetail',false)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this);toggleSection('otExtTubeDetail',true)">มี</button>
+        </div>
+      </div>
+      <div id="otExtTubeDetail" class="hidden space-y-2">
+        <div class="text-xs text-slate-500">กรอกรายละเอียดแต่ละราย (แสดงในรายงาน: จำนวน ตึก ทีม)</div>
+        <div id="otExtTubeList" class="space-y-2"></div>
+        <button type="button" onclick="addExtTubeRow('otExtTubeList')" class="text-xs text-blue-600 hover:underline">+ เพิ่มราย</button>
       </div>
     </div>
 
@@ -748,6 +783,7 @@ async function savePrePost() {
   try {
     await sbDB.insert('service_logs', row);
     sbUtils.toast('✅ ส่งยอด Pre/Post op สำเร็จ','success');
+    clearDraft();
     clearPrePostForm();
     loadHistory();
   } catch(e) { sbUtils.toast(e.message,'error'); }
@@ -915,6 +951,7 @@ async function saveLog() {
   try {
     await sbDB.insert('service_logs', row);
     sbUtils.toast('บันทึกแล้ว ✓','success');
+    clearDraft();
     loadHistory();
   } catch(e) { sbUtils.toast(e.message,'error'); }
 }
@@ -942,25 +979,121 @@ async function loadHistory() {
   `).join('');
 }
 
+// ===== HELPER =====
+function toggleSection(id, show) {
+  document.getElementById(id)?.classList.toggle('hidden', !show);
+}
+
+// ===== TUBE นอกสถานที่ ROWS =====
+function addExtTubeRow(listId) {
+  const div = document.createElement('div');
+  div.className = 'grid grid-cols-2 sm:grid-cols-5 gap-2 items-end bg-slate-50 p-2 rounded-lg';
+  div.innerHTML = `
+    <div><span class="lbl">HN</span><input class="input text-sm py-1 ext-hn" placeholder="HN ผู้ป่วย"></div>
+    <div><span class="lbl">ตึก</span><input class="input text-sm py-1 ext-ward" placeholder="ตึก/ห้อง"></div>
+    <div><span class="lbl">แพทย์เจ้าของไข้</span><input class="input text-sm py-1 ext-doctor" placeholder="ชื่อแพทย์"></div>
+    <div><span class="lbl">ทีมที่ไปใส่</span>
+      <select class="input text-sm py-1 ext-team">
+        <option value="">— เลือกทีม —</option>
+        ${['ทีม 1','ทีม 2','ทีม 3','ทีม 4','ทีม 5','ทีม 6','CVT','ERCP','VAS','SMC','Hepatec'].map(t=>`<option>${t}</option>`).join('')}
+      </select>
+    </div>
+    <button type="button" onclick="this.closest('div.grid').remove()" class="text-rose-400 hover:text-rose-600 pb-1">✕</button>`;
+  document.getElementById(listId).appendChild(div);
+}
+
+function collectExtTubeRows(listId) {
+  return Array.from(document.querySelectorAll(`#${listId} .grid`)).map(row => ({
+    hn:     row.querySelector('.ext-hn')?.value     || '',
+    ward:   row.querySelector('.ext-ward')?.value   || '',
+    doctor: row.querySelector('.ext-doctor')?.value || '',
+    team:   row.querySelector('.ext-team')?.value   || ''
+  })).filter(r => r.hn || r.ward);
+}
+
+// ===== DRAFT SAVE / RESTORE =====
+const DRAFT_KEY = 'service_log_draft_v2';
+let _draftTimer = null;
+
+function scheduleDraftSave() {
+  clearTimeout(_draftTimer);
+  _draftTimer = setTimeout(saveDraft, 1500);
+}
+
+function saveDraft() {
+  try {
+    const draft = {
+      type: currentType,
+      date: document.getElementById('f-date')?.value || '',
+      point: document.getElementById('f-point')?.value || '',
+      data: {}
+    };
+    // บันทึก inputs ทั้งหมดที่มี id
+    ['serviceForm','overtimeForm','prePostForm'].forEach(formId => {
+      const form = document.getElementById(formId);
+      if (!form) return;
+      form.querySelectorAll('input[id], textarea[id], select[id]').forEach(el => {
+        if (el.type === 'checkbox') draft.data[el.id] = el.checked;
+        else draft.data[el.id] = el.value;
+      });
+    });
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch(e) {}
+}
+
+function checkDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    if (draft && Object.keys(draft.data || {}).length > 2) {
+      document.getElementById('draftBanner').classList.remove('hidden');
+    }
+  } catch(e) {}
+}
+
+function restoreDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    if (!draft) return;
+    switchType(draft.type || 'ในเวลา');
+    setTimeout(() => {
+      Object.entries(draft.data || {}).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.type === 'checkbox') el.checked = val;
+        else el.value = val;
+      });
+      sbUtils.toast('โหลดข้อมูลค้างแล้ว ✓','success');
+    }, 200);
+    document.getElementById('draftBanner').classList.add('hidden');
+  } catch(e) { sbUtils.toast('โหลด draft ไม่สำเร็จ','error'); }
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+  document.getElementById('draftBanner').classList.add('hidden');
+  sbUtils.toast('ลบข้อมูลค้างแล้ว','info');
+}
+
 // ===== OVERTIME MONTH DROPDOWN =====
 function initOtMonthDropdown() {
-  const TH_MONTHS = ['ตุลาคม','พฤศจิกายน','ธันวาคม','มกราคม','กุมภาพันธ์','มีนาคม',
-                     'เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน'];
+  // auto-select เดือนปัจจุบัน
   const sel = document.getElementById('ot-month');
-  if (!sel || sel.options.length > 1) return;
-  const now = new Date();
-  const thYear = now.getFullYear() + 543;
-  const curMonth = now.getMonth(); // 0-based JS month
-  // สร้างตัวเลือก ย้อนหลัง 12 เดือน + ปัจจุบัน
-  const opts = [];
-  for (let i = 12; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const m = d.getMonth();
-    const y = d.getFullYear() + 543;
-    const label = `${TH_MONTHS[m]} ${y}`;
-    opts.push(`<option value="${label}" ${i===0?'selected':''}>${label}</option>`);
+  const TH_MONTHS_SHORT = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                           'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  if (sel && !sel.value) sel.value = TH_MONTHS_SHORT[new Date().getMonth()];
+
+  // ปีงบประมาณ dropdown
+  const fysel = document.getElementById('ot-fiscal-year');
+  if (fysel && !fysel.options.length) {
+    const now = new Date();
+    const curFy = now.getFullYear() + 543 + (now.getMonth() >= 9 ? 1 : 0);
+    fysel.innerHTML = [curFy+1, curFy, curFy-1, curFy-2, curFy-3]
+      .map(y => `<option value="${y}" ${y===curFy?'selected':''}>${y}</option>`).join('');
   }
-  sel.innerHTML = opts.join('');
 }
 
 // ===== OVERTIME FORM =====
@@ -1008,6 +1141,7 @@ function addOtTeamCard(name = '') {
     <div>
       <div class="text-xs font-semibold text-purple-600 mb-1.5">⚕️ พยาบาลวิสัญญี</div>
       <div class="ot-nurses-list space-y-1.5">
+        ${makePersonRow('nurses-dl','nurse')}
         ${makePersonRow('nurses-dl','nurse')}
       </div>
       <button type="button" onclick="addPersonRow(this,'nurses-dl','nurse')"
@@ -1151,6 +1285,7 @@ async function saveOvertimeLog() {
   try {
     await sbDB.insert('service_logs', row);
     sbUtils.toast('บันทึกแล้ว ✓','success');
+    clearDraft();
     loadHistory();
   } catch(e) { sbUtils.toast(e.message,'error'); }
 }
@@ -1169,6 +1304,10 @@ function subscribeRT() { sbRT.subscribe('service_logs', loadHistory); }
 (async () => {
   await ensureAuth();
   await loadNurses();
+  checkDraft();
+  // auto-save draft เมื่อ input เปลี่ยน
+  document.addEventListener('input', scheduleDraftSave);
+  document.addEventListener('change', scheduleDraftSave);
   const h = (location.hash || '').replace('#','');
   if (h === 'preop') switchType('preop');
   else if (h === 'นอกเวลา') switchType('นอกเวลา');
