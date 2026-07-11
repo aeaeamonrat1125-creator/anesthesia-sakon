@@ -299,7 +299,7 @@
         </div>
         <div>
           <span class="lbl">ประจำเดือน</span>
-          <input id="ot-month" class="input" placeholder="เช่น พฤษภาคม 2569">
+          <select id="ot-month" class="input"></select>
         </div>
       </div>
 
@@ -353,7 +353,12 @@
             <tr class="border-b"><td class="py-1.5 text-slate-400">ASA 2</td><td><input id="ot-asa-2" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
             <tr class="border-b"><td class="py-1.5 text-slate-400">ASA 3</td><td><input id="ot-asa-3" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
             <tr class="border-b"><td class="py-1.5 text-slate-400">ASA 4</td><td><input id="ot-asa-4" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
-            <tr><td class="py-1.5 text-slate-400">ASA 5</td><td><input id="ot-asa-5" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-slate-400">ASA 5</td><td><input id="ot-asa-5" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-amber-500 font-medium">ASA 1E</td><td><input id="ot-asa-1e" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-amber-500 font-medium">ASA 2E</td><td><input id="ot-asa-2e" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-amber-500 font-medium">ASA 3E</td><td><input id="ot-asa-3e" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-amber-500 font-medium">ASA 4E</td><td><input id="ot-asa-4e" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr><td class="py-1.5 text-amber-500 font-medium">ASA 5E</td><td><input id="ot-asa-5e" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
           </tbody>
         </table>
       </div>
@@ -692,7 +697,8 @@ function switchType(t) {
   if (isOT) {
     if (!document.getElementById('ot-date').value)
       document.getElementById('ot-date').value = new Date().toISOString().slice(0,10);
-    if (!document.getElementById('ot-teams-body').children.length) initOtTeams();
+    initOtMonthDropdown();
+    if (!document.getElementById('ot-team-btns').children.length) initOtTeams();
   }
   if (isPP) {
     if (!document.getElementById('pp-date').value)
@@ -936,6 +942,27 @@ async function loadHistory() {
   `).join('');
 }
 
+// ===== OVERTIME MONTH DROPDOWN =====
+function initOtMonthDropdown() {
+  const TH_MONTHS = ['ตุลาคม','พฤศจิกายน','ธันวาคม','มกราคม','กุมภาพันธ์','มีนาคม',
+                     'เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน'];
+  const sel = document.getElementById('ot-month');
+  if (!sel || sel.options.length > 1) return;
+  const now = new Date();
+  const thYear = now.getFullYear() + 543;
+  const curMonth = now.getMonth(); // 0-based JS month
+  // สร้างตัวเลือก ย้อนหลัง 12 เดือน + ปัจจุบัน
+  const opts = [];
+  for (let i = 12; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const m = d.getMonth();
+    const y = d.getFullYear() + 543;
+    const label = `${TH_MONTHS[m]} ${y}`;
+    opts.push(`<option value="${label}" ${i===0?'selected':''}>${label}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+}
+
 // ===== OVERTIME FORM =====
 const OT_ALL_TEAMS = ['ทีม 1','ทีม 2','ทีม 3','ทีม 4','ทีม 5','ทีม 6',
                       'CVT','ERCP','VAS','SMC','Hepatec','+ กำหนดเอง'];
@@ -1086,7 +1113,9 @@ async function saveOvertimeLog() {
   };
   const asa = {
     ASA1: num('ot-asa-1'), ASA2: num('ot-asa-2'), ASA3: num('ot-asa-3'),
-    ASA4: num('ot-asa-4'), ASA5: num('ot-asa-5')
+    ASA4: num('ot-asa-4'), ASA5: num('ot-asa-5'),
+    ASA1E: num('ot-asa-1e'), ASA2E: num('ot-asa-2e'), ASA3E: num('ot-asa-3e'),
+    ASA4E: num('ot-asa-4e'), ASA5E: num('ot-asa-5e')
   };
   const complications = {
     DOT:       { state: getOtRadio('ot-cx-dot'),       detail: txt('ot-cx-dot-detail') },
