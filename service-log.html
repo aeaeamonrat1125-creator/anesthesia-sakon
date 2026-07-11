@@ -164,13 +164,18 @@
         </div>
         <input id="cx-reint-detail" class="input flex-1 min-w-[140px]" placeholder="รายละเอียด">
       </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <span class="font-medium w-24">Fast Track:</span>
-        <div class="radio-row" data-group="cx-ft">
-          <button class="radio-pill" onclick="setRadio(this)">ไม่มี</button>
-          <button class="radio-pill" onclick="setRadio(this)">มี</button>
+      <div>
+        <div class="flex flex-wrap items-center gap-3 mb-1">
+          <span class="font-medium w-24">Fast Track:</span>
+          <div class="radio-row" data-group="cx-ft">
+            <button class="radio-pill" onclick="setRadio(this);toggleSection('ftDetailIn',false)">ไม่มี</button>
+            <button class="radio-pill" onclick="setRadio(this);toggleSection('ftDetailIn',true)">มี</button>
+          </div>
         </div>
-        <input id="cx-ft-detail" class="input flex-1 min-w-[140px]" placeholder="จำนวน">
+        <div id="ftDetailIn" class="hidden grid-2 gap-2 ml-0 mt-1">
+          <div><span class="lbl">จำนวน (ราย)</span><input id="cx-ft-count" type="number" class="input" placeholder="0"></div>
+          <div><span class="lbl">แผนก / Set มาจาก</span><input id="cx-ft-dept" class="input" placeholder="ชื่อแผนก"></div>
+        </div>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <span class="font-medium w-24">อื่นๆ:</span>
@@ -194,9 +199,6 @@
       <div class="text-xs text-slate-500">กรอกรายละเอียดแต่ละราย</div>
       <div id="extTubeList" class="space-y-2"></div>
       <button type="button" onclick="addExtTubeRow('extTubeList')" class="text-xs text-blue-600 hover:underline">+ เพิ่มราย</button>
-    </div>
-    <div class="grid-2">
-      <div><span class="lbl">จำนวน Set มาจาก (แผนก)</span><input id="set-dept" class="input"></div>
     </div>
 
     <div class="section-h">Emergency Drug Box</div>
@@ -443,17 +445,17 @@
             <input id="ot-cx-other-detail" class="input mt-1 text-xs" placeholder="รายละเอียด (ถ้ามี)">
           </div>
           <div>
-            <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex items-center gap-3 flex-wrap mb-1">
               <span class="font-medium w-20">Fast Tract:</span>
               <div class="radio-row" data-group="ot-cx-fasttract">
-                <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
-                <button class="radio-pill" onclick="setRadio(this)">มี</button>
+                <button class="radio-pill active" onclick="setRadio(this);toggleSection('otFtDetail',false)">ไม่มี</button>
+                <button class="radio-pill" onclick="setRadio(this);toggleSection('otFtDetail',true)">มี</button>
               </div>
             </div>
-            <input id="ot-cx-fasttract-detail" class="input mt-1 text-xs" placeholder="รายละเอียด (ถ้ามี)">
-          </div>
-          <div class="grid-2 pt-2 border-t">
-            <div><span class="lbl">จำนวน Fast Tract (ราย)</span><input id="ot-ft-count" type="number" class="input"></div>
+            <div id="otFtDetail" class="hidden grid-2 gap-2 mt-1">
+              <div><span class="lbl">จำนวน (ราย)</span><input id="ot-ft-count" type="number" class="input" placeholder="0"></div>
+              <div><span class="lbl">แผนก / Set มาจาก</span><input id="ot-ft-dept" class="input" placeholder="ชื่อแผนก"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -462,10 +464,6 @@
     <!-- Set + ปัญหา -->
     <div class="card p-4 space-y-3">
       <div class="section-h">Set / ยา / ปัญหา</div>
-      <div class="grid-2">
-        <div><span class="lbl">Set มาจากตึก (จำนวน ราย)</span><input id="ot-set-count" type="number" class="input"></div>
-        <div><span class="lbl">แผนก</span><input id="ot-set-dept" class="input" placeholder="ชื่อแผนก"></div>
-      </div>
 
       <div class="space-y-2 text-sm">
         <div class="flex flex-wrap items-center gap-3">
@@ -911,8 +909,7 @@ async function saveLog() {
     pass_rr: num('m-pass'), fail_rr: num('m-fail'),
     ett_return: num('m-ett'), handover_pm: num('m-handover'),
     pacu_over_1h: num('m-pacu1h'), pacu_over_1h_reason: txt('m-pacu1h-reason'),
-    ext_ett: num('ext-ett'), ext_where: txt('ext-where'),
-    set_dept: txt('set-dept')
+    ext_ett: num('ext-ett'), ext_where: txt('ext-where')
   };
   const asa = { ASA1:num('asa-1'), ASA2:num('asa-2'), ASA3:num('asa-3'),
                 ASA4:num('asa-4'), ASA5:num('asa-5'), ASA6:num('asa-6'),
@@ -922,7 +919,7 @@ async function saveLog() {
     DOT: { state: getRadio('cx-dot'), detail: txt('cx-dot-detail') },
     CPR: { state: getRadio('cx-cpr'), detail: txt('cx-cpr-detail') },
     ReIntubation: { state: getRadio('cx-reint'), detail: txt('cx-reint-detail') },
-    FastTrack: { state: getRadio('cx-ft'), detail: txt('cx-ft-detail') },
+    FastTrack: { state: getRadio('cx-ft'), count: num('cx-ft-count'), dept: txt('cx-ft-dept') },
     Other: { state: getRadio('cx-other'), detail: txt('cx-other-detail') }
   };
   const drug_box = {
@@ -1242,7 +1239,6 @@ async function saveOvertimeLog() {
     ga: num('ot-m-ga'), ra: num('ot-m-ra'), mac: num('ot-m-mac'),
     pass_rr: num('ot-m-pass'), fail_rr: num('ot-m-fail'),
     ext_ett: num('ot-ext-ett'), ext_team: txt('ot-ext-team'), ext_where: txt('ot-ext-where'),
-    set_count: num('ot-set-count'), set_dept: txt('ot-set-dept'),
     total_cases_from_teams: totalCases
   };
   const asa = {
@@ -1256,7 +1252,7 @@ async function saveOvertimeLog() {
     CPR:       { state: getOtRadio('ot-cx-cpr'),       detail: txt('ot-cx-cpr-detail') },
     ReIntube:  { state: getOtRadio('ot-cx-re-intube'), detail: txt('ot-cx-re-intube-detail') },
     Other:     { state: getOtRadio('ot-cx-other'),    detail: txt('ot-cx-other-detail') },
-    FastTract: { state: getOtRadio('ot-cx-fasttract'), detail: txt('ot-cx-fasttract-detail'), count: num('ot-ft-count') }
+    FastTract: { state: getOtRadio('ot-cx-fasttract'), count: num('ot-ft-count'), dept: txt('ot-ft-dept') }
   };
   const issues = {
     General:   { state: getOtRadio('ot-iss-general'), detail: txt('ot-iss-general-detail') },
