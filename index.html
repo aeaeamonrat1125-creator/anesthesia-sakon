@@ -13,35 +13,147 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-  body { font-family: 'Sarabun', system-ui, sans-serif; background:#f5f3ff; }
-  .grad-hero { background: linear-gradient(135deg, #6d28d9 0%, #9333ea 55%, #c026d3 100%); }
-  .card { background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04); }
-  .kpi-card { transition:transform .15s ease, box-shadow .15s ease; cursor:pointer; }
-  .kpi-card:hover { transform: translateY(-3px); box-shadow:0 12px 28px rgba(124,58,237,.14); }
-  .pulse { animation: pulse 1.6s infinite; }
+  body { font-family:'Sarabun',system-ui,sans-serif; background:#f0f4ff; }
+  .grad-hero { background:linear-gradient(135deg,#6d28d9 0%,#9333ea 55%,#c026d3 100%); }
+
+  /* ===== APP SHELL ===== */
+  .app-shell { display:flex; min-height:100vh; }
+  .app-content { flex:1; min-width:0; display:flex; flex-direction:column; min-height:100vh; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width:240px; flex-shrink:0; background:#fff;
+    border-right:1px solid #ede9fe;
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+    box-shadow:4px 0 16px rgba(109,40,217,.06);
+  }
+  .sidebar-logo { padding:20px 16px 16px; border-bottom:1px solid #f3e8ff; }
+  .sidebar-logo .logo-icon {
+    width:44px; height:44px; border-radius:14px;
+    background:linear-gradient(135deg,#7c3aed,#c026d3);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; margin-bottom:10px; box-shadow:0 4px 12px rgba(124,58,237,.35);
+  }
+  .sidebar-logo .name { font-weight:700; font-size:14px; color:#1e1b4b; line-height:1.3; }
+  .sidebar-logo .sub  { font-size:11px; color:#7c3aed; margin-top:1px; }
+
+  .sidebar-section-label { font-size:10px; font-weight:700; color:#a78bfa; letter-spacing:.08em; padding:14px 16px 4px; text-transform:uppercase; }
+
+  .sidebar-item {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 14px; border-radius:10px; margin:1px 8px;
+    font-size:13.5px; color:#475569; cursor:pointer;
+    transition:all .14s; text-decoration:none;
+    border:none; background:none; width:calc(100% - 16px); text-align:left;
+  }
+  .sidebar-item:hover { background:#faf5ff; color:#7c3aed; }
+  .sidebar-item.active {
+    background:linear-gradient(135deg,#7c3aed,#9333ea);
+    color:#fff; box-shadow:0 4px 14px rgba(124,58,237,.32);
+    font-weight:600;
+  }
+  .sidebar-item .si-icon { width:22px; text-align:center; font-size:15px; flex-shrink:0; }
+  .sidebar-badge { margin-left:auto; background:#f3e8ff; color:#7c3aed; border-radius:999px; font-size:10px; font-weight:700; padding:1px 7px; }
+  .sidebar-item.active .sidebar-badge { background:rgba(255,255,255,.25); color:#fff; }
+
+  .sidebar-footer { padding:12px 8px; border-top:1px solid #f3e8ff; margin-top:auto; }
+  .sidebar-user { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:#faf5ff; }
+  .sidebar-avatar { width:34px; height:34px; border-radius:999px; background:linear-gradient(135deg,#7c3aed,#c026d3); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px; flex-shrink:0; }
+
+  /* ===== TOP BAR (desktop) ===== */
+  .topbar {
+    background:#fff; border-bottom:1px solid #ede9fe;
+    padding:12px 24px; display:flex; align-items:center; justify-between;
+    gap:12px; box-shadow:0 1px 4px rgba(109,40,217,.06);
+    position:sticky; top:0; z-index:20;
+  }
+  .topbar-title { font-size:16px; font-weight:700; color:#1e1b4b; }
+  .topbar-meta { display:flex; align-items:center; gap:12px; }
+  .live-chip { display:flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:999px; padding:4px 10px; font-size:12px; color:#15803d; }
+
+  /* ===== MOBILE TOP HEADER (sm only) ===== */
+  .mobile-header { background:linear-gradient(135deg,#6d28d9,#9333ea,#c026d3); color:#fff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; }
+
+  /* ===== MOBILE BOTTOM NAV ===== */
+  .mobile-bottom-nav {
+    position:fixed; bottom:0; left:0; right:0; z-index:40;
+    background:#fff; border-top:1px solid #ede9fe;
+    box-shadow:0 -4px 20px rgba(109,40,217,.1);
+    display:flex; padding-bottom:env(safe-area-inset-bottom);
+  }
+  .mobile-bottom-nav a, .mobile-bottom-nav button {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; padding:8px 4px; font-size:10px; color:#94a3b8;
+    background:none; border:none; cursor:pointer; text-decoration:none;
+    transition:color .12s;
+  }
+  .mobile-bottom-nav a.active, .mobile-bottom-nav button.active { color:#7c3aed; }
+  .mobile-bottom-nav .bn-icon { font-size:20px; line-height:1; }
+
+  /* ===== CARDS ===== */
+  .card { background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04); }
+  .kpi-card { transition:transform .15s ease,box-shadow .15s ease; cursor:pointer; }
+  .kpi-card:hover { transform:translateY(-3px); box-shadow:0 12px 28px rgba(124,58,237,.14); }
+
+  /* Stat Cards */
+  .stat-kpi { border-radius:16px; padding:18px; color:#fff; position:relative; overflow:hidden; }
+  .stat-kpi::after { content:''; position:absolute; right:-20px; top:-20px; width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,.12); }
+  .stat-kpi::before { content:''; position:absolute; right:10px; bottom:-15px; width:55px; height:55px; border-radius:50%; background:rgba(255,255,255,.08); }
+  .sk-purple { background:linear-gradient(135deg,#7c3aed,#9333ea); }
+  .sk-blue   { background:linear-gradient(135deg,#2563eb,#3b82f6); }
+  .sk-green  { background:linear-gradient(135deg,#059669,#10b981); }
+  .sk-orange { background:linear-gradient(135deg,#d97706,#f59e0b); }
+  .sk-pink   { background:linear-gradient(135deg,#db2777,#ec4899); }
+  .sk-teal   { background:linear-gradient(135deg,#0d9488,#14b8a6); }
+
+  /* Quick actions (mobile) */
+  .quick-card { border-radius:16px; padding:16px; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:transform .15s; text-decoration:none; }
+  .quick-card:active { transform:scale(.96); }
+  .quick-card .qc-icon { font-size:28px; }
+  .quick-card .qc-label { font-size:12px; font-weight:600; text-align:center; }
+
+  /* ===== MISC ===== */
+  .pulse { animation:pulse 1.6s infinite; }
   @keyframes pulse { 0%,100% { opacity:.7 } 50% { opacity:1 } }
-  .scroll-x { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+  .scroll-x { overflow-x:auto; -webkit-overflow-scrolling:touch; }
   .gauge-shell { position:relative; width:100%; max-width:300px; margin:0 auto; height:180px; }
   .chart-box { position:relative; width:100%; height:240px; }
   .chart-box-sm { position:relative; width:100%; height:180px; }
   .chart-box-lg { position:relative; width:100%; height:300px; }
-  body.fs-mode header, body.fs-mode nav.main-nav { display:none !important; }
+  body.fs-mode .sidebar, body.fs-mode .topbar, body.fs-mode .mobile-header,
+  body.fs-mode .mobile-bottom-nav { display:none !important; }
   body.fs-mode main { padding-top:14px !important; }
   .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:50;
     background:#7c3aed; color:#fff; padding:8px 12px; border-radius:999px;
     box-shadow:0 6px 16px rgba(124,58,237,.4); font-size:13px; }
   body.fs-mode .show-menu-btn { display:flex; gap:6px; align-items:center; }
-  .tab-btn.active { background: rgba(255,255,255,.2); color:#fff; }
+  .tab-btn.active { background:rgba(255,255,255,.2); color:#fff; }
   .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:600; }
   .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .stat-card { background:linear-gradient(135deg,#7c3aed,#9333ea); border-radius:16px; color:#fff; }
   .about-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; }
   @keyframes fadeSlideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  section[data-page]:not(.hidden) { animation: fadeSlideIn 0.22s ease; }
-  .card { transition: box-shadow 0.15s, transform 0.15s; }
-  .act-card img { transition: transform 0.3s ease; }
-  .act-card:hover img { transform: scale(1.04); }
+  section[data-page]:not(.hidden) { animation:fadeSlideIn 0.22s ease; }
+  .card { transition:box-shadow 0.15s,transform 0.15s; }
+  .act-card img { transition:transform 0.3s ease; }
+  .act-card:hover img { transform:scale(1.04); }
   .act-card { overflow:hidden; }
+
+  /* Hide old nav on desktop */
+  @media (min-width:768px) {
+    .mobile-header { display:none !important; }
+    .mobile-bottom-nav { display:none !important; }
+    nav.main-nav { display:none !important; }
+    .old-quick-access { display:none !important; }
+  }
+  @media (max-width:767px) {
+    .sidebar { display:none !important; }
+    .topbar  { display:none !important; }
+    nav.main-nav { display:block !important; }
+    header.grad-hero { display:block !important; }
+    main { padding-bottom:72px !important; }
+  }
 </style>
 </head>
 <body class="text-slate-800">
@@ -50,7 +162,7 @@
   <span>▼</span> แสดงเมนู
 </button>
 
-<!-- Urgent announcement banner — โผล่บนสุด -->
+<!-- Urgent announcement banner -->
 <div id="urgentBanner" class="hidden sticky top-0 z-40 bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg">
   <div class="max-w-7xl mx-auto px-4 py-3 flex items-start sm:items-center gap-3 flex-wrap">
     <div class="text-2xl animate-pulse">🚨</div>
@@ -65,22 +177,115 @@
   </div>
 </div>
 
-<header class="grad-hero text-white">
-  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-    <div>
-      <div class="text-base sm:text-xl font-bold">หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</div>
-      <div class="text-white/80 text-xs flex items-center gap-2 mt-0.5">
-        <span id="live-dot" class="w-2 h-2 rounded-full bg-emerald-400 pulse"></span>
-        <span id="live-text">เชื่อมต่อแบบ Real-time</span>
-        <span class="opacity-60">•</span>
-        <span id="header-staff-count">-- บุคลากร</span>
+<!-- ===== APP SHELL ===== -->
+<div class="app-shell">
+
+<!-- SIDEBAR (desktop/iPad) -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">⚕️</div>
+    <div class="name">วิสัญญีพยาบาล</div>
+    <div class="sub">โรงพยาบาลสกลนคร</div>
+  </div>
+
+  <div class="py-2 flex-1">
+    <div class="sidebar-section-label">เมนูหลัก</div>
+    <button class="tab-btn sidebar-item active" data-tab="about" onclick="switchTab('about')">
+      <span class="si-icon">🏠</span> หน้าหลัก
+    </button>
+    <button class="tab-btn sidebar-item" data-tab="results" onclick="switchTab('results')">
+      <span class="si-icon">📈</span> ผลลัพธ์การทำงาน
+    </button>
+    <button class="tab-btn sidebar-item" data-tab="satisfaction" onclick="switchTab('satisfaction')">
+      <span class="si-icon">😊</span> ความพึงพอใจ
+    </button>
+    <button class="tab-btn sidebar-item" data-tab="kpi" onclick="switchTab('kpi')">
+      <span class="si-icon">📊</span> KPI 15 ตัว
+    </button>
+
+    <div class="sidebar-section-label">บันทึกข้อมูล</div>
+    <a href="service-log.html" class="sidebar-item">
+      <span class="si-icon">📋</span> ลงยอดบริการ
+    </a>
+    <button class="tab-btn sidebar-item" data-tab="daily" onclick="switchTab('daily')">
+      <span class="si-icon">📅</span> ยอดรายวัน
+    </button>
+    <button class="tab-btn sidebar-item" data-tab="prepost" onclick="switchTab('prepost')">
+      <span class="si-icon">🩺</span> Pre/Post op
+    </button>
+    <a href="inspection.html" class="sidebar-item">
+      <span class="si-icon">🔧</span> ตรวจเครื่องมือ
+    </a>
+    <button class="tab-btn sidebar-item" data-tab="inspect" onclick="switchTab('inspect')">
+      <span class="si-icon">📋</span> สรุปตรวจเครื่อง
+    </button>
+
+    <div class="sidebar-section-label">ข้อมูลหน่วยงาน</div>
+    <button class="tab-btn sidebar-item" data-tab="equipment" onclick="switchTab('equipment')">
+      <span class="si-icon">📦</span> ทะเบียนเครื่องมือ
+    </button>
+    <a href="staff.html" class="sidebar-item">
+      <span class="si-icon">👥</span> บุคลากร / KPI
+    </a>
+    <button class="tab-btn sidebar-item" data-tab="reports" onclick="switchTab('reports')">
+      <span class="si-icon">📑</span> รายงาน & Export
+    </button>
+    <button class="tab-btn sidebar-item" data-tab="news" onclick="switchTab('news')">
+      <span class="si-icon">📣</span> ประกาศ
+    </button>
+    <button class="tab-btn sidebar-item" data-tab="activities" onclick="switchTab('activities')">
+      <span class="si-icon">🎯</span> กิจกรรม
+    </button>
+    <button class="tab-btn sidebar-item" data-tab="qrcode" onclick="switchTab('qrcode')">
+      <span class="si-icon">📱</span> QR Code
+    </button>
+    <a href="service-report.html" class="sidebar-item">
+      <span class="si-icon">📊</span> รายงานยอดบริการ
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="sb-avatar">⚕</div>
+      <div class="min-w-0">
+        <div class="text-xs font-semibold text-slate-700 truncate" id="sb-name">กำลังโหลด...</div>
+        <div class="flex items-center gap-1 mt-0.5">
+          <span id="sb-live-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse"></span>
+          <span class="text-[10px] text-slate-400" id="sb-staff-count">-- บุคลากร</span>
+        </div>
       </div>
     </div>
-    <div class="flex gap-2 items-center">
-      <button onclick="toggleFullscreen(true)" class="hidden sm:flex bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg items-center">⛶</button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT AREA -->
+<div class="app-content">
+
+<!-- Mobile Header -->
+<header class="mobile-header grad-hero text-white">
+  <div>
+    <div class="font-bold text-base">หน่วยงานวิสัญญีพยาบาล รพ.สกลนคร</div>
+    <div class="text-white/80 text-xs flex items-center gap-1.5 mt-0.5">
+      <span id="live-dot" class="w-2 h-2 rounded-full bg-emerald-400 pulse"></span>
+      <span id="live-text">Real-time</span>
+      <span class="opacity-60">·</span>
+      <span id="header-staff-count">-- บุคลากร</span>
     </div>
   </div>
+  <button onclick="toggleFullscreen(true)" class="bg-white/15 text-white text-sm px-3 py-1.5 rounded-lg">⛶</button>
 </header>
+
+<!-- Desktop Top Bar -->
+<div class="topbar hidden md:flex items-center justify-between">
+  <div class="topbar-title" id="topbar-title">🏠 หน้าหลัก</div>
+  <div class="topbar-meta">
+    <div class="live-chip">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 pulse"></span>
+      Real-time · <span id="topbar-staff">-- บุคลากร</span>
+    </div>
+    <button onclick="toggleFullscreen(true)" class="text-slate-400 hover:text-slate-700 text-lg">⛶</button>
+  </div>
+</div>
 
 <nav class="main-nav bg-slate-900/95 text-white sticky top-0 z-30 shadow">
   <div class="max-w-7xl mx-auto px-2 py-2 flex items-center gap-1">
@@ -113,25 +318,16 @@
   </div>
 </nav>
 
-<!-- Quick Access — ปุ่มลัดขนาดใหญ่ เหมาะมือถือและผู้สูงอายุ -->
-<div class="bg-white border-b shadow-sm">
-  <div class="max-w-7xl mx-auto px-3 py-3 grid grid-cols-3 gap-2">
-    <a href="service-log.html" class="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl hover:bg-purple-50 active:bg-purple-100 transition border border-slate-100 hover:border-purple-300">
-      <span class="text-3xl sm:text-4xl">📋</span>
-      <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">ลงยอด<br>บริการ</span>
-    </a>
-    <a href="staff.html" class="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl hover:bg-purple-50 active:bg-purple-100 transition border border-slate-100 hover:border-purple-300">
-      <span class="text-3xl sm:text-4xl">👥</span>
-      <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">บุคลากร</span>
-    </a>
-    <a href="inspection.html" class="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl hover:bg-purple-50 active:bg-purple-100 transition border border-slate-100 hover:border-purple-300">
-      <span class="text-3xl sm:text-4xl">🔧</span>
-      <span class="text-xs sm:text-sm font-semibold text-slate-700 text-center leading-tight">ตรวจ<br>เครื่อง</span>
-    </a>
+<!-- Quick Access (mobile only) -->
+<div class="old-quick-access bg-white border-b shadow-sm md:hidden">
+  <div class="px-3 py-3 grid grid-cols-3 gap-2">
+    <a href="service-log.html" class="quick-card sk-purple"><span class="qc-icon">📋</span><span class="qc-label">ลงยอดบริการ</span></a>
+    <a href="staff.html"       class="quick-card sk-blue">  <span class="qc-icon">👥</span><span class="qc-label">บุคลากร</span></a>
+    <a href="inspection.html"  class="quick-card sk-green"> <span class="qc-icon">🔧</span><span class="qc-label">ตรวจเครื่อง</span></a>
   </div>
 </div>
 
-<main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-6">
+<main class="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-5 space-y-5">
 
   <section data-page="kpi" class="hidden">
     <div class="card p-4 sm:p-6 mb-5">
@@ -1020,6 +1216,64 @@
 
 </main>
 
+</div><!-- /app-content -->
+</div><!-- /app-shell -->
+
+<!-- Mobile Bottom Navigation -->
+<nav class="mobile-bottom-nav md:hidden">
+  <button class="tab-btn active" data-tab="about" onclick="switchTab('about')">
+    <span class="bn-icon">🏠</span>หลัก
+  </button>
+  <a href="service-log.html">
+    <span class="bn-icon">📋</span>ลงยอด
+  </a>
+  <a href="inspection.html">
+    <span class="bn-icon">🔧</span>ตรวจ
+  </a>
+  <a href="staff.html">
+    <span class="bn-icon">👥</span>บุคลากร
+  </a>
+  <button id="mobileMenuBtn" onclick="toggleMobileMenu()">
+    <span class="bn-icon">☰</span>เพิ่มเติม
+  </button>
+</nav>
+
+<!-- Mobile More Menu -->
+<div id="mobileMoreMenu" class="hidden fixed inset-0 bg-black/50 z-50" onclick="toggleMobileMenu()">
+  <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 pb-8" onclick="event.stopPropagation()">
+    <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+    <div class="grid grid-cols-3 gap-3">
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-purple-50 text-purple-700 text-xs font-semibold" data-tab="results" onclick="switchTab('results');toggleMobileMenu()">
+        <span class="text-2xl">📈</span>ผลลัพธ์
+      </button>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-blue-50 text-blue-700 text-xs font-semibold" data-tab="satisfaction" onclick="switchTab('satisfaction');toggleMobileMenu()">
+        <span class="text-2xl">😊</span>ความพึงพอใจ
+      </button>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold" data-tab="kpi" onclick="switchTab('kpi');toggleMobileMenu()">
+        <span class="text-2xl">📊</span>KPI
+      </button>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-amber-50 text-amber-700 text-xs font-semibold" data-tab="equipment" onclick="switchTab('equipment');toggleMobileMenu()">
+        <span class="text-2xl">📦</span>ทะเบียนเครื่อง
+      </button>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-rose-50 text-rose-700 text-xs font-semibold" data-tab="news" onclick="switchTab('news');toggleMobileMenu()">
+        <span class="text-2xl">📣</span>ประกาศ
+      </button>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-50 text-slate-700 text-xs font-semibold" data-tab="qrcode" onclick="switchTab('qrcode');toggleMobileMenu()">
+        <span class="text-2xl">📱</span>QR Code
+      </button>
+      <a href="service-report.html" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-semibold">
+        <span class="text-2xl">📊</span>รายงาน
+      </a>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-pink-50 text-pink-700 text-xs font-semibold" data-tab="activities" onclick="switchTab('activities');toggleMobileMenu()">
+        <span class="text-2xl">🎯</span>กิจกรรม
+      </button>
+      <a href="sheets.html" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-green-50 text-green-700 text-xs font-semibold">
+        <span class="text-2xl">📊</span>G-Sheets
+      </a>
+    </div>
+  </div>
+</div>
+
 <div id="kpiModal" class="fixed inset-0 bg-black/50 z-40 hidden items-center justify-center p-3">
   <div class="card max-w-2xl w-full max-h-[92vh] overflow-y-auto p-5">
     <div class="flex items-start justify-between gap-3 mb-3">
@@ -1075,25 +1329,38 @@ document.addEventListener('click', e => {
   }
 });
 
-document.querySelectorAll('.tab-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    const tab = b.dataset.tab;
-    document.querySelectorAll('section[data-page]').forEach(s => {
-      s.classList.toggle('hidden', s.dataset.page !== tab);
-    });
-    document.getElementById('idx-dropdown')?.classList.add('hidden');
-    if (tab === 'results') renderResults();
-    if (tab === 'satisfaction') renderSatisfaction();
-    if (tab === 'news') renderNews();
-    if (tab === 'daily') renderDaily();
-    if (tab === 'prepost') renderPrePost();
-    if (tab === 'inspect') renderInspect();
-    if (tab === 'equipment') renderEquipment();
-    if (tab === 'activities') renderActivities();
-    if (tab === 'qrcode') renderQRCodes();
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(x => {
+    const on = x.dataset.tab === tab;
+    x.classList.toggle('active', on);
+    // sidebar items: swap to gradient style
+    if (x.classList.contains('sidebar-item')) {
+      if (on) { x.style.background='linear-gradient(135deg,#7c3aed,#9333ea)'; x.style.color='#fff'; x.style.boxShadow='0 4px 14px rgba(124,58,237,.32)'; }
+      else { x.style.background=''; x.style.color=''; x.style.boxShadow=''; }
+    }
   });
+  document.querySelectorAll('section[data-page]').forEach(s => {
+    s.classList.toggle('hidden', s.dataset.page !== tab);
+  });
+  // update topbar title
+  const label = _TAB_LABELS?.[tab] || '';
+  const el = document.getElementById('topbar-title');
+  if (el && label) el.textContent = label;
+  document.getElementById('idx-dropdown')?.classList.add('hidden');
+  if (tab === 'results') renderResults();
+  if (tab === 'satisfaction') renderSatisfaction();
+  if (tab === 'news') renderNews();
+  if (tab === 'daily') renderDaily();
+  if (tab === 'prepost') renderPrePost();
+  if (tab === 'inspect') renderInspect();
+  if (tab === 'equipment') renderEquipment();
+  if (tab === 'activities') renderActivities();
+  if (tab === 'qrcode') renderQRCodes();
+  try { history.replaceState(null,'','#'+tab); } catch(e){}
+}
+
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => { if (b.dataset.tab) switchTab(b.dataset.tab); });
 });
 
 function toggleFullscreen(on) {
@@ -1102,6 +1369,19 @@ function toggleFullscreen(on) {
   try { localStorage.setItem('anes_fs', on ? '1' : '0'); } catch(e){}
 }
 try { if (localStorage.getItem('anes_fs') === '1') toggleFullscreen(true); } catch(e){}
+
+function toggleMobileMenu() {
+  document.getElementById('mobileMoreMenu').classList.toggle('hidden');
+}
+
+// sync sidebar active state + topbar title on tab switch
+const _TAB_LABELS = {
+  about:'🏠 หน้าหลัก', results:'📈 ผลลัพธ์', satisfaction:'😊 ความพึงพอใจ',
+  kpi:'📊 KPI 15 ตัว', daily:'📅 ยอดรายวัน', prepost:'🩺 Pre/Post op',
+  inspect:'📋 สรุปตรวจเครื่อง', equipment:'📦 ทะเบียนเครื่องมือ',
+  reports:'📑 รายงาน', news:'📣 ประกาศ', activities:'🎯 กิจกรรม', qrcode:'📱 QR Code'
+};
+const _origSwitchTab = typeof switchTab !== 'undefined' ? switchTab : null;
 
 async function loadAll() {
   try {
@@ -1125,7 +1405,10 @@ async function loadAll() {
     const asstNurseCount = nurses.filter(n => n.role === 'ผู้ช่วยพยาบาล').length;
     const asstPtCount    = nurses.filter(n => n.role === 'ผู้ช่วยเหลือคนไข้').length;
     const otherCount     = nurses.filter(n => !['พยาบาลวิสัญญี','ผู้ช่วยพยาบาล','ผู้ช่วยเหลือคนไข้'].includes(n.role)).length;
-    if (document.getElementById('header-staff-count')) document.getElementById('header-staff-count').textContent = nurses.length + ' บุคลากร';
+    const staffText = nurses.length + ' บุคลากร';
+    ['header-staff-count','topbar-staff','sb-staff-count'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = staffText;
+    });
     if (document.getElementById('staff-count-all')) {
       document.getElementById('staff-count-all').textContent       = nurses.length;
       document.getElementById('staff-count-nurse').textContent      = nurseCount;
