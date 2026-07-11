@@ -157,9 +157,9 @@
   @media (max-width:767px) {
     .sidebar { display:none !important; }
     .topbar  { display:none !important; }
-    nav.main-nav { display:block !important; }
+    nav.main-nav { display:none !important; } /* ซ่อนแถบบน ใช้ bottom nav แทน */
     header.grad-hero { display:block !important; }
-    main { padding-bottom:72px !important; }
+    main { padding-bottom:80px !important; }
   }
 </style>
 </head>
@@ -1268,12 +1268,24 @@
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-50 text-slate-700 text-xs font-semibold" data-tab="qrcode" onclick="switchTab('qrcode');toggleMobileMenu()">
         <span class="text-2xl">📱</span>QR Code
       </button>
-      <a href="service-report.html" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-semibold">
-        <span class="text-2xl">📊</span>รายงาน
-      </a>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-cyan-50 text-cyan-700 text-xs font-semibold" data-tab="daily" onclick="switchTab('daily');toggleMobileMenu()">
+        <span class="text-2xl">📅</span>ยอดรายวัน
+      </button>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-teal-50 text-teal-700 text-xs font-semibold" data-tab="prepost" onclick="switchTab('prepost');toggleMobileMenu()">
+        <span class="text-2xl">🩺</span>Pre/Post op
+      </button>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-violet-50 text-violet-700 text-xs font-semibold" data-tab="inspect" onclick="switchTab('inspect');toggleMobileMenu()">
+        <span class="text-2xl">🔍</span>สรุปตรวจเครื่อง
+      </button>
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-pink-50 text-pink-700 text-xs font-semibold" data-tab="activities" onclick="switchTab('activities');toggleMobileMenu()">
         <span class="text-2xl">🎯</span>กิจกรรม
       </button>
+      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-orange-50 text-orange-700 text-xs font-semibold" data-tab="reports" onclick="switchTab('reports');toggleMobileMenu()">
+        <span class="text-2xl">📑</span>รายงาน
+      </button>
+      <a href="service-report.html" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-semibold">
+        <span class="text-2xl">📊</span>ยอดบริการ
+      </a>
       <a href="sheets.html" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-green-50 text-green-700 text-xs font-semibold">
         <span class="text-2xl">📊</span>G-Sheets
       </a>
