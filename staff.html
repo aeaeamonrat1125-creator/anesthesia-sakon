@@ -82,6 +82,8 @@
         <button class="tab-btn active w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="announce">📣 ประกาศ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi-edit">📝 ลงข้อมูล KPI</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="kpi-dashboard">📊 Dashboard KPI</button>
+        <div class="border-t border-white/10 my-1"></div>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="line">📲 LINE Notify</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="equipment">🔧 เครื่องมือ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="schedule">📅 ตารางเวร</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="meetings">📚 ประชุมวิชาการ</button>
@@ -92,6 +94,8 @@
         <div class="border-t border-white/10 my-1"></div>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="nurses">📒 รายชื่อทั้งหมด</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="staff">👤 บัญชี Login</button>
+        <div class="border-t border-white/10 my-1"></div>
+        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="audit">🔍 ประวัติการใช้งาน</button>
       </div>
     </div>
   </div>
@@ -391,6 +395,157 @@
     </div>
   </section>
 
+  <!-- AUDIT LOG -->
+  <section data-page="audit" class="space-y-4 hidden">
+
+    <div class="card p-4">
+      <div class="font-semibold mb-1">🔍 ประวัติการใช้งานและแก้ไขข้อมูล</div>
+      <div class="text-xs text-slate-500 mb-3">ระบบบันทึกทุกการเพิ่ม/แก้ไข/ลบข้อมูลอัตโนมัติ</div>
+
+      <!-- Filters -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">จากวันที่</label>
+          <input id="aud-from" type="date" class="input text-sm py-1.5">
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">ถึงวันที่</label>
+          <input id="aud-to" type="date" class="input text-sm py-1.5">
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">ตาราง/ส่วน</label>
+          <select id="aud-table" class="input text-sm py-1.5">
+            <option value="">— ทั้งหมด —</option>
+            <option value="equipment">🔧 เครื่องมือ</option>
+            <option value="kpi_history">📊 ข้อมูล KPI</option>
+            <option value="kpis">📊 ตั้งค่า KPI</option>
+            <option value="service_logs">📋 ยอดบริการ</option>
+            <option value="daily_inspections">🔬 ตรวจเครื่อง</option>
+            <option value="nurses">👥 บุคลากร</option>
+            <option value="announcements">📣 ประกาศ</option>
+            <option value="profiles">👤 บัญชีผู้ใช้</option>
+            <option value="meetings">📚 ประชุม</option>
+            <option value="activities">🎯 กิจกรรม</option>
+            <option value="operation_stats">📈 สถิติบริการ</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">การกระทำ</label>
+          <select id="aud-action" class="input text-sm py-1.5">
+            <option value="">— ทั้งหมด —</option>
+            <option value="INSERT">➕ เพิ่มข้อมูล</option>
+            <option value="UPDATE">✏️ แก้ไขข้อมูล</option>
+            <option value="DELETE">🗑 ลบข้อมูล</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="loadAuditLogs()" class="btn btn-primary text-sm py-2">🔍 ค้นหา</button>
+        <button onclick="clearAuditFilters()" class="btn btn-ghost text-sm py-2">ล้าง</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-3" id="auditStats"></div>
+
+    <!-- Table -->
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold text-sm" id="auditCount">ผลลัพธ์</div>
+        <div class="text-xs text-slate-400">คลิกแถวเพื่อดูรายละเอียด</div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm" id="auditTable">
+          <thead class="text-slate-500 border-b text-left text-xs">
+            <tr>
+              <th class="py-2 pr-3 whitespace-nowrap">เวลา</th>
+              <th class="pr-3 whitespace-nowrap">ผู้ใช้</th>
+              <th class="pr-3 whitespace-nowrap">ส่วน</th>
+              <th class="pr-3 whitespace-nowrap">การกระทำ</th>
+              <th class="pr-3">รายละเอียด</th>
+            </tr>
+          </thead>
+          <tbody id="auditBody">
+            <tr><td colspan="5" class="text-center text-slate-400 py-8">กด "ค้นหา" เพื่อโหลดข้อมูล</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="flex justify-between items-center mt-3">
+        <button id="audPrevBtn" onclick="auditPage(-1)" class="btn btn-ghost text-xs py-1.5 px-3 disabled:opacity-40">← ก่อนหน้า</button>
+        <span id="audPageInfo" class="text-xs text-slate-500">หน้า 1</span>
+        <button id="audNextBtn" onclick="auditPage(1)" class="btn btn-ghost text-xs py-1.5 px-3 disabled:opacity-40">ถัดไป →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LINE NOTIFY -->
+  <section data-page="line" class="space-y-4 hidden">
+
+    <div class="card p-4">
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-2">
+        <div>
+          <div class="font-semibold">📲 LINE Notify — กลุ่มแจ้งเตือน</div>
+          <div class="text-xs text-slate-500 mt-1">เพิ่ม Token ของแต่ละกลุ่ม LINE เพื่อรับการแจ้งเตือนอัตโนมัติ</div>
+        </div>
+        <button class="btn btn-primary" onclick="openLineTokenForm()">+ เพิ่มกลุ่ม LINE</button>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 space-y-1">
+        <div class="font-semibold">วิธีสร้าง Token:</div>
+        <div>1. ไปที่ <a href="https://notify-bot.line.me" target="_blank" class="underline text-blue-600">notify-bot.line.me</a> → เข้าสู่ระบบด้วย LINE</div>
+        <div>2. กด "สร้าง Token" → เลือกกลุ่ม LINE ที่ต้องการ → Copy Token</div>
+        <div>3. นำ Token มาวางในระบบนี้</div>
+      </div>
+    </div>
+
+    <!-- Token list -->
+    <div class="card p-4">
+      <div class="font-semibold mb-3">กลุ่ม LINE ที่ตั้งค่าแล้ว</div>
+      <div id="lineTokenList"><div class="text-center text-slate-400 py-6">ยังไม่มีกลุ่ม — กด "+ เพิ่มกลุ่ม LINE" ด้านบน</div></div>
+    </div>
+
+    <!-- Manual send -->
+    <div class="card p-4">
+      <div class="font-semibold mb-3">📨 ส่งข้อความด้วยตนเอง</div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">เลือกกลุ่มที่ต้องการส่ง</label>
+          <div id="lineGroupChecks" class="flex flex-wrap gap-2 min-h-[32px]">
+            <span class="text-xs text-slate-400">ยังไม่มีกลุ่ม</span>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">ข้อความ</label>
+          <textarea id="lineManualMsg" class="input" rows="4" placeholder="พิมพ์ข้อความที่ต้องการส่ง...&#10;&#10;สามารถใช้หลายบรรทัดได้"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="sendLineManual()">📤 ส่งเข้า LINE ทันที</button>
+        <div id="lineSendResult" class="text-xs"></div>
+      </div>
+    </div>
+
+    <!-- Setup guide -->
+    <div class="card p-4">
+      <div class="font-semibold mb-2">⚙️ การตั้งค่า Edge Function (ทำครั้งเดียว)</div>
+      <div class="text-xs text-slate-600 space-y-2">
+        <div class="bg-slate-50 rounded p-3">
+          <div class="font-semibold mb-1">ขั้นตอน:</div>
+          <div>1. ไปที่ Supabase Dashboard → Edge Functions → Deploy new function</div>
+          <div>2. ตั้งชื่อ: <code class="bg-slate-200 px-1 rounded">send-line-notify</code></div>
+          <div>3. วางโค้ดจากไฟล์ <code class="bg-slate-200 px-1 rounded">supabase/functions/send-line-notify/index.ts</code></div>
+          <div>4. Deploy → Copy URL → วางในช่องด้านล่าง</div>
+        </div>
+        <div>
+          <label class="block mb-1 font-medium">Edge Function URL</label>
+          <div class="flex gap-2">
+            <input id="lineEdgeUrl" class="input text-xs font-mono" placeholder="https://xxxx.supabase.co/functions/v1/send-line-notify">
+            <button onclick="saveLineEdgeUrl()" class="btn btn-ghost text-xs px-3 whitespace-nowrap">บันทึก</button>
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1">หรือระบบจะใช้ URL อัตโนมัติจาก Supabase Project ของคุณ</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
 </main>
 
 <!-- ===================== GENERIC MODAL ===================== -->
@@ -416,7 +571,7 @@
 <script src="supabase-client.js"></script>
 <script>
 let currentUser = null, currentProfile = null;
-const cache = { staff:[], equipment:[], schedule:[], meetings:[], activities:[], refers:[], documents:[], docTypes:[], ops:[], kpis:[], kpiHistory:[], announcements:[], nurses:[], orgChart:[] };
+const cache = { staff:[], equipment:[], schedule:[], meetings:[], activities:[], refers:[], documents:[], docTypes:[], ops:[], kpis:[], kpiHistory:[], announcements:[], nurses:[], orgChart:[], lineTokens:[] };
 
 // ===== FULLSCREEN =====
 function toggleFullscreen(on) {
@@ -446,6 +601,8 @@ function switchTab(tab) {
   if (tab === 'staff') renderStaff();
   if (tab === 'kpi-edit') renderKpiPicker();
   if (tab === 'kpi-dashboard') renderKpiDashboard();
+  if (tab === 'line') renderLineTokens();
+  if (tab === 'audit') initAuditTab();
   if (tab === 'equipment') renderEquipment();
   if (tab === 'schedule') loadSchedule();
   if (tab === 'meetings') renderMeetings();
@@ -514,7 +671,7 @@ async function signOut() { await sbAuth.signOut(); location.reload(); }
 // ===== LOAD ALL =====
 async function loadAll() {
   try {
-    const [staff, eq, mt, ac, rf, dc, dt, op, kp, kh, an, nu, org] = await Promise.all([
+    const [staff, eq, mt, ac, rf, dc, dt, op, kp, kh, an, nu, org, lt] = await Promise.all([
       sbDB.list('profiles', { order:'full_name', asc:true }),
       sbDB.list('equipment', { order:'name', asc:true }),
       sbDB.list('meetings', { order:'date', asc:false }),
@@ -527,12 +684,13 @@ async function loadAll() {
       sbDB.list('kpi_history'),
       sbDB.list('announcements', { order:'date', asc:false }).catch(() => []),
       sbDB.list('nurses', { order:'sort_order', asc:true }).catch(() => []),
-      sbDB.list('org_chart').catch(() => [])
+      sbDB.list('org_chart').catch(() => []),
+      sbDB.list('line_notify_tokens', { order:'name', asc:true }).catch(() => [])
     ]);
     cache.staff = staff; cache.equipment = eq; cache.meetings = mt; cache.activities = ac;
     cache.refers = rf; cache.documents = dc; cache.docTypes = dt; cache.ops = op;
     cache.kpis = kp; cache.kpiHistory = kh; cache.announcements = an; cache.nurses = nu;
-    cache.orgChart = org;
+    cache.orgChart = org; cache.lineTokens = lt;
     renderStaff();
     renderKpiPicker();
     renderAnnouncements();
@@ -1500,6 +1658,13 @@ function openAnnouncementForm(id) {
         💡 ประกาศ <b>"สำคัญ/เร่งด่วน"</b> จะแสดง <b>banner สีแดง</b> ที่หน้าแรกของผู้ใช้ทุกคน<br>
         และ <b>Browser Notification</b> สำหรับผู้ที่อนุญาต
       </div>
+      ${cache.lineTokens.filter(t=>t.active).length > 0 ? `
+      <div class="flex items-center gap-2 bg-green-50 border border-green-200 rounded p-2">
+        <input type="checkbox" id="f-send-line" checked>
+        <label for="f-send-line" class="text-sm text-green-800 cursor-pointer">
+          📲 ส่งแจ้งเตือนเข้า LINE ด้วย (${cache.lineTokens.filter(t=>t.active).length} กลุ่ม)
+        </label>
+      </div>` : `<div class="text-xs text-slate-400 bg-slate-50 p-2 rounded">📲 ยังไม่มีกลุ่ม LINE — <button onclick="closeModal();switchTab('line')" class="underline">ตั้งค่า LINE Notify</button></div>`}
     </div>
     ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="deleteAnnouncement('${id}')">🗑 ลบประกาศนี้</button>` : ''}
   `;
@@ -1515,6 +1680,12 @@ function openAnnouncementForm(id) {
       if (id) await sbDB.update('announcements', id, row);
       else await sbDB.insert('announcements', row);
       sbUtils.toast(row.level === 'urgent' ? '🚨 ประกาศสำคัญถูกส่งแล้ว' : 'บันทึกประกาศแล้ว ✓','success');
+      // ส่ง LINE ถ้าติ๊กไว้
+      const sendLine = document.getElementById('f-send-line');
+      if (sendLine?.checked) {
+        sendLineAnnouncement(row.title, row.content, row.level)
+          .then(ok => sbUtils.toast(ok ? '📲 ส่ง LINE แล้ว ✓' : '📲 ส่ง LINE ไม่สำเร็จ', ok?'success':'error'));
+      }
       closeModal(); loadAll();
     } catch(e) { sbUtils.toast(e.message,'error'); }
   };
@@ -1780,6 +1951,366 @@ async function openEqHistory(eqId) {
   } catch(e) {
     document.getElementById('modalBody').innerHTML = `<div class="text-rose-500 py-4">${e.message}</div>`;
   }
+}
+
+// ===== AUDIT LOG =====
+const TABLE_LABELS = {
+  equipment:'🔧 เครื่องมือ', kpi_history:'📊 ข้อมูล KPI', kpis:'📊 ตั้งค่า KPI',
+  service_logs:'📋 ยอดบริการ', daily_inspections:'🔬 ตรวจเครื่อง',
+  nurses:'👥 บุคลากร', announcements:'📣 ประกาศ', profiles:'👤 บัญชีผู้ใช้',
+  meetings:'📚 ประชุม', activities:'🎯 กิจกรรม', operation_stats:'📈 สถิติ',
+  org_chart:'🏛 ผังองค์กร', documents:'📄 เอกสาร', line_notify_tokens:'📲 LINE'
+};
+const ACTION_STYLE = {
+  INSERT: 'bg-emerald-100 text-emerald-700',
+  UPDATE: 'bg-blue-100 text-blue-700',
+  DELETE: 'bg-rose-100 text-rose-700'
+};
+const ACTION_LABEL = { INSERT:'➕ เพิ่ม', UPDATE:'✏️ แก้ไข', DELETE:'🗑 ลบ' };
+
+let _auditPage = 0;
+const AUDIT_PAGE_SIZE = 50;
+let _auditTotal = 0;
+
+function initAuditTab() {
+  const today = new Date().toISOString().slice(0,10);
+  const week  = new Date(Date.now() - 7*24*60*60*1000).toISOString().slice(0,10);
+  if (!document.getElementById('aud-from').value) document.getElementById('aud-from').value = week;
+  if (!document.getElementById('aud-to').value)   document.getElementById('aud-to').value   = today;
+  loadAuditLogs();
+}
+
+function clearAuditFilters() {
+  const today = new Date().toISOString().slice(0,10);
+  const week  = new Date(Date.now() - 7*24*60*60*1000).toISOString().slice(0,10);
+  document.getElementById('aud-from').value   = week;
+  document.getElementById('aud-to').value     = today;
+  document.getElementById('aud-table').value  = '';
+  document.getElementById('aud-action').value = '';
+  _auditPage = 0;
+  loadAuditLogs();
+}
+
+async function loadAuditLogs() {
+  const from   = document.getElementById('aud-from').value;
+  const to     = document.getElementById('aud-to').value;
+  const tbl    = document.getElementById('aud-table').value;
+  const action = document.getElementById('aud-action').value;
+
+  document.getElementById('auditBody').innerHTML =
+    '<tr><td colspan="5" class="text-center text-slate-400 py-6">⏳ กำลังโหลด...</td></tr>';
+
+  try {
+    let q = sb.from('audit_logs_view').select('*', { count:'exact' });
+    if (from) q = q.gte('created_at', from + 'T00:00:00');
+    if (to)   q = q.lte('created_at', to   + 'T23:59:59');
+    if (tbl)    q = q.eq('table_name', tbl);
+    if (action) q = q.eq('action', action);
+    q = q.order('created_at', { ascending: false })
+         .range(_auditPage * AUDIT_PAGE_SIZE, (_auditPage + 1) * AUDIT_PAGE_SIZE - 1);
+
+    const { data, error, count } = await q;
+    if (error) throw error;
+
+    _auditTotal = count || 0;
+    renderAuditTable(data || []);
+    renderAuditStats(data || [], from, to);
+    renderAuditPager();
+  } catch(e) {
+    document.getElementById('auditBody').innerHTML =
+      `<tr><td colspan="5" class="text-rose-500 py-4 text-center">${e.message}<br><span class="text-xs text-slate-400">ตรวจสอบว่าได้รัน db/audit_logs.sql ใน Supabase แล้วหรือยัง</span></td></tr>`;
+  }
+}
+
+function renderAuditTable(rows) {
+  document.getElementById('auditCount').textContent = `พบ ${_auditTotal.toLocaleString()} รายการ`;
+  if (!rows.length) {
+    document.getElementById('auditBody').innerHTML =
+      '<tr><td colspan="5" class="text-center text-slate-400 py-8">ไม่พบข้อมูลในช่วงที่เลือก</td></tr>';
+    return;
+  }
+  document.getElementById('auditBody').innerHTML = rows.map(r => {
+    const dt  = new Date(r.created_at);
+    const dateStr = dt.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'numeric' });
+    const timeStr = dt.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    const tblLabel = TABLE_LABELS[r.table_name] || r.table_name;
+    const actBadge = `<span class="text-xs px-2 py-0.5 rounded-full font-medium ${ACTION_STYLE[r.action]||'bg-slate-100 text-slate-600'}">${ACTION_LABEL[r.action]||r.action}</span>`;
+    const detail = auditDetail(r);
+    return `<tr class="border-b last:border-0 hover:bg-slate-50 cursor-pointer transition"
+      onclick="openAuditDetail(${r.id})">
+      <td class="py-2 pr-3 whitespace-nowrap">
+        <div class="text-xs font-medium">${dateStr}</div>
+        <div class="text-xs text-slate-400">${timeStr}</div>
+      </td>
+      <td class="pr-3">
+        <div class="text-xs font-medium truncate max-w-[120px]">${r.display_name||'-'}</div>
+        <div class="text-xs text-slate-400 truncate max-w-[120px]">${r.display_email||''}</div>
+      </td>
+      <td class="pr-3 text-xs whitespace-nowrap">${tblLabel}</td>
+      <td class="pr-3">${actBadge}</td>
+      <td class="text-xs text-slate-600 max-w-xs truncate">${detail}</td>
+    </tr>`;
+  }).join('');
+}
+
+function auditDetail(r) {
+  if (r.action === 'INSERT' && r.new_data) {
+    const d = r.new_data;
+    return d.name || d.title || d.topic || d.date || `ID ${r.record_id}`;
+  }
+  if (r.action === 'DELETE' && r.old_data) {
+    const d = r.old_data;
+    return `ลบ: ${d.name || d.title || d.topic || d.date || `ID ${r.record_id}`}`;
+  }
+  if (r.action === 'UPDATE') {
+    const fields = Object.keys(r.new_data || {})
+      .filter(k => !['updated_at','created_at'].includes(k))
+      .slice(0, 3);
+    return fields.length ? `แก้ไข: ${fields.join(', ')}` : `ID ${r.record_id}`;
+  }
+  return r.record_id || '-';
+}
+
+function renderAuditStats(rows, from, to) {
+  const inserts = rows.filter(r=>r.action==='INSERT').length;
+  const updates = rows.filter(r=>r.action==='UPDATE').length;
+  const deletes = rows.filter(r=>r.action==='DELETE').length;
+  const users   = new Set(rows.map(r=>r.changed_by).filter(Boolean)).size;
+  document.getElementById('auditStats').innerHTML = `
+    <div class="card p-3 text-center">
+      <div class="text-xl font-bold text-emerald-600">${inserts}</div>
+      <div class="text-xs text-slate-500 mt-1">➕ เพิ่มข้อมูล</div>
+    </div>
+    <div class="card p-3 text-center">
+      <div class="text-xl font-bold text-blue-600">${updates}</div>
+      <div class="text-xs text-slate-500 mt-1">✏️ แก้ไขข้อมูล</div>
+    </div>
+    <div class="card p-3 text-center">
+      <div class="text-xl font-bold text-rose-600">${deletes}</div>
+      <div class="text-xs text-slate-500 mt-1">🗑 ลบข้อมูล</div>
+    </div>`;
+}
+
+function renderAuditPager() {
+  const totalPages = Math.ceil(_auditTotal / AUDIT_PAGE_SIZE);
+  document.getElementById('audPageInfo').textContent =
+    `หน้า ${_auditPage + 1} / ${totalPages || 1} (${_auditTotal.toLocaleString()} รายการ)`;
+  document.getElementById('audPrevBtn').disabled = _auditPage === 0;
+  document.getElementById('audNextBtn').disabled = (_auditPage + 1) * AUDIT_PAGE_SIZE >= _auditTotal;
+}
+
+function auditPage(dir) {
+  _auditPage = Math.max(0, _auditPage + dir);
+  loadAuditLogs();
+}
+
+let _auditAllRows = {};
+async function openAuditDetail(id) {
+  // fetch full row
+  try {
+    const { data, error } = await sb.from('audit_logs_view').select('*').eq('id', id).single();
+    if (error || !data) return;
+    const r = data;
+    const dt = new Date(r.created_at);
+    const tblLabel = TABLE_LABELS[r.table_name] || r.table_name;
+
+    const fmtJson = (obj) => {
+      if (!obj) return '<span class="text-slate-400">—</span>';
+      return `<div class="bg-slate-50 rounded p-2 font-mono text-xs overflow-x-auto whitespace-pre-wrap break-all">${
+        Object.entries(obj).filter(([k])=>!['updated_at','created_at'].includes(k))
+          .map(([k,v]) => `<div><span class="text-purple-600">${k}</span>: ${JSON.stringify(v)}</div>`).join('')
+      }</div>`;
+    };
+
+    document.getElementById('modalTitle').textContent = `🔍 รายละเอียดการเปลี่ยนแปลง`;
+    document.getElementById('modalBody').innerHTML = `
+      <div class="space-y-3 text-sm">
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-slate-50 rounded p-2">
+            <div class="text-slate-400 mb-0.5">วันที่-เวลา</div>
+            <div class="font-medium">${dt.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})} ${dt.toLocaleTimeString('th-TH')}</div>
+          </div>
+          <div class="bg-slate-50 rounded p-2">
+            <div class="text-slate-400 mb-0.5">ผู้ดำเนินการ</div>
+            <div class="font-medium">${r.display_name||'-'}</div>
+            <div class="text-slate-400">${r.display_email||''}</div>
+          </div>
+          <div class="bg-slate-50 rounded p-2">
+            <div class="text-slate-400 mb-0.5">ส่วน</div>
+            <div class="font-medium">${tblLabel}</div>
+          </div>
+          <div class="bg-slate-50 rounded p-2">
+            <div class="text-slate-400 mb-0.5">การกระทำ</div>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium ${ACTION_STYLE[r.action]||''}">${ACTION_LABEL[r.action]||r.action}</span>
+          </div>
+        </div>
+        ${r.action === 'UPDATE' ? `
+        <div>
+          <div class="text-xs font-semibold text-slate-600 mb-1">ข้อมูลที่เปลี่ยน (ก่อน → หลัง):</div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><div class="text-xs text-rose-500 mb-1">ก่อนแก้ไข</div>${fmtJson(r.old_data)}</div>
+            <div><div class="text-xs text-emerald-600 mb-1">หลังแก้ไข</div>${fmtJson(r.new_data)}</div>
+          </div>
+        </div>` : `
+        <div>
+          <div class="text-xs font-semibold text-slate-600 mb-1">${r.action==='INSERT'?'ข้อมูลที่เพิ่ม:':'ข้อมูลที่ลบ:'}</div>
+          ${fmtJson(r.action==='INSERT' ? r.new_data : r.old_data)}
+        </div>`}
+      </div>`;
+    document.getElementById('modalSaveBtn').style.display = 'none';
+    openModal();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+// ===== LINE NOTIFY =====
+function getLineEdgeUrl() {
+  try {
+    const saved = localStorage.getItem('line_edge_url');
+    if (saved) return saved;
+  } catch(e){}
+  // ใช้ URL อัตโนมัติจาก Supabase config
+  return `${window.SUPABASE_CONFIG.url}/functions/v1/send-line-notify`;
+}
+function saveLineEdgeUrl() {
+  const url = document.getElementById('lineEdgeUrl').value.trim();
+  if (!url) return;
+  try { localStorage.setItem('line_edge_url', url); } catch(e){}
+  sbUtils.toast('บันทึก URL แล้ว ✓','success');
+}
+
+function renderLineTokens() {
+  // load saved url
+  try { document.getElementById('lineEdgeUrl').value = localStorage.getItem('line_edge_url') || ''; } catch(e){}
+
+  const tokens = cache.lineTokens;
+  const listEl = document.getElementById('lineTokenList');
+  listEl.innerHTML = tokens.length === 0
+    ? '<div class="text-center text-slate-400 py-6">ยังไม่มีกลุ่ม — กด "+ เพิ่มกลุ่ม LINE" ด้านบน</div>'
+    : `<div class="space-y-2">
+        ${tokens.map(t => `
+        <div class="flex items-center gap-3 p-3 rounded-lg border ${t.active?'border-emerald-200 bg-emerald-50':'border-slate-200 bg-slate-50'}">
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-sm flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full ${t.active?'bg-emerald-500':'bg-slate-300'} flex-shrink-0"></span>
+              ${t.name}
+            </div>
+            ${t.description ? `<div class="text-xs text-slate-500 mt-0.5">${t.description}</div>` : ''}
+            <div class="text-xs text-slate-400 mt-0.5 font-mono">Token: ${'•'.repeat(12)}${t.token.slice(-4)}</div>
+          </div>
+          <div class="flex gap-2 flex-shrink-0">
+            <button onclick="testLineToken('${t.id}')" class="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2.5 py-1 rounded-lg">ทดสอบ</button>
+            <button onclick="openLineTokenForm('${t.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg">แก้ไข</button>
+          </div>
+        </div>`).join('')}
+      </div>`;
+
+  // update checkboxes in manual send
+  const checksEl = document.getElementById('lineGroupChecks');
+  checksEl.innerHTML = tokens.length === 0
+    ? '<span class="text-xs text-slate-400">ยังไม่มีกลุ่ม</span>'
+    : tokens.filter(t=>t.active).map(t => `
+      <label class="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+        <input type="checkbox" class="line-group-cb" value="${t.id}" checked>
+        ${t.name}
+      </label>`).join('');
+}
+
+function openLineTokenForm(id) {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const t = id ? cache.lineTokens.find(x => x.id === id) : {};
+  document.getElementById('modalTitle').textContent = id ? 'แก้ไขกลุ่ม LINE' : '+ เพิ่มกลุ่ม LINE Notify';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">ชื่อกลุ่ม *</label>
+        <input id="f-lt-name" class="input" placeholder="เช่น กลุ่มพยาบาลวิสัญญี, กลุ่มหัวหน้า" value="${t.name||''}">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">คำอธิบาย</label>
+        <input id="f-lt-desc" class="input" placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)" value="${t.description||''}">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">LINE Notify Token *</label>
+        <input id="f-lt-token" class="input font-mono text-sm" placeholder="วาง Token ที่ได้จาก notify-bot.line.me" value="${t.token||''}">
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="checkbox" id="f-lt-active" ${t.active!==false?'checked':''}>
+        <label for="f-lt-active" class="text-sm">เปิดใช้งาน (จะรับการแจ้งเตือน)</label>
+      </div>
+    </div>
+    ${id ? `<button class="text-rose-500 text-xs mt-4" onclick="deleteLineToken('${id}')">🗑 ลบกลุ่มนี้</button>` : ''}
+  `;
+  document.getElementById('modalSaveBtn').onclick = () => saveLineToken(id);
+  openModal();
+}
+
+async function saveLineToken(id) {
+  const name  = val('f-lt-name').trim();
+  const token = val('f-lt-token').trim();
+  if (!name || !token) { sbUtils.toast('กรุณากรอกชื่อกลุ่มและ Token','error'); return; }
+  const row = {
+    name, token,
+    description: val('f-lt-desc'),
+    active: document.getElementById('f-lt-active').checked
+  };
+  try {
+    if (id) await sbDB.update('line_notify_tokens', id, row);
+    else await sbDB.insert('line_notify_tokens', row);
+    sbUtils.toast('บันทึกแล้ว ✓','success');
+    closeModal(); loadAll();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+async function deleteLineToken(id) {
+  if (!confirm('ลบกลุ่ม LINE นี้?')) return;
+  try { await sbDB.remove('line_notify_tokens', id); closeModal(); loadAll(); }
+  catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+async function testLineToken(id) {
+  const t = cache.lineTokens.find(x => x.id === id);
+  if (!t) return;
+  sbUtils.toast(`กำลังทดสอบ ${t.name}...`,'info');
+  const ok = await _sendLine(`\n🔔 ทดสอบระบบแจ้งเตือน\nจากระบบวิสัญญีพยาบาล รพ.สกลนคร\n✅ เชื่อมต่อสำเร็จ`, [id]);
+  sbUtils.toast(ok ? `✅ ${t.name} — ส่งสำเร็จ` : `❌ ${t.name} — ส่งล้มเหลว`, ok ? 'success' : 'error');
+}
+
+async function sendLineManual() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const msg = document.getElementById('lineManualMsg').value.trim();
+  if (!msg) { sbUtils.toast('กรุณาพิมพ์ข้อความ','error'); return; }
+  const selected = Array.from(document.querySelectorAll('.line-group-cb:checked')).map(c => c.value);
+  if (!selected.length) { sbUtils.toast('กรุณาเลือกกลุ่มอย่างน้อย 1 กลุ่ม','error'); return; }
+  const res = document.getElementById('lineSendResult');
+  res.innerHTML = '⏳ กำลังส่ง...';
+  const ok = await _sendLine(`\n${msg}`, selected);
+  res.innerHTML = ok
+    ? `<span class="text-emerald-600">✅ ส่งสำเร็จ ${selected.length} กลุ่ม</span>`
+    : `<span class="text-rose-500">❌ ส่งล้มเหลว — ตรวจสอบ Token และ Edge Function URL</span>`;
+  if (ok) document.getElementById('lineManualMsg').value = '';
+}
+
+async function _sendLine(message, tokenIds = null) {
+  try {
+    const url = getLineEdgeUrl();
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${window.SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message, tokenIds })
+    });
+    const data = await res.json();
+    return data.ok;
+  } catch(e) { console.warn('LINE send error:', e); return false; }
+}
+
+// เรียกใช้เมื่อมีประกาศใหม่ (ถ้าติ๊ก "ส่ง LINE ด้วย")
+async function sendLineAnnouncement(title, content, level) {
+  const icon = level === 'urgent' ? '🚨' : level === 'warn' ? '⚠️' : '📌';
+  const msg = `\n${icon} ประกาศ: ${title}\n${content}`;
+  return _sendLine(msg);
 }
 
 // ===== REALTIME =====
