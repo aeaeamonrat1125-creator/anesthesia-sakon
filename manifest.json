@@ -1,0 +1,19 @@
+{
+  "name": "AnesSKH — วิสัญญีพยาบาล รพ.สกลนคร",
+  "short_name": "AnesSKH",
+  "description": "ระบบบริหารจัดการหน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#6d28d9",
+  "theme_color": "#7c3aed",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
