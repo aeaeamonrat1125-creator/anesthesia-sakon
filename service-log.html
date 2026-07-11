@@ -261,6 +261,8 @@
         <span class="lbl">ผู้บันทึก (พิมพ์ค้นหา หรือเลือกจากรายชื่อ)</span>
         <input id="recorder" list="nurses-options" class="input" placeholder="พิมพ์ชื่อ-นามสกุล หรือเลื่อนเลือก..." autocomplete="off">
         <datalist id="nurses-options"></datalist>
+        <datalist id="nurses-dl"></datalist>
+        <datalist id="asst-dl"></datalist>
       </div>
       <div><span class="lbl">ตำแหน่ง</span><input id="recorder-pos" class="input" value="พยาบาลวิสัญญี"></div>
     </div>
@@ -316,22 +318,11 @@
     <!-- ทีมผ่าตัด -->
     <div class="card p-4">
       <div class="section-h mb-3">ทีมผ่าตัด</div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="border-b text-xs text-slate-500">
-              <th class="text-left py-2 pr-2 w-24">ทีม</th>
-              <th class="text-left pr-2">วิสัญญี / รายชื่อ 1</th>
-              <th class="text-left pr-2">รายชื่อ 2</th>
-              <th class="text-left pr-2 w-20">จำนวน Case</th>
-              <th class="text-left w-28">หมายเหตุ</th>
-              <th class="w-6"></th>
-            </tr>
-          </thead>
-          <tbody id="ot-teams-body"></tbody>
-        </table>
+      <div class="text-xs text-slate-500 mb-2">เลือกทีมที่ออกเวร:</div>
+      <div class="flex flex-wrap gap-1.5 mb-4" id="ot-team-btns">
+        <!-- populated by JS -->
       </div>
-      <button class="btn btn-ghost text-xs mt-2" onclick="addOtTeam()">+ เพิ่มทีม</button>
+      <div id="ot-team-cards" class="space-y-3"></div>
     </div>
 
     <!-- ETT นอกสถานที่ -->
@@ -624,18 +615,25 @@
 let currentUser = null, currentType = 'ในเวลา', nursesList = [];
 
 // จุดบริการในเวลา (จาก Google Sheet เดิม)
-const POINTS_IN  = ['Pain management','CVT','RR3','RRตึกหัวใจ','Cathlab','RR2'];
+const POINTS_IN  = ['Pain management','CVT','RR3','RRตึกหัวใจ','Cathlab','RR2','ERCP','ESWL'];
 // จุดบริการนอกเวลา
-const POINTS_OUT = ['RR3','RRตึกหัวใจ','RR2','Cathlab','CVT','OR ส่วนกลาง','อื่นๆ'];
+const POINTS_OUT = ['RR3','RRตึกหัวใจ','RR2','Cathlab','CVT','OR ส่วนกลาง','ERCP','ESWL','อื่นๆ'];
 
 async function loadNurses() {
   try {
     nursesList = await sbDB.list('nurses', { eq:{active:true}, order:'sort_order', asc:true });
   } catch(e) { nursesList = []; }
-  // datalist สำหรับ recorder ทั้ง 2 ฟอร์ม — พิมพ์ค้นหาได้
+  const nurses = nursesList.filter(n => n.role === 'พยาบาลวิสัญญี');
+  const assts  = nursesList.filter(n => ['ผู้ช่วยพยาบาล','ผู้ช่วยเหลือคนไข้'].includes(n.role));
+  // datalist ทั่วไป
   document.getElementById('nurses-options').innerHTML =
     nursesList.map(n => `<option value="${n.name}" label="${n.role}"></option>`).join('');
-  // auto-fill ตำแหน่งเมื่อเลือก/พิมพ์ตรงกับชื่อใน list
+  // datalist แยกสำหรับทีมนอกเวลา
+  document.getElementById('nurses-dl').innerHTML =
+    nurses.map(n => `<option value="${n.name}"></option>`).join('');
+  document.getElementById('asst-dl').innerHTML =
+    assts.map(n => `<option value="${n.name}"></option>`).join('');
+  // auto-fill ตำแหน่ง
   const inp = document.getElementById('recorder');
   inp.addEventListener('input', () => {
     const found = nursesList.find(n => n.name === inp.value);
@@ -939,39 +937,124 @@ async function loadHistory() {
 }
 
 // ===== OVERTIME FORM =====
-const OT_DEFAULT_TEAMS = [
-  'ทีม 1','ทีม 2','ทีม 3','ทีม 4','ทีม 5','ทีม 6','ทีม CVT','ทีม ERCP','ทีม','ทีม','ทีม','ทีม'
-];
+const OT_ALL_TEAMS = ['ทีม 1','ทีม 2','ทีม 3','ทีม 4','ทีม 5','ทีม 6',
+                      'CVT','ERCP','VAS','SMC','Hepatec','+ กำหนดเอง'];
 
 function initOtTeams() {
-  const tbody = document.getElementById('ot-teams-body');
-  tbody.innerHTML = '';
-  OT_DEFAULT_TEAMS.forEach(name => addOtTeam(name));
+  // สร้างปุ่ม quick-add
+  document.getElementById('ot-team-btns').innerHTML = OT_ALL_TEAMS.map(t => `
+    <button type="button"
+      class="ot-qadd-btn text-xs px-3 py-1.5 rounded-full border border-slate-300 bg-white text-slate-600
+             hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition"
+      onclick="quickAddTeam('${t}')">${t}</button>
+  `).join('');
+  document.getElementById('ot-team-cards').innerHTML = '';
 }
 
-function addOtTeam(name = '', n1 = '', n2 = '', cases = '', note = '') {
-  const tr = document.createElement('tr');
-  tr.className = 'border-b last:border-0';
-  const isFixed = OT_DEFAULT_TEAMS.slice(0,8).includes(name);
-  tr.innerHTML = `
-    <td class="py-1 pr-2">
-      <input class="input text-xs py-1 ot-t-name" value="${name}" placeholder="ทีม" ${isFixed?'':''}></td>
-    <td class="pr-2"><input list="nurses-options" class="input text-xs py-1 ot-t-n1" value="${n1}" placeholder="รายชื่อ 1" autocomplete="off"></td>
-    <td class="pr-2"><input list="nurses-options" class="input text-xs py-1 ot-t-n2" value="${n2}" placeholder="รายชื่อ 2" autocomplete="off"></td>
-    <td class="pr-2"><input type="number" class="input text-xs py-1 ot-t-cases" value="${cases}" placeholder="0" style="width:64px"></td>
-    <td class="pr-2"><input class="input text-xs py-1 ot-t-note" value="${note}" placeholder="หมายเหตุ"></td>
-    <td>${isFixed ? '' : `<button onclick="this.closest('tr').remove()" class="text-rose-400 text-sm">✕</button>`}</td>`;
-  document.getElementById('ot-teams-body').appendChild(tr);
+function quickAddTeam(name) {
+  if (name === '+ กำหนดเอง') { addOtTeamCard(''); return; }
+  // ป้องกันเพิ่มซ้ำ
+  const existing = Array.from(document.querySelectorAll('.ot-team-card .ot-t-name'))
+    .find(el => el.value === name);
+  if (existing) { existing.closest('.ot-team-card').scrollIntoView({behavior:'smooth',block:'nearest'}); return; }
+  addOtTeamCard(name);
+}
+
+function addOtTeamCard(name = '') {
+  const card = document.createElement('div');
+  card.className = 'ot-team-card border border-slate-200 rounded-xl p-3 space-y-2 bg-white';
+  card.innerHTML = `
+    <div class="flex items-center justify-between gap-2">
+      <select class="ot-t-name input text-sm py-1 flex-1 font-semibold">
+        ${OT_ALL_TEAMS.filter(t=>t!=='+ กำหนดเอง').map(t =>
+          `<option value="${t}" ${t===name?'selected':''}>${t}</option>`).join('')}
+        <option value="${name}" ${!OT_ALL_TEAMS.includes(name)?'selected':''}>กำหนดเอง</option>
+      </select>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <span class="text-xs text-slate-500">Case</span>
+        <input type="number" class="ot-t-cases input py-1 text-center font-bold text-base" style="width:60px" placeholder="0" min="0">
+        <button type="button" onclick="this.closest('.ot-team-card').remove()" class="text-rose-400 hover:text-rose-600 text-xl leading-none">✕</button>
+      </div>
+    </div>
+
+    <!-- พยาบาลวิสัญญี -->
+    <div>
+      <div class="text-xs font-semibold text-purple-600 mb-1.5">⚕️ พยาบาลวิสัญญี</div>
+      <div class="ot-nurses-list space-y-1.5">
+        ${makePersonRow('nurses-dl','nurse')}
+      </div>
+      <button type="button" onclick="addPersonRow(this,'nurses-dl','nurse')"
+        class="text-xs text-purple-500 hover:text-purple-700 mt-1">+ เพิ่มพยาบาล</button>
+    </div>
+
+    <!-- ผู้ช่วย -->
+    <div>
+      <div class="text-xs font-semibold text-amber-600 mb-1.5">🤝 ผู้ช่วย</div>
+      <div class="ot-asst-list space-y-1.5">
+        ${makePersonRow('asst-dl','asst')}
+      </div>
+      <button type="button" onclick="addPersonRow(this,'asst-dl','asst')"
+        class="text-xs text-amber-500 hover:text-amber-700 mt-1">+ เพิ่มผู้ช่วย</button>
+    </div>
+
+    <input class="ot-t-note input text-xs py-1" placeholder="หมายเหตุ">
+  `;
+  document.getElementById('ot-team-cards').appendChild(card);
+  card.querySelector('.ot-t-name').focus();
+}
+
+function makePersonRow(dlId, cls) {
+  return `<div class="flex items-center gap-2">
+    <input list="${dlId}" class="input text-sm py-1 flex-1 ot-person ${cls}" placeholder="พิมพ์ค้นหาหรือเลือก..." autocomplete="off">
+    <label class="flex items-center gap-1 text-xs cursor-pointer whitespace-nowrap select-none">
+      <input type="checkbox" class="ot-is-extra accent-amber-500" onchange="styleExtraRow(this)">
+      <span class="text-slate-400">เสริม</span>
+    </label>
+    <button type="button" onclick="this.parentElement.remove()" class="text-slate-300 hover:text-rose-400 text-base leading-none flex-shrink-0">✕</button>
+  </div>`;
+}
+
+function addPersonRow(btn, dlId, cls) {
+  const list = btn.previousElementSibling;
+  const rows = list.querySelectorAll('.flex');
+  if (cls === 'nurse' && rows.length >= 5) { sbUtils.toast('พยาบาลสูงสุด 5 คนต่อทีม','error'); return; }
+  list.insertAdjacentHTML('beforeend', makePersonRow(dlId, cls));
+  list.lastElementChild.querySelector('input[list]').focus();
+}
+
+function styleExtraRow(cb) {
+  const row = cb.closest('.flex');
+  const inp = row.querySelector('input[list]');
+  if (cb.checked) {
+    inp.style.background = '#fef3c7';
+    inp.style.borderColor = '#f59e0b';
+    row.querySelector('span').textContent = 'เสริม';
+    row.querySelector('span').style.color = '#b45309';
+  } else {
+    inp.style.background = '';
+    inp.style.borderColor = '';
+    row.querySelector('span').textContent = 'เสริม';
+    row.querySelector('span').style.color = '';
+  }
 }
 
 function collectOtTeams() {
-  return Array.from(document.querySelectorAll('#ot-teams-body tr')).map(tr => ({
-    team:  tr.querySelector('.ot-t-name')?.value  || '',
-    n1:    tr.querySelector('.ot-t-n1')?.value    || '',
-    n2:    tr.querySelector('.ot-t-n2')?.value    || '',
-    cases: parseInt(tr.querySelector('.ot-t-cases')?.value) || 0,
-    note:  tr.querySelector('.ot-t-note')?.value  || ''
-  })).filter(t => t.n1 || t.n2 || t.cases);
+  return Array.from(document.querySelectorAll('.ot-team-card')).map(card => {
+    const nurses = Array.from(card.querySelectorAll('.ot-nurses-list .flex')).map(row => ({
+      name: row.querySelector('input[list]')?.value || '',
+      extra: row.querySelector('.ot-is-extra')?.checked || false
+    })).filter(p => p.name);
+    const assts = Array.from(card.querySelectorAll('.ot-asst-list .flex')).map(row => ({
+      name: row.querySelector('input[list]')?.value || '',
+      extra: row.querySelector('.ot-is-extra')?.checked || false
+    })).filter(p => p.name);
+    return {
+      team:   card.querySelector('.ot-t-name')?.value  || '',
+      nurses, assts,
+      cases:  parseInt(card.querySelector('.ot-t-cases')?.value) || 0,
+      note:   card.querySelector('.ot-t-note')?.value  || ''
+    };
+  }).filter(t => t.nurses.length || t.assts.length || t.cases);
 }
 
 function getOtRadio(group) {
@@ -1033,7 +1116,7 @@ async function saveOvertimeLog() {
     location: 'นอกเวลา',
     recorder_id: currentUser.id,
     metrics, asa, complications, issues, drug_box,
-    notes: `ประจำเดือน: ${txt('ot-month')}\nผู้บันทึก: ${txt('ot-recorder')} (${txt('ot-recorder-pos')})\nทีม: ${JSON.stringify(teams)}\nหมายเหตุ: ${txt('ot-notes')}`
+    notes: `ประจำเดือน: ${txt('ot-month')} | ผู้บันทึก: ${txt('ot-recorder')} (${txt('ot-recorder-pos')}) | หมายเหตุ: ${txt('ot-notes')}`
   };
 
   try {
@@ -1045,7 +1128,7 @@ async function saveOvertimeLog() {
 
 function clearOvertimeForm() {
   if (!confirm('รีเซ็ตฟอร์ม?')) return;
-  document.querySelectorAll('#overtimeForm input:not([type=radio]), #overtimeForm textarea')
+  document.querySelectorAll('#overtimeForm input:not([type=checkbox]):not([type=radio]), #overtimeForm textarea')
     .forEach(el => { if(el.type !== 'date') el.value = ''; });
   document.querySelectorAll('#overtimeForm .radio-pill').forEach(b => b.classList.remove('active'));
   document.getElementById('ot-date').value = new Date().toISOString().slice(0,10);
