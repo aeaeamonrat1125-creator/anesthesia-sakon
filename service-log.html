@@ -201,9 +201,15 @@
       <button type="button" onclick="addExtTubeRow('extTubeList')" class="text-xs text-blue-600 hover:underline">+ เพิ่มราย</button>
     </div>
 
-    <div class="section-h">Emergency Drug Box</div>
+    <div class="section-h">Emergency Drug Box / PCA</div>
+    <!-- Drug Box -->
     <div class="grid-3 items-end">
-      <div><span class="lbl">จำนวนกล่อง</span><input id="dbox-count" type="number" class="input"></div>
+      <div>
+        <span class="lbl">Drug Box จำนวน (กล่อง)</span>
+        <select id="dbox-count" class="input">
+          ${[...Array(11)].map((_,i)=>`<option value="${i}">${i} กล่อง</option>`).join('')}
+        </select>
+      </div>
       <div>
         <span class="lbl">สถานะ</span>
         <div class="radio-row" data-group="dbox-status">
@@ -213,16 +219,41 @@
       </div>
       <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="dbox-reason" class="input"></div>
     </div>
-    <div id="caWrap" class="grid-3 items-end hidden">
-      <div><span class="lbl">CA (กล่อง)</span><input id="ca-count" type="number" class="input"></div>
+    <!-- PCA Syringe -->
+    <div class="grid-3 items-end mt-2">
       <div>
-        <span class="lbl">สถานะ CA</span>
-        <div class="radio-row" data-group="ca-status">
+        <span class="lbl">PCA (Syringe) จำนวน (เครื่อง)</span>
+        <select id="pca-syringe-count" class="input">
+          ${[...Array(11)].map((_,i)=>`<option value="${i}">${i} เครื่อง</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <span class="lbl">สถานะ</span>
+        <div class="radio-row" data-group="pca-syringe-status">
           <button class="radio-pill" onclick="setRadio(this)">พร้อมใช้</button>
           <button class="radio-pill" onclick="setRadio(this)">ไม่พร้อมใช้</button>
         </div>
       </div>
-      <div><span class="lbl">หมายเหตุ CA</span><input id="ca-reason" class="input"></div>
+      <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="pca-syringe-reason" class="input"></div>
+    </div>
+    <!-- Sapphire -->
+    <div class="grid-3 items-end mt-2">
+      <div>
+        <span class="lbl">Sapphire จำนวน (เครื่อง)</span>
+        <select id="pca-sapphire-count" class="input">
+          ${[...Array(11)].map((_,i)=>`<option value="${i}">${i} เครื่อง</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <span class="lbl">สถานะ</span>
+        <div class="radio-row" data-group="pca-sapphire-status">
+          <button class="radio-pill" onclick="setRadio(this)">พร้อมใช้</button>
+          <button class="radio-pill" onclick="setRadio(this)">ไม่พร้อมใช้</button>
+        </div>
+      </div>
+      <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="pca-sapphire-reason" class="input"></div>
+    </div>
+    <div id="caWrap" class="hidden">
     </div>
 
     <div class="section-h">ปัญหา / ข้อขัดข้อง</div>
@@ -521,11 +552,17 @@
       </div>
     </div>
 
-    <!-- Emergency Drug Box + CA -->
+    <!-- Emergency Drug Box + PCA -->
     <div class="card p-4 space-y-3">
-      <div class="section-h">Emergency Drug Box / CA</div>
+      <div class="section-h">Emergency Drug Box / PCA</div>
+      <!-- Drug Box -->
       <div class="grid-3 items-center">
-        <div><span class="lbl">Drug Box จำนวน (กล่อง)</span><input id="ot-dbox-count" type="number" class="input"></div>
+        <div>
+          <span class="lbl">Drug Box จำนวน (กล่อง)</span>
+          <select id="ot-dbox-count" class="input">
+            ${[...Array(11)].map((_,i)=>`<option value="${i}">${i} กล่อง</option>`).join('')}
+          </select>
+        </div>
         <div>
           <span class="lbl">สถานะ</span>
           <div class="radio-row mt-1" data-group="ot-dbox-status">
@@ -535,16 +572,39 @@
         </div>
         <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="ot-dbox-reason" class="input"></div>
       </div>
+      <!-- PCA Syringe -->
       <div class="grid-3 items-center">
-        <div><span class="lbl">CA จำนวน (เครื่อง)</span><input id="ot-ca-count" type="number" class="input"></div>
         <div>
-          <span class="lbl">สถานะ CA</span>
-          <div class="radio-row mt-1" data-group="ot-ca-status">
+          <span class="lbl">PCA (Syringe) จำนวน (เครื่อง)</span>
+          <select id="ot-pca-syringe-count" class="input">
+            ${[...Array(11)].map((_,i)=>`<option value="${i}">${i} เครื่อง</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <span class="lbl">สถานะ</span>
+          <div class="radio-row mt-1" data-group="ot-pca-syringe-status">
             <button class="radio-pill" onclick="setRadio(this)">พร้อมใช้</button>
             <button class="radio-pill" onclick="setRadio(this)">ไม่พร้อมใช้</button>
           </div>
         </div>
-        <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="ot-ca-reason" class="input"></div>
+        <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="ot-pca-syringe-reason" class="input"></div>
+      </div>
+      <!-- Sapphire -->
+      <div class="grid-3 items-center">
+        <div>
+          <span class="lbl">Sapphire จำนวน (เครื่อง)</span>
+          <select id="ot-pca-sapphire-count" class="input">
+            ${[...Array(11)].map((_,i)=>`<option value="${i}">${i} เครื่อง</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <span class="lbl">สถานะ</span>
+          <div class="radio-row mt-1" data-group="ot-pca-sapphire-status">
+            <button class="radio-pill" onclick="setRadio(this)">พร้อมใช้</button>
+            <button class="radio-pill" onclick="setRadio(this)">ไม่พร้อมใช้</button>
+          </div>
+        </div>
+        <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="ot-pca-sapphire-reason" class="input"></div>
       </div>
     </div>
 
@@ -923,8 +983,10 @@ async function saveLog() {
     Other: { state: getRadio('cx-other'), detail: txt('cx-other-detail') }
   };
   const drug_box = {
-    count: num('dbox-count'), status: getRadio('dbox-status'), reason: txt('dbox-reason'),
-    ca_count: num('ca-count'), ca_status: getRadio('ca-status'), ca_reason: txt('ca-reason')
+    count: parseInt(document.getElementById('dbox-count')?.value)||0,
+    status: getRadio('dbox-status'), reason: txt('dbox-reason'),
+    pca_syringe: { count: parseInt(document.getElementById('pca-syringe-count')?.value)||0, status: getRadio('pca-syringe-status'), reason: txt('pca-syringe-reason') },
+    sapphire:    { count: parseInt(document.getElementById('pca-sapphire-count')?.value)||0, status: getRadio('pca-sapphire-status'), reason: txt('pca-sapphire-reason') }
   };
   const issues = {
     Drug:     { state: getRadio('iss-drug'),  detail: txt('iss-drug-detail') },
@@ -1263,8 +1325,10 @@ async function saveOvertimeLog() {
     Other:     { state: getOtRadio('ot-iss-other'),   detail: txt('ot-iss-other-detail') }
   };
   const drug_box = {
-    count: num('ot-dbox-count'), status: getOtRadio('ot-dbox-status'), reason: txt('ot-dbox-reason'),
-    ca_count: num('ot-ca-count'), ca_status: getOtRadio('ot-ca-status'), ca_reason: txt('ot-ca-reason')
+    count: parseInt(document.getElementById('ot-dbox-count')?.value)||0,
+    status: getOtRadio('ot-dbox-status'), reason: txt('ot-dbox-reason'),
+    pca_syringe: { count: parseInt(document.getElementById('ot-pca-syringe-count')?.value)||0, status: getOtRadio('ot-pca-syringe-status'), reason: txt('ot-pca-syringe-reason') },
+    sapphire:    { count: parseInt(document.getElementById('ot-pca-sapphire-count')?.value)||0, status: getOtRadio('ot-pca-sapphire-status'), reason: txt('ot-pca-sapphire-reason') }
   };
 
   const row = {
