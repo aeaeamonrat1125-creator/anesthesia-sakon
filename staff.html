@@ -95,7 +95,7 @@
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="nurses">📒 รายชื่อทั้งหมด</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="staff">👤 บัญชี Login</button>
         <div class="border-t border-white/10 my-1"></div>
-        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="audit">🔍 ประวัติการใช้งาน</button>
+        <button id="auditTabBtn" class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none hidden" data-tab="audit">🔍 ประวัติการใช้งาน</button>
       </div>
     </div>
   </div>
@@ -633,6 +633,10 @@ async function ensureAuth() {
       document.getElementById('user-info').textContent =
         `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
       document.getElementById('signOutBtn').classList.remove('hidden');
+      // แสดงเมนู Audit เฉพาะ Admin
+      if (currentProfile?.role === 'admin') {
+        document.getElementById('auditTabBtn').classList.remove('hidden');
+      }
       document.getElementById('loginOverlay').style.display = 'none';
       return true;
     }
@@ -1973,6 +1977,11 @@ const AUDIT_PAGE_SIZE = 50;
 let _auditTotal = 0;
 
 function initAuditTab() {
+  if (currentProfile?.role !== 'admin') {
+    document.getElementById('auditBody').innerHTML =
+      '<tr><td colspan="5" class="text-center text-rose-400 py-8">⛔ เฉพาะ Admin เท่านั้น</td></tr>';
+    return;
+  }
   const today = new Date().toISOString().slice(0,10);
   const week  = new Date(Date.now() - 7*24*60*60*1000).toISOString().slice(0,10);
   if (!document.getElementById('aud-from').value) document.getElementById('aud-from').value = week;
