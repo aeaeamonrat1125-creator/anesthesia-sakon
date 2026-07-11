@@ -2,25 +2,48 @@
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#6d28d9"/>
-      <stop offset="55%" style="stop-color:#9333ea"/>
+      <stop offset="50%" style="stop-color:#9333ea"/>
       <stop offset="100%" style="stop-color:#c026d3"/>
     </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.18)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+    </linearGradient>
   </defs>
+
   <!-- Background rounded square -->
-  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
-  <!-- Stethoscope icon (white) -->
-  <!-- Head piece -->
-  <circle cx="256" cy="155" r="52" fill="none" stroke="white" stroke-width="28"/>
-  <!-- Tube going down -->
-  <path d="M208 155 Q208 310 256 340 Q304 370 304 155" fill="none" stroke="white" stroke-width="28" stroke-linecap="round"/>
-  <!-- Chest piece circle -->
-  <circle cx="256" cy="355" r="42" fill="white"/>
-  <circle cx="256" cy="355" r="24" fill="url(#bg)"/>
-  <!-- Ear pieces -->
-  <line x1="204" y1="115" x2="175" y2="88" stroke="white" stroke-width="22" stroke-linecap="round"/>
-  <line x1="308" y1="115" x2="337" y2="88" stroke="white" stroke-width="22" stroke-linecap="round"/>
-  <circle cx="175" cy="80" r="16" fill="white"/>
-  <circle cx="337" cy="80" r="16" fill="white"/>
-  <!-- SKH text -->
-  <text x="256" y="470" font-family="Arial,sans-serif" font-size="72" font-weight="700" fill="rgba(255,255,255,0.9)" text-anchor="middle">SKH</text>
+  <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+  <!-- Shine overlay -->
+  <rect width="512" height="256" rx="115" fill="url(#shine)"/>
+
+  <!-- Subtle circle decoration -->
+  <circle cx="400" cy="80" r="130" fill="rgba(255,255,255,0.06)"/>
+  <circle cx="100" cy="420" r="100" fill="rgba(255,255,255,0.04)"/>
+
+  <!-- AN text - bold, clean, modern -->
+  <text
+    x="256"
+    y="318"
+    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+    font-size="240"
+    font-weight="900"
+    fill="white"
+    text-anchor="middle"
+    letter-spacing="-8"
+  >AN</text>
+
+  <!-- Thin underline accent -->
+  <rect x="96" y="345" width="320" height="10" rx="5" fill="rgba(255,255,255,0.5)"/>
+
+  <!-- Small tagline -->
+  <text
+    x="256"
+    y="415"
+    font-family="'Arial', sans-serif"
+    font-size="52"
+    font-weight="400"
+    fill="rgba(255,255,255,0.75)"
+    text-anchor="middle"
+    letter-spacing="12"
+  >SAKON</text>
 </svg>
