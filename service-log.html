@@ -249,13 +249,6 @@
       </div>
     </div>
 
-    <!-- เฉพาะนอกเวลา: ทีม -->
-    <div id="teamsWrap" class="hidden">
-      <div class="section-h">ทีมและรายชื่อ (นอกเวลา)</div>
-      <div id="teamsList" class="space-y-2 text-sm"></div>
-      <button class="btn btn-ghost text-xs mt-2" onclick="addTeam()">+ เพิ่มทีม</button>
-    </div>
-
     <div class="section-h">อัปโหลดรูปฟอร์มกระดาษ (ถ้ามี)</div>
     <div class="space-y-2">
       <input id="photoFile" type="file" accept="image/*" capture="environment" class="input">
@@ -279,6 +272,271 @@
     <div class="flex gap-2 pt-2">
       <button class="btn btn-primary flex-1" onclick="saveLog()">💾 บันทึกยอด</button>
       <button class="btn btn-ghost" onclick="clearForm()">รีเซ็ต</button>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- ฟอร์มนอกเวลาราชการ (แยกใหม่ตามแบบฟอร์มกระดาษ)       -->
+  <!-- ======================================================= -->
+  <div id="overtimeForm" class="space-y-4 hidden">
+
+    <div class="card p-4 space-y-3">
+      <div class="section-h">แบบรายงาน การให้บริการงานวิสัญญี — นอกเวลาราชการ</div>
+      <div class="grid-3">
+        <div>
+          <span class="lbl">วัน/เดือน/ปี</span>
+          <input id="ot-date" type="date" class="input">
+        </div>
+        <div>
+          <span class="lbl">เวร</span>
+          <div class="radio-row mt-1" data-group="ot-shift">
+            <button class="radio-pill" onclick="setRadio(this)">เช้า</button>
+            <button class="radio-pill" onclick="setRadio(this)">บ่าย</button>
+            <button class="radio-pill active" onclick="setRadio(this)">ดึก</button>
+          </div>
+        </div>
+        <div>
+          <span class="lbl">ประจำเดือน</span>
+          <input id="ot-month" class="input" placeholder="เช่น พฤษภาคม 2569">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div><span class="lbl">Pt ทั้งหมด (ราย)</span><input id="ot-total" type="number" class="input"></div>
+        <div><span class="lbl">Pt ดูแลใน RR (ราย)</span><input id="ot-rr" type="number" class="input"></div>
+        <div><span class="lbl">ใส่ ETT กลับ (ราย)</span><input id="ot-ett-return" type="number" class="input"></div>
+        <div><span class="lbl">ส่งต่อเวรถัดไป (ราย)</span><input id="ot-handover" type="number" class="input"></div>
+      </div>
+      <div class="grid-2">
+        <div><span class="lbl">ผู้ป่วยอยู่ RR เกิน 1 ชม. (ราย)</span><input id="ot-pacu1h" type="number" class="input"></div>
+        <div><span class="lbl">สาเหตุ</span><input id="ot-pacu1h-reason" class="input" placeholder="ระบุสาเหตุ"></div>
+      </div>
+    </div>
+
+    <!-- ทีมผ่าตัด -->
+    <div class="card p-4">
+      <div class="section-h mb-3">ทีมผ่าตัด</div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="border-b text-xs text-slate-500">
+              <th class="text-left py-2 pr-2 w-24">ทีม</th>
+              <th class="text-left pr-2">วิสัญญี / รายชื่อ 1</th>
+              <th class="text-left pr-2">รายชื่อ 2</th>
+              <th class="text-left pr-2 w-20">จำนวน Case</th>
+              <th class="text-left w-28">หมายเหตุ</th>
+              <th class="w-6"></th>
+            </tr>
+          </thead>
+          <tbody id="ot-teams-body"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-ghost text-xs mt-2" onclick="addOtTeam()">+ เพิ่มทีม</button>
+    </div>
+
+    <!-- ETT นอกสถานที่ -->
+    <div class="card p-4 space-y-2">
+      <div class="section-h">การบริการใช้ ETT นอกสถานที่</div>
+      <div class="grid-3">
+        <div><span class="lbl">จำนวน (ราย)</span><input id="ot-ext-ett" type="number" class="input"></div>
+        <div><span class="lbl">ทีม</span><input id="ot-ext-team" class="input" placeholder="ระบุทีม"></div>
+        <div><span class="lbl">ตึก / สถานที่</span><input id="ot-ext-where" class="input" placeholder="ระบุสถานที่"></div>
+      </div>
+    </div>
+
+    <!-- Pt stats + อุบัติการณ์ -->
+    <div class="grid sm:grid-cols-2 gap-4">
+
+      <!-- Left: จำนวนผู้ป่วย + ASA -->
+      <div class="card p-4 space-y-2">
+        <div class="section-h">จำนวนผู้ป่วย / ASA</div>
+        <table class="w-full text-sm">
+          <tbody>
+            <tr class="border-b"><td class="py-1.5 font-medium w-28">Pt ทั้งหมด</td><td><input id="ot-m-total" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5">GA</td><td><input id="ot-m-ga" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5">RA</td><td><input id="ot-m-ra" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5">MAC</td><td><input id="ot-m-mac" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5">ผ่าน RR</td><td><input id="ot-m-pass" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5">ไม่ผ่าน RR</td><td><input id="ot-m-fail" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-slate-400">ASA 1</td><td><input id="ot-asa-1" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-slate-400">ASA 2</td><td><input id="ot-asa-2" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-slate-400">ASA 3</td><td><input id="ot-asa-3" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr class="border-b"><td class="py-1.5 text-slate-400">ASA 4</td><td><input id="ot-asa-4" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+            <tr><td class="py-1.5 text-slate-400">ASA 5</td><td><input id="ot-asa-5" type="number" class="input py-1"></td><td class="pl-2 text-slate-500 text-xs">ราย</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Right: อุบัติการณ์ -->
+      <div class="card p-4 space-y-3">
+        <div class="section-h">อุบัติการณ์ / ภาวะแทรกซ้อน</div>
+        <div class="space-y-3 text-sm">
+          <div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="font-medium w-20">DOT:</span>
+              <div class="radio-row" data-group="ot-cx-dot">
+                <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+                <button class="radio-pill" onclick="setRadio(this)">มี</button>
+              </div>
+            </div>
+            <input id="ot-cx-dot-detail" class="input mt-1 text-xs" placeholder="รายละเอียด (ถ้ามี)">
+          </div>
+          <div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="font-medium w-20">CPR:</span>
+              <div class="radio-row" data-group="ot-cx-cpr">
+                <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+                <button class="radio-pill" onclick="setRadio(this)">มี</button>
+              </div>
+            </div>
+            <input id="ot-cx-cpr-detail" class="input mt-1 text-xs" placeholder="รายละเอียด (ถ้ามี)">
+          </div>
+          <div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="font-medium w-20">Re-intube:</span>
+              <div class="radio-row" data-group="ot-cx-re-intube">
+                <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+                <button class="radio-pill" onclick="setRadio(this)">มี</button>
+              </div>
+            </div>
+            <input id="ot-cx-re-intube-detail" class="input mt-1 text-xs" placeholder="รายละเอียด (ถ้ามี)">
+          </div>
+          <div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="font-medium w-20">อื่น ๆ:</span>
+              <div class="radio-row" data-group="ot-cx-other">
+                <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+                <button class="radio-pill" onclick="setRadio(this)">มี</button>
+              </div>
+            </div>
+            <input id="ot-cx-other-detail" class="input mt-1 text-xs" placeholder="รายละเอียด (ถ้ามี)">
+          </div>
+          <div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="font-medium w-20">Fast Tract:</span>
+              <div class="radio-row" data-group="ot-cx-fasttract">
+                <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+                <button class="radio-pill" onclick="setRadio(this)">มี</button>
+              </div>
+            </div>
+            <input id="ot-cx-fasttract-detail" class="input mt-1 text-xs" placeholder="รายละเอียด (ถ้ามี)">
+          </div>
+          <div class="grid-2 pt-2 border-t">
+            <div><span class="lbl">จำนวน Fast Tract (ราย)</span><input id="ot-ft-count" type="number" class="input"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Set + ปัญหา -->
+    <div class="card p-4 space-y-3">
+      <div class="section-h">Set / ยา / ปัญหา</div>
+      <div class="grid-2">
+        <div><span class="lbl">Set มาจากตึก (จำนวน ราย)</span><input id="ot-set-count" type="number" class="input"></div>
+        <div><span class="lbl">แผนก</span><input id="ot-set-dept" class="input" placeholder="ชื่อแผนก"></div>
+      </div>
+
+      <div class="space-y-2 text-sm">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-medium w-44">ปัญหา:</span>
+          <div class="radio-row" data-group="ot-iss-general">
+            <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+            <button class="radio-pill" onclick="setRadio(this)">มี</button>
+          </div>
+          <input id="ot-iss-general-detail" class="input flex-1 min-w-[140px]" placeholder="โปรดระบุ">
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-medium w-44">ปัญหาเรื่องยาเสพติด:</span>
+          <div class="radio-row" data-group="ot-iss-drug">
+            <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+            <button class="radio-pill" onclick="setRadio(this)">มี</button>
+          </div>
+          <input id="ot-iss-drug-detail" class="input flex-1 min-w-[140px]" placeholder="โปรดระบุ">
+        </div>
+      </div>
+
+      <div class="section-h mt-2">ปัญหาข้อขัดข้องจากการปฏิบัติงาน</div>
+      <div class="space-y-2 text-sm">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-medium w-44">ด้านอัตรากำลัง/สมรรถนะ:</span>
+          <div class="radio-row" data-group="ot-iss-staff">
+            <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+            <button class="radio-pill" onclick="setRadio(this)">มี</button>
+          </div>
+          <input id="ot-iss-staff-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-medium w-44">ด้านเครื่องมือ/อุปกรณ์:</span>
+          <div class="radio-row" data-group="ot-iss-equip">
+            <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+            <button class="radio-pill" onclick="setRadio(this)">มี</button>
+          </div>
+          <input id="ot-iss-equip-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-medium w-44">ด้านระบบงาน/ประสานงาน:</span>
+          <div class="radio-row" data-group="ot-iss-sys">
+            <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+            <button class="radio-pill" onclick="setRadio(this)">มี</button>
+          </div>
+          <input id="ot-iss-sys-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-medium w-44">ด้านอื่น ๆ:</span>
+          <div class="radio-row" data-group="ot-iss-other">
+            <button class="radio-pill active" onclick="setRadio(this)">ไม่มี</button>
+            <button class="radio-pill" onclick="setRadio(this)">มี</button>
+          </div>
+          <input id="ot-iss-other-detail" class="input flex-1 min-w-[140px]" placeholder="ระบุ">
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency Drug Box + CA -->
+    <div class="card p-4 space-y-3">
+      <div class="section-h">Emergency Drug Box / CA</div>
+      <div class="grid-3 items-center">
+        <div><span class="lbl">Drug Box จำนวน (กล่อง)</span><input id="ot-dbox-count" type="number" class="input"></div>
+        <div>
+          <span class="lbl">สถานะ</span>
+          <div class="radio-row mt-1" data-group="ot-dbox-status">
+            <button class="radio-pill" onclick="setRadio(this)">พร้อมใช้</button>
+            <button class="radio-pill" onclick="setRadio(this)">ไม่พร้อมใช้</button>
+          </div>
+        </div>
+        <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="ot-dbox-reason" class="input"></div>
+      </div>
+      <div class="grid-3 items-center">
+        <div><span class="lbl">CA จำนวน (เครื่อง)</span><input id="ot-ca-count" type="number" class="input"></div>
+        <div>
+          <span class="lbl">สถานะ CA</span>
+          <div class="radio-row mt-1" data-group="ot-ca-status">
+            <button class="radio-pill" onclick="setRadio(this)">พร้อมใช้</button>
+            <button class="radio-pill" onclick="setRadio(this)">ไม่พร้อมใช้</button>
+          </div>
+        </div>
+        <div><span class="lbl">เพราะ (ถ้าไม่พร้อม)</span><input id="ot-ca-reason" class="input"></div>
+      </div>
+    </div>
+
+    <!-- อัปโหลดรูป + ผู้บันทึก -->
+    <div class="card p-4 space-y-3">
+      <div class="section-h">อัปโหลดรูปฟอร์มกระดาษ (ถ้ามี)</div>
+      <input id="ot-photo" type="file" accept="image/*" capture="environment" class="input">
+      <div class="section-h mt-2">ผู้บันทึก</div>
+      <div class="grid-2">
+        <div>
+          <span class="lbl">ผู้บันทึก</span>
+          <input id="ot-recorder" list="nurses-options" class="input" placeholder="พิมพ์ชื่อ..." autocomplete="off">
+        </div>
+        <div><span class="lbl">ตำแหน่ง</span><input id="ot-recorder-pos" class="input" value="พยาบาลวิสัญญี"></div>
+      </div>
+      <div><span class="lbl">หมายเหตุ</span><textarea id="ot-notes" class="input" rows="2"></textarea></div>
+
+      <div class="flex gap-2 pt-2">
+        <button class="btn btn-primary flex-1" onclick="saveOvertimeLog()">💾 บันทึกยอดนอกเวลา</button>
+        <button class="btn btn-ghost" onclick="clearOvertimeForm()">รีเซ็ต</button>
+      </div>
     </div>
   </div>
 
@@ -425,23 +683,22 @@ document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
 function switchType(t) {
   currentType = t;
   document.querySelectorAll('.tab-pill').forEach(b => b.classList.toggle('active', b.dataset.type === t));
+  const isOT = t === 'นอกเวลา';
   const isPP = t === 'preop';
-  // toggle form visibility
-  document.getElementById('serviceForm').classList.toggle('hidden', isPP);
+  document.getElementById('serviceForm').classList.toggle('hidden', isPP || isOT);
+  document.getElementById('overtimeForm').classList.toggle('hidden', !isOT);
   document.getElementById('prePostForm').classList.toggle('hidden', !isPP);
-  if (!isPP) {
-    document.getElementById('shiftWrap').classList.toggle('hidden', t === 'ในเวลา');
-    document.getElementById('teamsWrap').classList.toggle('hidden', t === 'ในเวลา');
-    document.getElementById('caWrap').classList.toggle('hidden', t === 'ในเวลา');
+  if (!isPP && !isOT) {
     refreshPoints();
-  } else {
-    // ตั้งค่าเริ่มต้นวันที่ + ผู้บันทึก
+  }
+  if (isOT) {
+    if (!document.getElementById('ot-date').value)
+      document.getElementById('ot-date').value = new Date().toISOString().slice(0,10);
+    if (!document.getElementById('ot-teams-body').children.length) initOtTeams();
+  }
+  if (isPP) {
     if (!document.getElementById('pp-date').value)
       document.getElementById('pp-date').value = new Date().toISOString().slice(0,10);
-    const recorder = document.getElementById('recorder').value;
-    if (recorder && !document.getElementById('pp-recorder').value) {
-      document.getElementById('pp-recorder').value = recorder;
-    }
   }
 }
 
@@ -679,6 +936,120 @@ async function loadHistory() {
       </div>
     </div>
   `).join('');
+}
+
+// ===== OVERTIME FORM =====
+const OT_DEFAULT_TEAMS = [
+  'ทีม 1','ทีม 2','ทีม 3','ทีม 4','ทีม 5','ทีม 6','ทีม CVT','ทีม ERCP','ทีม','ทีม','ทีม','ทีม'
+];
+
+function initOtTeams() {
+  const tbody = document.getElementById('ot-teams-body');
+  tbody.innerHTML = '';
+  OT_DEFAULT_TEAMS.forEach(name => addOtTeam(name));
+}
+
+function addOtTeam(name = '', n1 = '', n2 = '', cases = '', note = '') {
+  const tr = document.createElement('tr');
+  tr.className = 'border-b last:border-0';
+  const isFixed = OT_DEFAULT_TEAMS.slice(0,8).includes(name);
+  tr.innerHTML = `
+    <td class="py-1 pr-2">
+      <input class="input text-xs py-1 ot-t-name" value="${name}" placeholder="ทีม" ${isFixed?'':''}></td>
+    <td class="pr-2"><input list="nurses-options" class="input text-xs py-1 ot-t-n1" value="${n1}" placeholder="รายชื่อ 1" autocomplete="off"></td>
+    <td class="pr-2"><input list="nurses-options" class="input text-xs py-1 ot-t-n2" value="${n2}" placeholder="รายชื่อ 2" autocomplete="off"></td>
+    <td class="pr-2"><input type="number" class="input text-xs py-1 ot-t-cases" value="${cases}" placeholder="0" style="width:64px"></td>
+    <td class="pr-2"><input class="input text-xs py-1 ot-t-note" value="${note}" placeholder="หมายเหตุ"></td>
+    <td>${isFixed ? '' : `<button onclick="this.closest('tr').remove()" class="text-rose-400 text-sm">✕</button>`}</td>`;
+  document.getElementById('ot-teams-body').appendChild(tr);
+}
+
+function collectOtTeams() {
+  return Array.from(document.querySelectorAll('#ot-teams-body tr')).map(tr => ({
+    team:  tr.querySelector('.ot-t-name')?.value  || '',
+    n1:    tr.querySelector('.ot-t-n1')?.value    || '',
+    n2:    tr.querySelector('.ot-t-n2')?.value    || '',
+    cases: parseInt(tr.querySelector('.ot-t-cases')?.value) || 0,
+    note:  tr.querySelector('.ot-t-note')?.value  || ''
+  })).filter(t => t.n1 || t.n2 || t.cases);
+}
+
+function getOtRadio(group) {
+  const g = document.querySelector(`.radio-row[data-group="${group}"]`);
+  return g?.querySelector('.radio-pill.active')?.textContent.trim() || null;
+}
+
+async function saveOvertimeLog() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  sbUtils.toast('กำลังบันทึก...');
+  const num = id => parseInt(document.getElementById(id)?.value) || 0;
+  const txt = id => document.getElementById(id)?.value || '';
+
+  const teams = collectOtTeams();
+  const totalCases = teams.reduce((s,t) => s + t.cases, 0);
+
+  const metrics = {
+    total: num('ot-total') || num('ot-m-total'),
+    rr_patients: num('ot-rr'),
+    ett_return: num('ot-ett-return'),
+    handover: num('ot-handover'),
+    pacu_over_1h: num('ot-pacu1h'),
+    pacu_over_1h_reason: txt('ot-pacu1h-reason'),
+    ga: num('ot-m-ga'), ra: num('ot-m-ra'), mac: num('ot-m-mac'),
+    pass_rr: num('ot-m-pass'), fail_rr: num('ot-m-fail'),
+    ext_ett: num('ot-ext-ett'), ext_team: txt('ot-ext-team'), ext_where: txt('ot-ext-where'),
+    set_count: num('ot-set-count'), set_dept: txt('ot-set-dept'),
+    total_cases_from_teams: totalCases
+  };
+  const asa = {
+    ASA1: num('ot-asa-1'), ASA2: num('ot-asa-2'), ASA3: num('ot-asa-3'),
+    ASA4: num('ot-asa-4'), ASA5: num('ot-asa-5')
+  };
+  const complications = {
+    DOT:       { state: getOtRadio('ot-cx-dot'),       detail: txt('ot-cx-dot-detail') },
+    CPR:       { state: getOtRadio('ot-cx-cpr'),       detail: txt('ot-cx-cpr-detail') },
+    ReIntube:  { state: getOtRadio('ot-cx-re-intube'), detail: txt('ot-cx-re-intube-detail') },
+    Other:     { state: getOtRadio('ot-cx-other'),    detail: txt('ot-cx-other-detail') },
+    FastTract: { state: getOtRadio('ot-cx-fasttract'), detail: txt('ot-cx-fasttract-detail'), count: num('ot-ft-count') }
+  };
+  const issues = {
+    General:   { state: getOtRadio('ot-iss-general'), detail: txt('ot-iss-general-detail') },
+    Drug:      { state: getOtRadio('ot-iss-drug'),    detail: txt('ot-iss-drug-detail') },
+    Staff:     { state: getOtRadio('ot-iss-staff'),   detail: txt('ot-iss-staff-detail') },
+    Equipment: { state: getOtRadio('ot-iss-equip'),   detail: txt('ot-iss-equip-detail') },
+    System:    { state: getOtRadio('ot-iss-sys'),     detail: txt('ot-iss-sys-detail') },
+    Other:     { state: getOtRadio('ot-iss-other'),   detail: txt('ot-iss-other-detail') }
+  };
+  const drug_box = {
+    count: num('ot-dbox-count'), status: getOtRadio('ot-dbox-status'), reason: txt('ot-dbox-reason'),
+    ca_count: num('ot-ca-count'), ca_status: getOtRadio('ot-ca-status'), ca_reason: txt('ot-ca-reason')
+  };
+
+  const row = {
+    date: txt('ot-date'),
+    type: 'นอกเวลา',
+    shift: getOtRadio('ot-shift'),
+    service_point: 'นอกเวลา',
+    location: 'นอกเวลา',
+    recorder_id: currentUser.id,
+    metrics, asa, complications, issues, drug_box,
+    notes: `ประจำเดือน: ${txt('ot-month')}\nผู้บันทึก: ${txt('ot-recorder')} (${txt('ot-recorder-pos')})\nทีม: ${JSON.stringify(teams)}\nหมายเหตุ: ${txt('ot-notes')}`
+  };
+
+  try {
+    await sbDB.insert('service_logs', row);
+    sbUtils.toast('บันทึกแล้ว ✓','success');
+    loadHistory();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+function clearOvertimeForm() {
+  if (!confirm('รีเซ็ตฟอร์ม?')) return;
+  document.querySelectorAll('#overtimeForm input:not([type=radio]), #overtimeForm textarea')
+    .forEach(el => { if(el.type !== 'date') el.value = ''; });
+  document.querySelectorAll('#overtimeForm .radio-pill').forEach(b => b.classList.remove('active'));
+  document.getElementById('ot-date').value = new Date().toISOString().slice(0,10);
+  initOtTeams();
 }
 
 function subscribeRT() { sbRT.subscribe('service_logs', loadHistory); }
