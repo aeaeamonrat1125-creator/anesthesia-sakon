@@ -206,9 +206,6 @@
     <button class="tab-btn sidebar-item" data-tab="satisfaction" onclick="switchTab('satisfaction')">
       <span class="si-icon">😊</span> ความพึงพอใจ
     </button>
-    <a href="staff.html#kpi-dashboard" class="sidebar-item">
-      <span class="si-icon">📊</span> Dashboard KPI
-    </a>
     <a href="staff.html" class="sidebar-item">
       <span class="si-icon">👥</span> บุคลากร
     </a>
@@ -233,9 +230,6 @@
     <div class="sidebar-section-label">ข้อมูลหน่วยงาน</div>
     <button class="tab-btn sidebar-item" data-tab="equipment" onclick="switchTab('equipment')">
       <span class="si-icon">📦</span> ทะเบียนเครื่องมือ
-    </button>
-    <button class="tab-btn sidebar-item" data-tab="news" onclick="switchTab('news')">
-      <span class="si-icon">📣</span> ประกาศ
     </button>
     <button class="tab-btn sidebar-item" data-tab="activities" onclick="switchTab('activities')">
       <span class="si-icon">🎯</span> กิจกรรม
@@ -309,8 +303,6 @@
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="prepost">📋 Pre/Post op</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="inspect">🔧 สรุปตรวจเครื่อง</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="equipment">📦 ทะเบียนเครื่องมือ</button>
-        <a href="staff.html#kpi-dashboard" class="w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none flex items-center gap-2 text-white">📊 Dashboard KPI</a>
-        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="news">📣 ประกาศ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="activities">🎯 กิจกรรมหน่วยงาน</button>
         <div class="border-t border-white/10 my-1"></div>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="qrcode">📱 QR Code</button>
@@ -1195,14 +1187,8 @@
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-blue-50 text-blue-700 text-xs font-semibold" data-tab="satisfaction" onclick="switchTab('satisfaction');toggleMobileMenu()">
         <span class="text-2xl">😊</span>ความพึงพอใจ
       </button>
-      <a href="staff.html#kpi-dashboard" onclick="toggleMobileMenu()" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold">
-        <span class="text-2xl">📊</span>KPI
-      </a>
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-amber-50 text-amber-700 text-xs font-semibold" data-tab="equipment" onclick="switchTab('equipment');toggleMobileMenu()">
         <span class="text-2xl">📦</span>ทะเบียนเครื่อง
-      </button>
-      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-rose-50 text-rose-700 text-xs font-semibold" data-tab="news" onclick="switchTab('news');toggleMobileMenu()">
-        <span class="text-2xl">📣</span>ประกาศ
       </button>
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-50 text-slate-700 text-xs font-semibold" data-tab="qrcode" onclick="switchTab('qrcode');toggleMobileMenu()">
         <span class="text-2xl">📱</span>QR Code
@@ -1334,7 +1320,7 @@ const _TAB_LABELS = {
   about:'🏠 หน้าหลัก', results:'📈 ผลลัพธ์', satisfaction:'😊 ความพึงพอใจ',
   kpi:'📊 KPI 15 ตัว', daily:'📅 ยอดรายวัน', prepost:'🩺 Pre/Post op',
   inspect:'📋 สรุปตรวจเครื่อง', equipment:'📦 ทะเบียนเครื่องมือ',
-  news:'📣 ประกาศ', activities:'🎯 กิจกรรม', qrcode:'📱 QR Code'
+  activities:'🎯 กิจกรรม', qrcode:'📱 QR Code'
 };
 const _origSwitchTab = typeof switchTab !== 'undefined' ? switchTab : null;
 
