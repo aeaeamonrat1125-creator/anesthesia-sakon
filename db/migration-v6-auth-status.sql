@@ -94,7 +94,7 @@ BEGIN
 
   RETURN QUERY
   SELECT
-    p.id, p.full_name, p.nickname, p.position, p.phone,
+    p.id AS id, p.full_name, p.nickname, p.position, p.phone,
     u.email,
     p.status, p.is_admin, p.created_at
   FROM profiles p
