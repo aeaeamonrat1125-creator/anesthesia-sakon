@@ -241,7 +241,7 @@ function renderPending(users) {
   body.innerHTML = users.map(u => `
     <tr>
       <td class="font-semibold">${u.full_name||'—'}<br><span class="text-xs text-slate-400">${u.nickname ? '('+u.nickname+')' : ''}</span></td>
-      <td class="text-sm">${u.position||'—'}</td>
+      <td class="text-sm">\${u.user_position||'—'}</td>
       <td class="text-xs text-slate-500">${u.email||'—'}</td>
       <td class="text-sm">${u.phone||'—'}</td>
       <td class="text-xs text-slate-400">${fmtDate(u.created_at)}</td>
@@ -263,7 +263,7 @@ function renderAll(users) {
     const isSelf   = u.id === currentUserId;
     return `<tr>
       <td class="font-medium">${u.full_name||'—'}<br><span class="text-xs text-slate-400">${u.nickname ? '('+u.nickname+')' : ''}</span></td>
-      <td class="text-sm">${u.position||'—'}</td>
+      <td class="text-sm">\${u.user_position||'—'}</td>
       <td class="text-xs text-slate-500">${u.email||'—'}</td>
       <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
       <td>${u.is_admin ? '<span class="badge badge-admin">🛡️ Admin</span>' : '—'}</td>

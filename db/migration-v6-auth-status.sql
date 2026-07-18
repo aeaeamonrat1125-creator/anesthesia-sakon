@@ -71,15 +71,15 @@ $$;
 
 CREATE OR REPLACE FUNCTION admin_list_users()
 RETURNS TABLE (
-  id         uuid,
-  full_name  text,
-  nickname   text,
-  position   text,
-  phone      text,
-  email      text,
-  status     text,
-  is_admin   boolean,
-  created_at timestamptz
+  id            uuid,
+  full_name     text,
+  nickname      text,
+  user_position text,
+  phone         text,
+  email         text,
+  status        text,
+  is_admin      boolean,
+  created_at    timestamptz
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
