@@ -66,6 +66,17 @@ select.input { cursor:pointer; }
 #reader { flex:1; min-height:0; overflow:hidden; position:relative; background:#000; }
 #reader > * { height:100% !important; }
 #reader video { width:100% !important; height:100% !important; object-fit:cover; }
+.alert-box { border-radius:12px; padding:12px 14px; display:flex; align-items:flex-start; gap:10px; }
+.alert-expired { background:#fef2f2; border:1.5px solid #fca5a5; }
+.alert-expiring { background:#fefce8; border:1.5px solid #fde047; }
+.alert-lowstock { background:#fff7ed; border:1.5px solid #fdba74; }
+.alert-box .al-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
+.alert-box .al-title { font-weight:700; font-size:13px; margin-bottom:4px; }
+.alert-item-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.alert-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; }
+.chip-expired  { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
+.chip-expiring { background:#fef3c7; color:#92400e; border:1px solid #fde047; }
+.chip-lowstock { background:#ffedd5; color:#c2410c; border:1px solid #fdba74; }
 .scan-overlay-frame { position:absolute; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center; z-index:2; }
 .scan-frame { width:260px; height:160px; border:3px solid #a78bfa; border-radius:16px; box-shadow:0 0 0 9999px rgba(0,0,0,.5); animation:scanPulse 1.5s ease-in-out infinite; }
 @keyframes scanPulse { 0%,100%{border-color:#a78bfa} 50%{border-color:#e9d5ff;box-shadow:0 0 0 9999px rgba(0,0,0,.5),0 0 24px rgba(167,139,250,.5)} }
@@ -151,6 +162,9 @@ select.input { cursor:pointer; }
       <button class="tab-pill"        id="tbtn-settings" onclick="switchTab('settings')">⚙️ ตั้งค่า</button>
     </div>
   </div>
+
+  <!-- ========== ALERT BANNER ========== -->
+  <div id="alert-banner" class="hidden space-y-2"></div>
 
   <!-- ========== TAB: รับเข้า ========== -->
   <div id="tab-receive" class="space-y-3 fade-in">
@@ -1063,6 +1077,100 @@ async function exportBackup() {
   }
 }
 
+// ── Alerts: หมดอายุ / สต็อกต่ำ ──────────────────────────────
+async function loadAlerts() {
+  const banner = document.getElementById('alert-banner');
+  banner.innerHTML = '';
+  banner.classList.add('hidden');
+
+  const today   = new Date();
+  const in90    = new Date(); in90.setDate(today.getDate() + 90);
+  const todayStr = today.toISOString().split('T')[0];
+  const in90Str  = in90.toISOString().split('T')[0];
+
+  try {
+    // 1. ดึง lot ที่มี expiry_date
+    const { data: receipts } = await sb
+      .from('supply_receipts')
+      .select('item_name, lot, expiry_date, quantity')
+      .not('expiry_date', 'is', null)
+      .lte('expiry_date', in90Str)
+      .order('expiry_date');
+
+    const expired  = (receipts||[]).filter(r => r.expiry_date <= todayStr);
+    const expiring = (receipts||[]).filter(r => r.expiry_date > todayStr);
+
+    // 2. ดึง stock ต่ำ (ต้องคำนวณ)
+    const [itemsRes, rAll, tAll] = await Promise.all([
+      sb.from('supply_items').select('id,name,unit,min_stock').gt('min_stock', 0),
+      sb.from('supply_receipts').select('item_id,quantity'),
+      sb.from('supply_transfers').select('item_id,quantity'),
+    ]);
+    const rMap = {}, tMap = {};
+    (rAll.data||[]).forEach(r => rMap[r.item_id] = (rMap[r.item_id]||0) + r.quantity);
+    (tAll.data||[]).forEach(r => tMap[r.item_id] = (tMap[r.item_id]||0) + r.quantity);
+    const lowStock = (itemsRes.data||[]).filter(item => {
+      const stock = (rMap[item.id]||0) - (tMap[item.id]||0);
+      return stock <= item.min_stock;
+    }).map(item => ({
+      ...item,
+      stock: (rMap[item.id]||0) - (tMap[item.id]||0)
+    }));
+
+    const parts = [];
+
+    if (expired.length) {
+      parts.push(`
+        <div class="alert-box alert-expired">
+          <span class="al-icon">🔴</span>
+          <div class="flex-1">
+            <div class="al-title text-red-700">หมดอายุแล้ว — ${expired.length} รายการ</div>
+            <div class="text-xs text-red-600 mb-1">ต้องดำเนินการทันที</div>
+            <div class="alert-item-list">
+              ${expired.map(r => `<span class="alert-chip chip-expired" title="Lot: ${r.lot||'—'}">${r.item_name} ${r.lot?'· '+r.lot:''} <span class="font-normal">(${fmtDate(r.expiry_date)})</span></span>`).join('')}
+            </div>
+          </div>
+        </div>`);
+    }
+
+    if (expiring.length) {
+      parts.push(`
+        <div class="alert-box alert-expiring">
+          <span class="al-icon">🟡</span>
+          <div class="flex-1">
+            <div class="al-title text-amber-700">ใกล้หมดอายุ (ภายใน 90 วัน) — ${expiring.length} รายการ</div>
+            <div class="alert-item-list">
+              ${expiring.map(r => {
+                const days = Math.ceil((new Date(r.expiry_date) - today) / 86400000);
+                return `<span class="alert-chip chip-expiring">${r.item_name} ${r.lot?'· '+r.lot:''} <span class="font-normal">(เหลือ ${days} วัน)</span></span>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>`);
+    }
+
+    if (lowStock.length) {
+      parts.push(`
+        <div class="alert-box alert-lowstock">
+          <span class="al-icon">🟠</span>
+          <div class="flex-1">
+            <div class="al-title text-orange-700">สต็อกต่ำ / หมด — ${lowStock.length} รายการ</div>
+            <div class="alert-item-list">
+              ${lowStock.map(item => `<span class="alert-chip chip-lowstock">${item.name} <span class="font-normal">(เหลือ ${item.stock} ${item.unit} · จุดเตือน ${item.min_stock})</span></span>`).join('')}
+            </div>
+          </div>
+        </div>`);
+    }
+
+    if (parts.length) {
+      banner.innerHTML = parts.join('');
+      banner.classList.remove('hidden');
+    }
+  } catch(e) {
+    console.warn('loadAlerts:', e.message);
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────
 async function init() {
   document.getElementById('r-date').value      = TODAY;
@@ -1077,7 +1185,7 @@ async function init() {
     populateWarehouseSelect();
   } catch(e) {}
 
-  await Promise.all([loadReceiptHistory(), loadTransferHistory()]);
+  await Promise.all([loadReceiptHistory(), loadTransferHistory(), loadAlerts()]);
 }
 
 init();
