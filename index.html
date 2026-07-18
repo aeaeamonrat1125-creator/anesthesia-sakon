@@ -297,9 +297,7 @@
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect y="2" width="16" height="2" rx="1" fill="white"/><rect y="7" width="16" height="2" rx="1" fill="white"/><rect y="12" width="16" height="2" rx="1" fill="white"/></svg>
       </button>
       <div id="idx-dropdown" class="hidden absolute right-0 top-full mt-1 bg-slate-800 rounded-xl shadow-2xl py-2 min-w-[220px] z-50 border border-white/10">
-        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="daily">📋 ยอดบริการรายวัน</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="prepost">📋 Pre/Post op</button>
-        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="inspect">🔧 สรุปตรวจเครื่อง</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="equipment">📦 ทะเบียนเครื่องมือ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="activities">🎯 กิจกรรมหน่วยงาน</button>
         <div class="border-t border-white/10 my-1"></div>
@@ -1191,14 +1189,8 @@
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-50 text-slate-700 text-xs font-semibold" data-tab="qrcode" onclick="switchTab('qrcode');toggleMobileMenu()">
         <span class="text-2xl">📱</span>QR Code
       </button>
-      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-cyan-50 text-cyan-700 text-xs font-semibold" data-tab="daily" onclick="switchTab('daily');toggleMobileMenu()">
-        <span class="text-2xl">📅</span>ยอดรายวัน
-      </button>
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-teal-50 text-teal-700 text-xs font-semibold" data-tab="prepost" onclick="switchTab('prepost');toggleMobileMenu()">
         <span class="text-2xl">🩺</span>Pre/Post op
-      </button>
-      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-violet-50 text-violet-700 text-xs font-semibold" data-tab="inspect" onclick="switchTab('inspect');toggleMobileMenu()">
-        <span class="text-2xl">🔍</span>สรุปตรวจเครื่อง
       </button>
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-pink-50 text-pink-700 text-xs font-semibold" data-tab="activities" onclick="switchTab('activities');toggleMobileMenu()">
         <span class="text-2xl">🎯</span>กิจกรรม
