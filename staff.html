@@ -131,7 +131,11 @@
     <button class="tab-btn sidebar-item" data-tab="equipment" onclick="switchTab('equipment')"><span class="si-icon">🔧</span> เครื่องมือ</button>
     <a href="inventory.html" class="sidebar-item"><span class="si-icon">📦</span> คลังเวชภัณฑ์</a>
     <button class="tab-btn sidebar-item" data-tab="staff" onclick="switchTab('staff')"><span class="si-icon">👤</span> บัญชี Login</button>
-    <button id="auditTabBtn" class="tab-btn sidebar-item hidden" data-tab="audit" onclick="switchTab('audit')"><span class="si-icon">🔍</span> ประวัติการใช้งาน</button>
+    <div id="adminSidebarSection" class="hidden">
+      <div class="sidebar-section-label">Admin เท่านั้น</div>
+      <button id="auditTabBtn" class="tab-btn sidebar-item" data-tab="audit" onclick="switchTab('audit')"><span class="si-icon">🔍</span> ประวัติการใช้งาน</button>
+      <a href="admin.html" class="sidebar-item"><span class="si-icon">🛡️</span> ยืนยันสมาชิก</a>
+    </div>
     <div class="sidebar-section-label">ลิงก์ด่วน</div>
     <a href="index.html" class="sidebar-item"><span class="si-icon">🏠</span> หน้าหลัก</a>
     <a href="service-log.html" class="sidebar-item"><span class="si-icon">📋</span> ลงยอดบริการ</a>
@@ -899,12 +903,15 @@ async function ensureAuth() {
       const uLabel = `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
       ['user-info','user-info-mobile'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=uLabel; });
       ['signOutBtn','signOutBtnMobile'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
-      // แสดงเมนู Audit เฉพาะ Admin
-      if (currentProfile?.role === 'admin') {
-        ['auditTabBtn','auditTabBtnMobile','bn-audit-more'].forEach(id => {
+      // แสดงเมนู Admin เฉพาะ Admin (role หรือ is_admin)
+      const isAdmin = currentProfile?.role === 'admin' || currentProfile?.is_admin === true;
+      if (isAdmin) {
+        ['auditTabBtnMobile','bn-audit-more'].forEach(id => {
           const el = document.getElementById(id);
           if (el) { el.classList.remove('hidden'); el.style.display='flex'; }
         });
+        const adminSection = document.getElementById('adminSidebarSection');
+        if (adminSection) adminSection.classList.remove('hidden');
       }
       document.getElementById('loginOverlay').style.display = 'none';
       return true;
