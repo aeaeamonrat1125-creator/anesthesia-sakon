@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>คลังเวชภัณฑ์ — วิสัญญี รพ.สกลนคร</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AnesSKH">
+<meta name="theme-color" content="#7c3aed">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+body { font-family:'Sarabun',system-ui,sans-serif; background:#f5f3ff; }
+.grad-hero { background:linear-gradient(135deg,#6d28d9 0%,#9333ea 55%,#c026d3 100%); }
+.card { background:#fff; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06); }
+.input { width:100%; padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:15px; background:#fff; font-family:'Sarabun',sans-serif; transition:border-color .12s,box-shadow .12s; box-sizing:border-box; }
+.input:focus { outline:none; border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+select.input { cursor:pointer; }
+.btn { padding:11px 18px; border-radius:10px; font-weight:600; font-size:14px; cursor:pointer; transition:all .15s; font-family:'Sarabun',sans-serif; border:none; display:inline-flex; align-items:center; gap:6px; justify-content:center; }
+.btn-primary { background:linear-gradient(135deg,#7c3aed,#9333ea); color:#fff; }
+.btn-primary:hover { opacity:.92; box-shadow:0 4px 14px rgba(124,58,237,.3); }
+.btn-primary:active { transform:scale(.98); }
+.btn-ghost { background:#f5f3ff; color:#7c3aed; border:1.5px solid #e9d5ff; }
+.btn-ghost:hover { background:#ede9fe; }
+.btn-danger { background:#fff1f2; color:#e11d48; border:1.5px solid #fecdd3; }
+.btn-danger:hover { background:#ffe4e6; }
+.btn-scan { background:linear-gradient(135deg,#0ea5e9,#2563eb); color:#fff; padding:10px 14px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; border:none; display:flex; align-items:center; gap:6px; font-family:'Sarabun',sans-serif; white-space:nowrap; flex-shrink:0; }
+.tab-pill { flex:1; padding:10px 6px; border-radius:10px; font-weight:600; text-align:center; background:#ede9fe; color:#7c3aed; cursor:pointer; transition:all .12s; font-size:13px; border:none; font-family:'Sarabun',sans-serif; }
+.tab-pill.active { background:linear-gradient(135deg,#7c3aed,#9333ea); color:#fff; box-shadow:0 4px 12px rgba(124,58,237,.25); }
+.lbl { font-size:12px; color:#64748b; margin-bottom:4px; display:block; font-weight:500; }
+.section-h { font-weight:700; color:#4c1d95; font-size:15px; border-left:4px solid #7c3aed; padding:3px 0 3px 12px; }
+.tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.tbl th { background:#faf5ff; color:#6d28d9; font-weight:700; padding:9px 10px; text-align:left; border-bottom:2px solid #e9d5ff; white-space:nowrap; }
+.tbl td { padding:8px 10px; border-bottom:1px solid #f3e8ff; vertical-align:middle; }
+.tbl tr:hover td { background:#faf5ff; }
+.tbl tr:last-child td { border-bottom:none; }
+.scroll-x { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef3c7; color:#92400e; }
+.badge-red    { background:#fee2e2; color:#dc2626; }
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-purple { background:#ede9fe; color:#6d28d9; }
+.wh-chip { display:inline-flex; align-items:center; gap:4px; background:#f5f3ff; color:#6d28d9; border:1px solid #e9d5ff; border-radius:999px; padding:3px 10px; font-size:12px; font-weight:600; }
+.stat-card { border-radius:14px; padding:18px 16px; color:#fff; position:relative; overflow:hidden; }
+.stat-card::after { content:''; position:absolute; right:-16px; top:-16px; width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,.12); }
+.sk-purple { background:linear-gradient(135deg,#7c3aed,#9333ea); }
+.sk-green  { background:linear-gradient(135deg,#059669,#10b981); }
+.sk-blue   { background:linear-gradient(135deg,#2563eb,#3b82f6); }
+.sk-orange { background:linear-gradient(135deg,#d97706,#f59e0b); }
+.stock-bar-wrap { height:5px; border-radius:999px; background:#e9d5ff; overflow:hidden; margin-top:5px; }
+.stock-bar { height:100%; border-radius:999px; transition:width .4s; }
+.lookup-box { border-radius:10px; padding:10px 12px; display:flex; align-items:flex-start; gap:8px; }
+.lookup-found { background:#f0fdf4; border:1.5px solid #86efac; }
+.lookup-new   { background:#fefce8; border:1.5px solid #fde047; }
+/* Scanner Modal */
+#scannerModal { display:none; position:fixed; inset:0; z-index:60; background:#000; flex-direction:column; }
+#scannerModal.open { display:flex; }
+#reader { flex:1; min-height:0; overflow:hidden; position:relative; background:#000; }
+#reader > * { height:100% !important; }
+#reader video { width:100% !important; height:100% !important; object-fit:cover; }
+.scan-overlay-frame { position:absolute; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center; z-index:2; }
+.scan-frame { width:260px; height:160px; border:3px solid #a78bfa; border-radius:16px; box-shadow:0 0 0 9999px rgba(0,0,0,.5); animation:scanPulse 1.5s ease-in-out infinite; }
+@keyframes scanPulse { 0%,100%{border-color:#a78bfa} 50%{border-color:#e9d5ff;box-shadow:0 0 0 9999px rgba(0,0,0,.5),0 0 24px rgba(167,139,250,.5)} }
+.scanner-top { background:rgba(109,40,217,.92); backdrop-filter:blur(8px); padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; padding-top:max(14px,env(safe-area-inset-top)); }
+.scanner-btm { background:rgba(0,0,0,.85); backdrop-filter:blur(8px); padding:12px 16px; padding-bottom:max(16px,env(safe-area-inset-bottom)); flex-shrink:0; }
+.manual-input { background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.25); color:#fff; padding:11px 14px; border-radius:10px; font-size:15px; width:100%; font-family:'Sarabun',sans-serif; box-sizing:border-box; }
+.manual-input:focus { outline:none; border-color:#a78bfa; background:rgba(255,255,255,.15); }
+.manual-input::placeholder { color:rgba(255,255,255,.4); }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation:fadeIn .22s ease; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- Toast container -->
+<div id="toastWrap" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 items-center pointer-events-none min-w-max"></div>
+
+<!-- ====== HEADER ====== -->
+<header class="grad-hero text-white sticky top-0 z-30 shadow-lg">
+  <div class="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between gap-2">
+    <div>
+      <div class="text-lg font-bold">📦 คลังเวชภัณฑ์วิสัญญี</div>
+      <div class="text-white/70 text-xs" id="userInfo">กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="flex gap-2 items-center flex-shrink-0">
+      <a href="index.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
+      <button id="signOutBtn" onclick="doSignOut()" class="hidden bg-rose-500/80 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
+    </div>
+  </div>
+</header>
+
+<!-- ====== LOGIN OVERLAY ====== -->
+<div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-6">
+    <div class="text-xl font-bold text-violet-800 mb-1">🔐 เข้าสู่ระบบ</div>
+    <div class="text-sm text-slate-500 mb-4">ระบบคลังเวชภัณฑ์ — สำหรับเจ้าหน้าที่เท่านั้น</div>
+    <div class="space-y-3 mb-4">
+      <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
+      <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+    </div>
+    <div id="loginError" class="text-xs text-rose-500 mb-3 hidden"></div>
+    <button onclick="doSignIn()" class="btn btn-primary w-full text-base">เข้าสู่ระบบ</button>
+    <div class="flex justify-between mt-3 text-xs">
+      <a href="signup.html" class="text-violet-600">สมัครสมาชิก</a>
+      <a href="index.html" class="text-slate-400">กลับหน้าหลัก</a>
+    </div>
+  </div>
+</div>
+
+<!-- ====== PENDING OVERLAY ====== -->
+<div id="pendingOverlay" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-6 text-center">
+    <div class="text-5xl mb-4">⏳</div>
+    <div class="text-xl font-bold text-amber-700 mb-2">รอการอนุมัติ</div>
+    <div class="text-sm text-slate-600 mb-4">บัญชีของคุณยังอยู่ระหว่างรอ Admin อนุมัติ<br>กรุณาแจ้งหัวหน้าหน่วยงาน</div>
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-800 text-left">
+      <div class="font-semibold mb-1">ติดต่อ Admin เพื่ออนุมัติ</div>
+      <div>แจ้ง email และชื่อ-สกุลที่สมัครไว้ผ่าน LINE กลุ่มหน่วยงาน</div>
+    </div>
+    <button onclick="doSignOut()" class="btn btn-ghost w-full">ออกจากระบบ</button>
+  </div>
+</div>
+
+<!-- ====== REJECTED OVERLAY ====== -->
+<div id="rejectedOverlay" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-6 text-center">
+    <div class="text-5xl mb-4">🚫</div>
+    <div class="text-xl font-bold text-rose-700 mb-2">ไม่ได้รับอนุญาต</div>
+    <div class="text-sm text-slate-600 mb-4">บัญชีนี้ถูกปฏิเสธ กรุณาติดต่อผู้ดูแลระบบ</div>
+    <button onclick="doSignOut()" class="btn btn-ghost w-full">ออกจากระบบ</button>
+  </div>
+</div>
+
+<!-- ====== MAIN ====== -->
+<main class="max-w-5xl mx-auto px-3 sm:px-4 py-4 space-y-3 pb-10">
+
+  <!-- Tab nav -->
+  <div class="card p-2">
+    <div class="flex gap-1.5">
+      <button class="tab-pill active" id="tbtn-receive"  onclick="switchTab('receive')">📥 รับเข้า</button>
+      <button class="tab-pill"        id="tbtn-transfer" onclick="switchTab('transfer')">📤 เบิกออก</button>
+      <button class="tab-pill"        id="tbtn-stock"    onclick="switchTab('stock')">📊 ยอดคลัง</button>
+      <button class="tab-pill"        id="tbtn-settings" onclick="switchTab('settings')">⚙️ ตั้งค่า</button>
+    </div>
+  </div>
+
+  <!-- ========== TAB: รับเข้า ========== -->
+  <div id="tab-receive" class="space-y-3 fade-in">
+
+    <div class="card p-4">
+      <div class="section-h mb-2">สแกนบาร์โค้ด / QR</div>
+      <p class="text-xs text-slate-400 mb-3">รองรับ GS1-128, GS1 DataMatrix, QR Code — ดึง Lot และวันหมดอายุอัตโนมัติ<br>เครื่องสแกน USB/Bluetooth: วางบาร์โค้ดในช่องแล้วกด Enter</p>
+      <div class="flex gap-2">
+        <input id="r-barcode-input" type="text" class="input" placeholder="สแกนหรือพิมพ์บาร์โค้ด แล้วกด Enter" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button class="btn-scan" onclick="openScanner('receive')">📷 <span class="hidden sm:inline">สแกน</span></button>
+      </div>
+      <div id="r-lookup-info" class="hidden mt-3 text-sm"></div>
+    </div>
+
+    <div class="card p-4">
+      <div class="section-h mb-4">บันทึกรับเข้าคลังใหญ่</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">วันที่รับเข้า *</label>
+          <input id="r-date" type="date" class="input">
+        </div>
+        <div>
+          <label class="lbl">เลขที่ใบเบิกจากคลัง รพ.</label>
+          <input id="r-req" type="text" class="input" placeholder="เช่น REQ-2568-001">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="lbl">ชื่อเวชภัณฑ์ *</label>
+          <input id="r-name" type="text" class="input" placeholder="กรอกหรือสแกน Barcode เพื่อดึงอัตโนมัติ">
+        </div>
+        <div>
+          <label class="lbl">จำนวนรับเข้า *</label>
+          <input id="r-qty" type="number" class="input" placeholder="0" min="1">
+        </div>
+        <div>
+          <label class="lbl">หน่วยนับ</label>
+          <input id="r-unit" type="text" class="input" placeholder="ชิ้น / กล่อง / อัน">
+        </div>
+        <div>
+          <label class="lbl">Lot Number <span class="text-violet-400">(ดึงจาก Barcode)</span></label>
+          <input id="r-lot" type="text" class="input" placeholder="Lot number">
+        </div>
+        <div>
+          <label class="lbl">วันหมดอายุ <span class="text-violet-400">(ดึงจาก Barcode)</span></label>
+          <input id="r-expiry" type="date" class="input">
+        </div>
+        <div>
+          <label class="lbl">ผู้รับของ</label>
+          <input id="r-receiver" type="text" class="input" placeholder="ชื่อผู้รับ">
+        </div>
+        <div>
+          <label class="lbl">ตำแหน่งจัดเก็บ</label>
+          <input id="r-location" type="text" class="input" placeholder="เช่น ชั้น A1, ลิ้นชัก 3">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="lbl">หมายเหตุ</label>
+          <input id="r-notes" type="text" class="input" placeholder="หมายเหตุ (ถ้ามี)">
+        </div>
+      </div>
+      <div class="mt-4 flex gap-2 flex-wrap">
+        <button onclick="submitReceipt()" class="btn btn-primary flex-1 min-w-32">💾 บันทึกรับเข้า</button>
+        <button onclick="clearReceiptForm()" class="btn btn-ghost">ล้างฟอร์ม</button>
+      </div>
+    </div>
+
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div class="section-h">ประวัติรับเข้า</div>
+        <input type="date" id="r-hist-date" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="loadReceiptHistory()">
+      </div>
+      <div class="scroll-x">
+        <table class="tbl">
+          <thead><tr><th>วันที่</th><th>ชื่อเวชภัณฑ์</th><th>จำนวน</th><th>Lot</th><th>หมดอายุ</th><th>ผู้รับ</th><th></th></tr></thead>
+          <tbody id="r-hist-body"><tr><td colspan="7" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== TAB: เบิกออก ========== -->
+  <div id="tab-transfer" class="space-y-3 fade-in hidden">
+
+    <div class="card p-4">
+      <div class="section-h mb-2">สแกนบาร์โค้ด / QR</div>
+      <p class="text-xs text-slate-400 mb-3">สแกนเพื่อดึงชื่อเวชภัณฑ์และตรวจสอบยอดคงเหลือในคลังใหญ่</p>
+      <div class="flex gap-2">
+        <input id="t-barcode-input" type="text" class="input" placeholder="สแกนหรือพิมพ์บาร์โค้ด แล้วกด Enter" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button class="btn-scan" onclick="openScanner('transfer')">📷 <span class="hidden sm:inline">สแกน</span></button>
+      </div>
+      <div id="t-lookup-info" class="hidden mt-3 text-sm"></div>
+      <div id="t-stock-info" class="hidden mt-2 p-3 bg-violet-50 rounded-xl border border-violet-100 text-sm">
+        <span class="text-violet-600 font-semibold">ยอดคงเหลือในคลังใหญ่: </span>
+        <span id="t-stock-val" class="font-bold text-violet-900">—</span>
+      </div>
+    </div>
+
+    <div class="card p-4">
+      <div class="section-h mb-4">บันทึกเบิกออกไปคลังย่อย</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">วันที่เบิก *</label>
+          <input id="t-date" type="date" class="input">
+        </div>
+        <div>
+          <label class="lbl">คลังย่อยปลายทาง *</label>
+          <select id="t-warehouse" class="input">
+            <option value="">— เลือกคลังย่อย —</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="lbl">ชื่อเวชภัณฑ์ *</label>
+          <input id="t-name" type="text" class="input" placeholder="กรอกหรือสแกน Barcode">
+        </div>
+        <div>
+          <label class="lbl">จำนวนที่เบิก *</label>
+          <input id="t-qty" type="number" class="input" placeholder="0" min="1">
+        </div>
+        <div>
+          <label class="lbl">หน่วยนับ</label>
+          <input id="t-unit" type="text" class="input" placeholder="ชิ้น / กล่อง">
+        </div>
+        <div>
+          <label class="lbl">Lot Number <span class="text-violet-400">(ดึงจาก Barcode)</span></label>
+          <input id="t-lot" type="text" class="input" placeholder="Lot number">
+        </div>
+        <div>
+          <label class="lbl">ผู้เบิก</label>
+          <input id="t-requester" type="text" class="input" placeholder="ชื่อผู้เบิก">
+        </div>
+        <div>
+          <label class="lbl">ผู้จ่าย</label>
+          <input id="t-issuer" type="text" class="input" placeholder="ชื่อผู้จ่าย">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="lbl">หมายเหตุ</label>
+          <input id="t-notes" type="text" class="input" placeholder="หมายเหตุ (ถ้ามี)">
+        </div>
+      </div>
+      <div class="mt-4 flex gap-2 flex-wrap">
+        <button onclick="submitTransfer()" class="btn btn-primary flex-1 min-w-32">💾 บันทึกเบิกออก</button>
+        <button onclick="clearTransferForm()" class="btn btn-ghost">ล้างฟอร์ม</button>
+      </div>
+    </div>
+
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div class="section-h">ประวัติเบิกออก</div>
+        <input type="date" id="t-hist-date" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="loadTransferHistory()">
+      </div>
+      <div class="scroll-x">
+        <table class="tbl">
+          <thead><tr><th>วันที่</th><th>ชื่อเวชภัณฑ์</th><th>จำนวน</th><th>Lot</th><th>คลังย่อย</th><th>ผู้เบิก</th><th></th></tr></thead>
+          <tbody id="t-hist-body"><tr><td colspan="7" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== TAB: ยอดคลัง ========== -->
+  <div id="tab-stock" class="space-y-3 fade-in hidden">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="stat-card sk-purple"><div class="text-2xl font-bold" id="s-total">—</div><div class="text-white/75 text-xs mt-1">รายการทั้งหมด</div></div>
+      <div class="stat-card sk-green"> <div class="text-2xl font-bold" id="s-in">—</div>   <div class="text-white/75 text-xs mt-1">รับเข้าวันนี้</div></div>
+      <div class="stat-card sk-blue">  <div class="text-2xl font-bold" id="s-out">—</div>  <div class="text-white/75 text-xs mt-1">เบิกออกวันนี้</div></div>
+      <div class="stat-card sk-orange"><div class="text-2xl font-bold" id="s-low">—</div>  <div class="text-white/75 text-xs mt-1">สต็อกต่ำ/หมด</div></div>
+    </div>
+    <div class="card p-3 flex gap-2 items-center flex-wrap">
+      <input id="s-search" type="text" class="input" style="max-width:220px;padding:7px 10px;font-size:13px;" placeholder="🔍 ค้นหาชื่อ..." oninput="renderStock()">
+      <button onclick="loadStock()" class="btn btn-ghost" style="padding:7px 14px;font-size:13px;">🔄 รีเฟรช</button>
+      <button onclick="exportBackup()" class="btn btn-ghost" style="padding:7px 14px;font-size:13px;color:#059669;border-color:#86efac;">📥 Export Excel</button>
+    </div>
+    <div class="card p-4">
+      <div class="section-h mb-3">ยอดคลังใหญ่วิสัญญี</div>
+      <div class="scroll-x">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>ชื่อเวชภัณฑ์</th><th>รับเข้า</th><th>เบิกออก</th><th>คงเหลือ</th><th>หน่วย</th><th>สถานะ</th></tr></thead>
+          <tbody id="stock-body"><tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card p-4">
+      <div class="section-h mb-3">สรุปยอดส่งคลังย่อย</div>
+      <div id="sub-wh-summary"><div class="text-center text-slate-400 py-6">กำลังโหลด...</div></div>
+    </div>
+  </div>
+
+  <!-- ========== TAB: ตั้งค่า ========== -->
+  <div id="tab-settings" class="space-y-3 fade-in hidden">
+
+    <div class="card p-4">
+      <div class="section-h mb-4">เพิ่ม Master เวชภัณฑ์</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="lbl">Barcode / GTIN</label>
+          <div class="flex gap-2">
+            <input id="m-barcode" type="text" class="input" placeholder="สแกนหรือพิมพ์">
+            <button class="btn-scan" onclick="openScanner('master')" style="padding:8px 10px;">📷</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">ชื่อเวชภัณฑ์ *</label>
+          <input id="m-name" type="text" class="input" placeholder="ชื่อ">
+        </div>
+        <div>
+          <label class="lbl">ชื่อสามัญ</label>
+          <input id="m-generic" type="text" class="input" placeholder="Generic name">
+        </div>
+        <div>
+          <label class="lbl">หน่วยนับ</label>
+          <input id="m-unit" type="text" class="input" placeholder="ชิ้น, กล่อง, อัน, ml">
+        </div>
+        <div>
+          <label class="lbl">หมวดหมู่</label>
+          <input id="m-cat" type="text" class="input" placeholder="ยาสลบ, อุปกรณ์, สิ้นเปลือง">
+        </div>
+        <div>
+          <label class="lbl">จุดแจ้งเตือนสต็อกต่ำ</label>
+          <input id="m-min" type="number" class="input" placeholder="0" min="0">
+        </div>
+      </div>
+      <button onclick="addItem()" class="btn btn-primary">➕ เพิ่มรายการ</button>
+      <div class="scroll-x mt-4">
+        <table class="tbl">
+          <thead><tr><th>Barcode</th><th>ชื่อ</th><th>หน่วย</th><th>หมวด</th><th>แจ้งเตือน</th><th></th></tr></thead>
+          <tbody id="items-body"><tr><td colspan="6" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card p-4">
+      <div class="section-h mb-4">จัดการคลังย่อย</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="lbl">ชื่อคลังย่อย *</label>
+          <input id="sw-name" type="text" class="input" placeholder="เช่น คลังย่อย OR 1">
+        </div>
+        <div>
+          <label class="lbl">สถานที่</label>
+          <input id="sw-loc" type="text" class="input" placeholder="ห้อง / ตึก">
+        </div>
+      </div>
+      <button onclick="addSubWarehouse()" class="btn btn-primary">➕ เพิ่มคลังย่อย</button>
+      <div class="scroll-x mt-4">
+        <table class="tbl">
+          <thead><tr><th>ชื่อคลังย่อย</th><th>สถานที่</th><th>สถานะ</th><th></th></tr></thead>
+          <tbody id="sw-body"><tr><td colspan="4" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ====== SCANNER MODAL ====== -->
+<div id="scannerModal">
+  <div class="scanner-top">
+    <div>
+      <div class="text-white font-bold">สแกน Barcode / QR Code</div>
+      <div class="text-white/60 text-xs">GS1-128 · DataMatrix · QR · Code128</div>
+    </div>
+    <button onclick="closeScanner()" class="bg-white/15 hover:bg-white/25 text-white px-4 py-2 rounded-lg text-sm font-semibold">✕ ปิด</button>
+  </div>
+  <div id="reader">
+    <div class="scan-overlay-frame"><div class="scan-frame"></div></div>
+  </div>
+  <div class="scanner-btm">
+    <div class="text-white/50 text-xs text-center mb-2">หรือพิมพ์/วางบาร์โค้ดจากเครื่องสแกน USB/Bluetooth แล้วกด Enter</div>
+    <input id="manual-scan" class="manual-input" type="text" placeholder="พิมพ์ barcode แล้วกด Enter" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+</div>
+
+<!-- ====== SCRIPTS ====== -->
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+// ── Globals ──────────────────────────────────────────────────
+let currentUser = null;
+let scanTarget  = 'receive';   // which tab opened the scanner
+let html5QrCode = null;
+let subWarehouses = [];
+let stockData = [];
+const TODAY = new Date().toISOString().split('T')[0];
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  const bg = { success:'linear-gradient(135deg,#059669,#10b981)', error:'linear-gradient(135deg,#dc2626,#ef4444)', info:'linear-gradient(135deg,#6d28d9,#9333ea)', warn:'linear-gradient(135deg,#d97706,#f59e0b)' };
+  el.style.cssText = `background:${bg[type]||bg.info};color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:auto;white-space:nowrap;`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Auth ──────────────────────────────────────────────────────
+async function initAuth() {
+  const u = await sbAuth.getUser();
+  if (!u) {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    return;
+  }
+  currentUser = u;
+  const p = await sbAuth.getProfile();
+
+  if (!p || p.status === 'pending') {
+    document.getElementById('pendingOverlay').style.display = 'flex';
+    return;
+  }
+  if (p.status === 'rejected') {
+    document.getElementById('rejectedOverlay').style.display = 'flex';
+    return;
+  }
+
+  // approved
+  document.getElementById('userInfo').textContent = p.full_name || u.email;
+  document.getElementById('signOutBtn').classList.remove('hidden');
+  if (p.is_admin) {
+    const adminLink = document.createElement('a');
+    adminLink.href = 'admin.html';
+    adminLink.className = 'bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg';
+    adminLink.textContent = '🛡️ Admin';
+    document.getElementById('signOutBtn').insertAdjacentElement('beforebegin', adminLink);
+  }
+}
+
+async function doSignIn() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw    = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('hidden');
+  try {
+    await sbAuth.signIn(email, pw);
+    location.reload();
+  } catch(e) {
+    errEl.textContent = e.message || 'ล็อกอินไม่สำเร็จ';
+    errEl.classList.remove('hidden');
+  }
+}
+document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key==='Enter') doSignIn(); });
+async function doSignOut() { await sbAuth.signOut(); location.reload(); }
+
+// ── Tabs ──────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['receive','transfer','stock','settings'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab);
+    document.getElementById('tbtn-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab==='stock')    loadStock();
+  if (tab==='settings') loadSettings();
+  if (tab==='transfer') populateWarehouseSelect();
+}
+
+// ── GS1 Parser ───────────────────────────────────────────────
+function parseGS1(raw) {
+  if (!raw) return { barcode: raw, lot: null, expiry: null };
+  const GS = '\x1d';
+
+  // Human-readable: (01)14digits(10)lot(17)YYMMDD
+  if (/\(\d{2}\)/.test(raw)) {
+    const m01 = raw.match(/\(01\)(\d{13,14})/);
+    const m10 = raw.match(/\(10\)([^(]+)/);
+    const m17 = raw.match(/\(17\)(\d{6})/);
+    return {
+      barcode: m01 ? m01[1] : raw,
+      lot:     m10 ? m10[1].trim() : null,
+      expiry:  m17 ? gs1Date(m17[1]) : null,
+    };
+  }
+
+  // Raw GS1 binary (with GS \x1d separators)
+  const clean = raw.replace(/[\x1c\x1e\x04]/g, GS);
+  let gtin = null, lot = null, expiry = null, i = 0;
+  while (i < clean.length) {
+    const gs = clean[i] === GS ? 1 : 0;
+    const a2 = clean.substr(i+gs, 2);
+    if (a2 === '01') {
+      gtin = clean.substr(i+gs+2, 14); i += gs+16;
+    } else if (a2 === '10') {
+      const s = i+gs+2, e = clean.indexOf(GS, s);
+      lot = e>-1 ? clean.substring(s,e) : clean.substring(s);
+      i = e>-1 ? e : clean.length;
+    } else if (a2 === '17') {
+      expiry = gs1Date(clean.substr(i+gs+2, 6)); i += gs+8;
+    } else if (a2 === '21') {
+      const s = i+gs+2, e = clean.indexOf(GS, s);
+      i = e>-1 ? e : clean.length;
+    } else { i++; }
+  }
+  return { barcode: gtin || raw, lot, expiry };
+}
+
+function gs1Date(s) {
+  if (!s || s.length < 6) return null;
+  const yy = +s.slice(0,2), mm = s.slice(2,4);
+  let dd = s.slice(4,6);
+  const yyyy = yy <= 49 ? 2000+yy : 1900+yy;
+  if (dd === '00') dd = new Date(yyyy, +mm, 0).getDate().toString().padStart(2,'0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// ── Barcode Lookup ────────────────────────────────────────────
+async function lookupBarcode(raw, target) {
+  if (!raw) return;
+  const parsed  = parseGS1(raw);
+  const barcode = parsed.barcode;
+  const prefix  = target === 'receive' ? 'r' : 't';
+  const infoEl  = document.getElementById(prefix+'-lookup-info');
+
+  let item = null;
+  if (barcode) {
+    const { data } = await sb.from('supply_items').select('*').eq('barcode', barcode).maybeSingle();
+    item = data;
+  }
+
+  // Fill auto fields
+  const nameEl   = document.getElementById(prefix+'-name');
+  const unitEl   = document.getElementById(prefix+'-unit');
+  const lotEl    = document.getElementById(prefix+'-lot');
+  const expiryEl = document.getElementById(prefix+'-expiry'); // only exists in receive tab
+
+  if (item) {
+    if (nameEl)   nameEl.value   = item.name;
+    if (unitEl)   unitEl.value   = item.unit || '';
+  }
+  if (lotEl    && parsed.lot)    lotEl.value    = parsed.lot;
+  if (expiryEl && parsed.expiry) expiryEl.value = parsed.expiry;
+
+  // Set parsed barcode as data attribute for form submission
+  document.getElementById(prefix+'-barcode-input').dataset.parsed = barcode;
+
+  // Info box
+  if (item) {
+    const extras = [parsed.lot && 'Lot: '+parsed.lot, parsed.expiry && 'หมดอายุ: '+fmtDate(parsed.expiry)].filter(Boolean).join(' · ');
+    infoEl.innerHTML = `<div class="lookup-box lookup-found"><span class="text-lg">✅</span><div><div class="font-semibold text-green-800">${item.name}</div><div class="text-xs text-green-600">พบในฐานข้อมูล · ${item.unit}${extras ? ' · '+extras : ''}</div></div></div>`;
+  } else {
+    const extras = [parsed.lot && 'Lot: '+parsed.lot, parsed.expiry && 'หมดอายุ: '+fmtDate(parsed.expiry)].filter(Boolean).join(' · ');
+    infoEl.innerHTML = `<div class="lookup-box lookup-new"><span class="text-lg">ℹ️</span><div><div class="font-semibold text-amber-800">บาร์โค้ด: ${barcode}</div><div class="text-xs text-amber-700">ยังไม่มีในฐานข้อมูล — กรอกชื่อเอง หรือเพิ่มใน "ตั้งค่า"${extras ? '<br>'+extras : ''}</div></div></div>`;
+  }
+  infoEl.classList.remove('hidden');
+
+  // Show stock for transfer tab
+  if (target === 'transfer' && item) showItemStock(item.id, item.unit);
+  else if (target === 'transfer') document.getElementById('t-stock-info').classList.add('hidden');
+
+  // Focus qty after lookup
+  setTimeout(() => document.getElementById(prefix+'-qty')?.focus(), 100);
+}
+
+async function showItemStock(itemId, unit) {
+  const [rRes, tRes] = await Promise.all([
+    sb.from('supply_receipts').select('quantity').eq('item_id', itemId),
+    sb.from('supply_transfers').select('quantity').eq('item_id', itemId),
+  ]);
+  const totalIn  = (rRes.data||[]).reduce((s,r)=>s+r.quantity,0);
+  const totalOut = (tRes.data||[]).reduce((s,r)=>s+r.quantity,0);
+  const stock    = totalIn - totalOut;
+  const el = document.getElementById('t-stock-val');
+  el.textContent = `${stock} ${unit||''}`;
+  el.className   = `font-bold ${stock > 0 ? 'text-green-700' : 'text-red-600'}`;
+  document.getElementById('t-stock-info').classList.remove('hidden');
+}
+
+// Barcode inputs: Enter key triggers lookup
+['r-barcode-input','t-barcode-input'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = e.target.value.trim();
+      if (val) lookupBarcode(val, id.startsWith('r') ? 'receive' : 'transfer');
+    }
+  });
+});
+
+// ── Scanner ───────────────────────────────────────────────────
+function openScanner(target) {
+  scanTarget = target;
+  document.getElementById('scannerModal').classList.add('open');
+  document.getElementById('manual-scan').value = '';
+  setTimeout(() => document.getElementById('manual-scan').focus(), 400);
+
+  if (html5QrCode) { try { html5QrCode.stop(); } catch(e){} html5QrCode = null; }
+  html5QrCode = new Html5Qrcode('reader');
+  html5QrCode.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 260, height: 160 } },
+    raw => handleScanResult(raw),
+    () => {}
+  ).catch(err => {
+    console.warn('Camera:', err);
+    toast('ไม่สามารถเปิดกล้องได้ — ใช้ช่องพิมพ์ด้านล่างแทน', 'warn');
+  });
+}
+
+function closeScanner() {
+  document.getElementById('scannerModal').classList.remove('open');
+  if (html5QrCode) {
+    html5QrCode.stop().catch(()=>{}).finally(()=>{ html5QrCode.clear(); html5QrCode = null; });
+  }
+}
+
+function handleScanResult(raw) {
+  closeScanner();
+  if (scanTarget === 'master') {
+    document.getElementById('m-barcode').value = parseGS1(raw).barcode || raw;
+    return;
+  }
+  const prefix = scanTarget === 'receive' ? 'r' : 't';
+  document.getElementById(prefix+'-barcode-input').value = raw;
+  lookupBarcode(raw, scanTarget);
+}
+
+document.getElementById('manual-scan').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (val) handleScanResult(val);
+  }
+});
+
+// ── รับเข้า Form ──────────────────────────────────────────────
+function clearReceiptForm() {
+  ['r-barcode-input','r-req','r-name','r-qty','r-unit','r-lot','r-expiry','r-receiver','r-location','r-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; delete el.dataset.parsed; }
+  });
+  document.getElementById('r-date').value = TODAY;
+  document.getElementById('r-lookup-info').classList.add('hidden');
+}
+
+async function submitReceipt() {
+  if (!currentUser) { toast('กรุณาเข้าสู่ระบบก่อน', 'error'); return; }
+  const name = document.getElementById('r-name').value.trim();
+  const qty  = parseInt(document.getElementById('r-qty').value);
+  if (!name)       { toast('กรุณาระบุชื่อเวชภัณฑ์', 'error'); return; }
+  if (!qty || qty<1) { toast('กรุณาระบุจำนวนที่ถูกต้อง', 'error'); return; }
+
+  const barcode = document.getElementById('r-barcode-input').dataset.parsed || document.getElementById('r-barcode-input').value.trim() || null;
+  let itemId = null;
+  if (barcode) {
+    const { data } = await sb.from('supply_items').select('id').eq('barcode', barcode).maybeSingle();
+    itemId = data?.id || null;
+  }
+
+  try {
+    await sbDB.insert('supply_receipts', {
+      receipt_date:     document.getElementById('r-date').value || TODAY,
+      requisition_no:   document.getElementById('r-req').value.trim() || null,
+      item_id:          itemId,
+      barcode_raw:      document.getElementById('r-barcode-input').value.trim() || null,
+      item_name:        name,
+      quantity:         qty,
+      unit:             document.getElementById('r-unit').value.trim() || null,
+      lot:              document.getElementById('r-lot').value.trim() || null,
+      expiry_date:      document.getElementById('r-expiry').value || null,
+      received_by:      document.getElementById('r-receiver').value.trim() || null,
+      storage_location: document.getElementById('r-location').value.trim() || null,
+      notes:            document.getElementById('r-notes').value.trim() || null,
+      created_by:       currentUser.id,
+    });
+    toast('✅ บันทึกรับเข้าสำเร็จ', 'success');
+    clearReceiptForm();
+    loadReceiptHistory();
+  } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
+}
+
+// ── เบิกออก Form ──────────────────────────────────────────────
+function clearTransferForm() {
+  ['t-barcode-input','t-name','t-qty','t-unit','t-lot','t-requester','t-issuer','t-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; delete el.dataset.parsed; }
+  });
+  document.getElementById('t-date').value = TODAY;
+  document.getElementById('t-warehouse').value = '';
+  document.getElementById('t-lookup-info').classList.add('hidden');
+  document.getElementById('t-stock-info').classList.add('hidden');
+}
+
+async function submitTransfer() {
+  if (!currentUser) { toast('กรุณาเข้าสู่ระบบก่อน', 'error'); return; }
+  const name = document.getElementById('t-name').value.trim();
+  const qty  = parseInt(document.getElementById('t-qty').value);
+  const whId = document.getElementById('t-warehouse').value;
+  if (!name)       { toast('กรุณาระบุชื่อเวชภัณฑ์', 'error'); return; }
+  if (!qty || qty<1) { toast('กรุณาระบุจำนวน', 'error'); return; }
+  if (!whId)       { toast('กรุณาเลือกคลังย่อยปลายทาง', 'error'); return; }
+
+  const wh = subWarehouses.find(w => w.id === whId);
+  const barcode = document.getElementById('t-barcode-input').dataset.parsed || document.getElementById('t-barcode-input').value.trim() || null;
+  let itemId = null;
+  if (barcode) {
+    const { data } = await sb.from('supply_items').select('id').eq('barcode', barcode).maybeSingle();
+    itemId = data?.id || null;
+  }
+
+  try {
+    await sbDB.insert('supply_transfers', {
+      transfer_date:      document.getElementById('t-date').value || TODAY,
+      item_id:            itemId,
+      barcode_raw:        document.getElementById('t-barcode-input').value.trim() || null,
+      item_name:          name,
+      quantity:           qty,
+      unit:               document.getElementById('t-unit').value.trim() || null,
+      lot:                document.getElementById('t-lot').value.trim() || null,
+      sub_warehouse_id:   whId,
+      sub_warehouse_name: wh?.name || null,
+      requested_by:       document.getElementById('t-requester').value.trim() || null,
+      issued_by:          document.getElementById('t-issuer').value.trim() || null,
+      notes:              document.getElementById('t-notes').value.trim() || null,
+      created_by:         currentUser.id,
+    });
+    toast('✅ บันทึกเบิกออกสำเร็จ', 'success');
+    clearTransferForm();
+    loadTransferHistory();
+  } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
+}
+
+// ── History ───────────────────────────────────────────────────
+async function loadReceiptHistory() {
+  const date = document.getElementById('r-hist-date').value || TODAY;
+  const body = document.getElementById('r-hist-body');
+  body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-4">กำลังโหลด...</td></tr>';
+  try {
+    const rows = await sbDB.list('supply_receipts', { eq:{ receipt_date:date }, order:'created_at', asc:false });
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">ไม่มีรายการ</td></tr>'; return; }
+    body.innerHTML = rows.map(r => `
+      <tr>
+        <td class="text-slate-500 text-xs">${fmtDate(r.receipt_date)}</td>
+        <td class="font-medium">${r.item_name}<br>${r.barcode_raw?`<span class="text-xs text-slate-400 font-mono">${r.barcode_raw.slice(0,20)}</span>`:''}</td>
+        <td class="font-semibold text-green-700">${r.quantity} <span class="text-slate-400 font-normal">${r.unit||''}</span></td>
+        <td>${r.lot?`<span class="badge badge-purple">${r.lot}</span>`:'—'}</td>
+        <td>${r.expiry_date ? expiryBadge(r.expiry_date) : '—'}</td>
+        <td class="text-xs">${r.received_by||'—'}</td>
+        <td><button onclick="deleteRow('supply_receipts','${r.id}',loadReceiptHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button></td>
+      </tr>`).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="7" class="text-center text-rose-400 py-4">โหลดไม่ได้</td></tr>'; }
+}
+
+async function loadTransferHistory() {
+  const date = document.getElementById('t-hist-date').value || TODAY;
+  const body = document.getElementById('t-hist-body');
+  body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-4">กำลังโหลด...</td></tr>';
+  try {
+    const rows = await sbDB.list('supply_transfers', { eq:{ transfer_date:date }, order:'created_at', asc:false });
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">ไม่มีรายการ</td></tr>'; return; }
+    body.innerHTML = rows.map(r => `
+      <tr>
+        <td class="text-slate-500 text-xs">${fmtDate(r.transfer_date)}</td>
+        <td class="font-medium">${r.item_name}</td>
+        <td class="font-semibold text-blue-700">${r.quantity} <span class="text-slate-400 font-normal">${r.unit||''}</span></td>
+        <td>${r.lot?`<span class="badge badge-purple">${r.lot}</span>`:'—'}</td>
+        <td><span class="wh-chip">🏷️ ${r.sub_warehouse_name||'—'}</span></td>
+        <td class="text-xs">${r.requested_by||'—'}</td>
+        <td><button onclick="deleteRow('supply_transfers','${r.id}',loadTransferHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button></td>
+      </tr>`).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="7" class="text-center text-rose-400 py-4">โหลดไม่ได้</td></tr>'; }
+}
+
+async function deleteRow(table, id, reload) {
+  if (!confirm('ลบรายการนี้?')) return;
+  try { await sbDB.remove(table, id); toast('ลบแล้ว', 'success'); reload(); }
+  catch(e) { toast('ลบไม่สำเร็จ', 'error'); }
+}
+
+// ── Stock ─────────────────────────────────────────────────────
+async function loadStock() {
+  document.getElementById('stock-body').innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังคำนวณ...</td></tr>';
+  try {
+    const [itemsRes, rAll, tAll, rToday, tToday] = await Promise.all([
+      sb.from('supply_items').select('*').order('name'),
+      sb.from('supply_receipts').select('item_id,quantity'),
+      sb.from('supply_transfers').select('item_id,quantity'),
+      sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
+      sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
+    ]);
+
+    const rMap = {}, tMap = {};
+    (rAll.data||[]).forEach(r => rMap[r.item_id] = (rMap[r.item_id]||0) + r.quantity);
+    (tAll.data||[]).forEach(r => tMap[r.item_id] = (tMap[r.item_id]||0) + r.quantity);
+
+    stockData = (itemsRes.data||[]).map(item => ({
+      ...item,
+      total_in:  rMap[item.id]||0,
+      total_out: tMap[item.id]||0,
+      current_stock: (rMap[item.id]||0) - (tMap[item.id]||0),
+    }));
+
+    document.getElementById('s-total').textContent = stockData.length;
+    document.getElementById('s-in').textContent    = (rToday.data||[]).reduce((s,r)=>s+r.quantity,0);
+    document.getElementById('s-out').textContent   = (tToday.data||[]).reduce((s,r)=>s+r.quantity,0);
+    document.getElementById('s-low').textContent   = stockData.filter(i=>i.current_stock <= i.min_stock).length;
+
+    renderStock();
+    loadSubWhSummary();
+  } catch(e) {
+    document.getElementById('stock-body').innerHTML = `<tr><td colspan="7" class="text-center text-rose-400 py-8">โหลดไม่ได้: ${e.message}</td></tr>`;
+  }
+}
+
+function renderStock() {
+  const q = document.getElementById('s-search').value.toLowerCase();
+  const data = q ? stockData.filter(i => i.name.toLowerCase().includes(q)||(i.category||'').toLowerCase().includes(q)) : stockData;
+  const body = document.getElementById('stock-body');
+  if (!data.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">ไม่พบรายการ</td></tr>'; return; }
+  body.innerHTML = data.map((item,i) => {
+    const s   = item.current_stock;
+    const pct = item.total_in > 0 ? Math.max(0, Math.min(100, s/item.total_in*100)) : 0;
+    const barColor = s<=0 ? '#ef4444' : s<=item.min_stock ? '#f59e0b' : '#7c3aed';
+    const badge = s<=0 ? '<span class="badge badge-red">หมด</span>' : s<=item.min_stock ? '<span class="badge badge-yellow">ต่ำ</span>' : '<span class="badge badge-green">ปกติ</span>';
+    return `<tr>
+      <td class="text-slate-400 text-xs">${i+1}</td>
+      <td><div class="font-medium text-sm">${item.name}</div>${item.barcode?`<div class="text-xs text-slate-400 font-mono">${item.barcode}</div>`:''}<div class="stock-bar-wrap"><div class="stock-bar" style="width:${pct}%;background:${barColor}"></div></div></td>
+      <td class="text-green-700 font-semibold">${item.total_in}</td>
+      <td class="text-blue-600 font-semibold">${item.total_out}</td>
+      <td class="font-bold text-lg ${s<=0?'text-red-600':s<=item.min_stock?'text-amber-600':'text-violet-700'}">${s}</td>
+      <td class="text-slate-500 text-xs">${item.unit||'—'}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadSubWhSummary() {
+  const el = document.getElementById('sub-wh-summary');
+  try {
+    const { data } = await sb.from('supply_transfers').select('sub_warehouse_name,item_name,unit,quantity');
+    if (!data?.length) { el.innerHTML = '<div class="text-center text-slate-400 py-4">ยังไม่มีข้อมูลเบิกออก</div>'; return; }
+
+    const grouped = {};
+    data.forEach(r => {
+      const wh = r.sub_warehouse_name||'ไม่ระบุ';
+      if (!grouped[wh]) grouped[wh] = {};
+      grouped[wh][r.item_name] = { qty: (grouped[wh][r.item_name]?.qty||0)+r.quantity, unit: r.unit };
+    });
+
+    el.innerHTML = Object.entries(grouped).map(([wh, items]) => `
+      <div class="mb-4">
+        <div class="mb-2"><span class="wh-chip">🏷️ ${wh}</span></div>
+        <div class="scroll-x">
+          <table class="tbl">
+            <thead><tr><th>เวชภัณฑ์</th><th>จำนวนส่งทั้งหมด</th></tr></thead>
+            <tbody>${Object.entries(items).map(([name,v])=>`<tr><td>${name}</td><td class="font-semibold text-blue-700">${v.qty} ${v.unit||''}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div class="text-rose-400 text-sm py-4">โหลดไม่ได้</div>'; }
+}
+
+// ── Settings ─────────────────────────────────────────────────
+async function loadSettings() {
+  await Promise.all([loadItems(), loadSubWarehouses()]);
+}
+
+async function loadItems() {
+  const body = document.getElementById('items-body');
+  try {
+    const items = await sbDB.list('supply_items', { order:'name' });
+    if (!items.length) { body.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-4">ยังไม่มีรายการ — เพิ่มด้านบน</td></tr>'; return; }
+    body.innerHTML = items.map(item => `
+      <tr>
+        <td class="text-xs text-slate-400 font-mono">${item.barcode||'—'}</td>
+        <td><div class="font-medium">${item.name}</div>${item.generic_name?`<div class="text-xs text-slate-400">${item.generic_name}</div>`:''}</td>
+        <td>${item.unit||'—'}</td>
+        <td>${item.category?`<span class="badge badge-purple">${item.category}</span>`:'—'}</td>
+        <td>${item.min_stock||0}</td>
+        <td><button onclick="deleteRow('supply_items','${item.id}',loadItems)" class="btn btn-danger" style="padding:4px 10px;font-size:12px;">ลบ</button></td>
+      </tr>`).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="6" class="text-rose-400 py-4 text-center">โหลดไม่ได้</td></tr>'; }
+}
+
+async function addItem() {
+  if (!currentUser) { toast('กรุณาเข้าสู่ระบบก่อน', 'error'); return; }
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) { toast('กรุณาระบุชื่อเวชภัณฑ์', 'error'); return; }
+  try {
+    await sbDB.insert('supply_items', {
+      barcode:      document.getElementById('m-barcode').value.trim()  || null,
+      name,
+      generic_name: document.getElementById('m-generic').value.trim()  || null,
+      unit:         document.getElementById('m-unit').value.trim()     || 'ชิ้น',
+      category:     document.getElementById('m-cat').value.trim()      || null,
+      min_stock:    parseInt(document.getElementById('m-min').value)   || 0,
+    });
+    toast('✅ เพิ่มรายการแล้ว', 'success');
+    ['m-barcode','m-name','m-generic','m-unit','m-cat','m-min'].forEach(id => document.getElementById(id).value = '');
+    loadItems();
+  } catch(e) {
+    toast(e.message.includes('unique') ? 'Barcode ซ้ำในระบบ' : 'เพิ่มไม่สำเร็จ: '+e.message, 'error');
+  }
+}
+
+async function loadSubWarehouses() {
+  const body = document.getElementById('sw-body');
+  try {
+    subWarehouses = await sbDB.list('sub_warehouses', { order:'sort_order' });
+    if (!subWarehouses.length) { body.innerHTML = '<tr><td colspan="4" class="text-center text-slate-400 py-4">ยังไม่มีคลังย่อย</td></tr>'; return; }
+    body.innerHTML = subWarehouses.map(wh => `
+      <tr>
+        <td class="font-medium">${wh.name}</td>
+        <td>${wh.location||'—'}</td>
+        <td>${wh.active?'<span class="badge badge-green">ใช้งาน</span>':'<span class="badge badge-red">ปิด</span>'}</td>
+        <td><button onclick="deleteRow('sub_warehouses','${wh.id}',loadSubWarehouses)" class="btn btn-danger" style="padding:4px 10px;font-size:12px;">ลบ</button></td>
+      </tr>`).join('');
+    populateWarehouseSelect();
+  } catch(e) { body.innerHTML = '<tr><td colspan="4" class="text-rose-400 py-4 text-center">โหลดไม่ได้</td></tr>'; }
+}
+
+async function addSubWarehouse() {
+  if (!currentUser) { toast('กรุณาเข้าสู่ระบบก่อน', 'error'); return; }
+  const name = document.getElementById('sw-name').value.trim();
+  if (!name) { toast('กรุณาระบุชื่อคลังย่อย', 'error'); return; }
+  try {
+    await sbDB.insert('sub_warehouses', { name, location: document.getElementById('sw-loc').value.trim()||null, sort_order: subWarehouses.length+1 });
+    toast('✅ เพิ่มคลังย่อยแล้ว', 'success');
+    document.getElementById('sw-name').value = '';
+    document.getElementById('sw-loc').value  = '';
+    loadSubWarehouses();
+  } catch(e) { toast(e.message.includes('unique')?'ชื่อซ้ำในระบบ':'เพิ่มไม่สำเร็จ', 'error'); }
+}
+
+function populateWarehouseSelect() {
+  const sel = document.getElementById('t-warehouse');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— เลือกคลังย่อย —</option>' +
+    subWarehouses.filter(w=>w.active).map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+// ── Utilities ─────────────────────────────────────────────────
+function fmtDate(d) {
+  if (!d) return '—';
+  try { return new Date(d+'T00:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}); }
+  catch { return d; }
+}
+function expiryBadge(dateStr) {
+  const diff = Math.floor((new Date(dateStr+'T00:00:00') - new Date()) / 86400000);
+  if (diff < 0)   return `<span class="badge badge-red">หมดอายุ ${Math.abs(diff)} วัน</span>`;
+  if (diff < 90)  return `<span class="badge badge-yellow">เหลือ ${diff} วัน</span>`;
+  return `<span class="badge badge-green">${fmtDate(dateStr)}</span>`;
+}
+
+// ── Export / Backup ───────────────────────────────────────────
+async function exportBackup() {
+  toast('กำลังดึงข้อมูล...', 'info');
+  try {
+    const [rRows, tRows, items] = await Promise.all([
+      sb.from('supply_receipts').select('*').order('receipt_date', { ascending: false }),
+      sb.from('supply_transfers').select('*').order('transfer_date', { ascending: false }),
+      sb.from('supply_items').select('*').order('name'),
+    ]);
+
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: ยอดคลัง
+    const stockSheet = stockData.length ? stockData.map(i => ({
+      'บาร์โค้ด': i.barcode||'',
+      'ชื่อเวชภัณฑ์': i.name,
+      'หน่วย': i.unit||'',
+      'หมวดหมู่': i.category||'',
+      'รับเข้าทั้งหมด': i.total_in,
+      'เบิกออกทั้งหมด': i.total_out,
+      'คงเหลือ': i.current_stock,
+    })) : [{ 'หมายเหตุ': 'ยังไม่มีข้อมูล (โหลดแท็บยอดคลังก่อน Export)' }];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockSheet), 'ยอดคลัง');
+
+    // Sheet 2: ประวัติรับเข้า
+    const rSheet = (rRows.data||[]).map(r => ({
+      'วันที่': r.receipt_date,
+      'เลขใบเบิก': r.requisition_no||'',
+      'บาร์โค้ด': r.barcode_raw||'',
+      'ชื่อเวชภัณฑ์': r.item_name,
+      'จำนวน': r.quantity,
+      'หน่วย': r.unit||'',
+      'Lot': r.lot||'',
+      'วันหมดอายุ': r.expiry_date||'',
+      'ผู้รับ': r.received_by||'',
+      'ตำแหน่งจัดเก็บ': r.storage_location||'',
+      'หมายเหตุ': r.notes||'',
+      'บันทึกเมื่อ': r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '',
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rSheet.length ? rSheet : [{}]), 'รับเข้า');
+
+    // Sheet 3: ประวัติเบิกออก
+    const tSheet = (tRows.data||[]).map(r => ({
+      'วันที่': r.transfer_date,
+      'ชื่อเวชภัณฑ์': r.item_name,
+      'จำนวน': r.quantity,
+      'หน่วย': r.unit||'',
+      'Lot': r.lot||'',
+      'คลังย่อย': r.sub_warehouse_name||'',
+      'ผู้เบิก': r.requested_by||'',
+      'ผู้จ่าย': r.issued_by||'',
+      'หมายเหตุ': r.notes||'',
+      'บันทึกเมื่อ': r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '',
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tSheet.length ? tSheet : [{}]), 'เบิกออก');
+
+    // Sheet 4: Master เวชภัณฑ์
+    const mSheet = (items.data||[]).map(i => ({
+      'Barcode': i.barcode||'',
+      'ชื่อ': i.name,
+      'ชื่อสามัญ': i.generic_name||'',
+      'หน่วย': i.unit||'',
+      'หมวดหมู่': i.category||'',
+      'จุดแจ้งเตือน': i.min_stock||0,
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mSheet.length ? mSheet : [{}]), 'Master');
+
+    const date = new Date().toLocaleDateString('th-TH').replace(/\//g,'-');
+    XLSX.writeFile(wb, `คลังเวชภัณฑ์_${date}.xlsx`);
+    toast('✅ ดาวน์โหลด Excel สำเร็จ', 'success');
+  } catch(e) {
+    toast('Export ไม่สำเร็จ: '+e.message, 'error');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+async function init() {
+  document.getElementById('r-date').value      = TODAY;
+  document.getElementById('t-date').value      = TODAY;
+  document.getElementById('r-hist-date').value = TODAY;
+  document.getElementById('t-hist-date').value = TODAY;
+
+  await initAuth();
+
+  try {
+    subWarehouses = await sbDB.list('sub_warehouses', { order:'sort_order' });
+    populateWarehouseSelect();
+  } catch(e) {}
+
+  await Promise.all([loadReceiptHistory(), loadTransferHistory()]);
+}
+
+init();
+</script>
+</body>
+</html>

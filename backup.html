@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>สำรองข้อมูล — วิสัญญี รพ.สกลนคร</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<meta name="theme-color" content="#7c3aed">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+body { font-family:'Sarabun',system-ui,sans-serif; background:#f5f3ff; }
+.grad-hero { background:linear-gradient(135deg,#6d28d9 0%,#9333ea 55%,#c026d3 100%); }
+.card { background:#fff; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06); }
+.btn { padding:10px 18px; border-radius:10px; font-weight:600; font-size:14px; cursor:pointer; transition:all .15s; font-family:'Sarabun',sans-serif; border:none; display:inline-flex; align-items:center; gap:6px; justify-content:center; }
+.btn-primary { background:linear-gradient(135deg,#7c3aed,#9333ea); color:#fff; }
+.btn-primary:hover { opacity:.9; box-shadow:0 4px 14px rgba(124,58,237,.3); }
+.btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+.btn-green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; }
+.btn-green:hover { opacity:.9; }
+.btn-green:disabled { opacity:.5; cursor:not-allowed; }
+.btn-ghost { background:#f5f3ff; color:#7c3aed; border:1.5px solid #e9d5ff; }
+.btn-ghost:hover { background:#ede9fe; }
+.btn-sm { padding:6px 12px; font-size:12px; border-radius:8px; }
+.section-h { font-weight:700; color:#4c1d95; font-size:15px; border-left:4px solid #7c3aed; padding:3px 0 3px 12px; }
+.tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.tbl th { background:#faf5ff; color:#6d28d9; font-weight:700; padding:10px 12px; text-align:left; border-bottom:2px solid #e9d5ff; white-space:nowrap; }
+.tbl td { padding:9px 12px; border-bottom:1px solid #f3e8ff; vertical-align:middle; }
+.tbl tr:last-child td { border-bottom:none; }
+.tbl tr:hover td { background:#faf5ff; }
+.scroll-x { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef3c7; color:#92400e; }
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.stat-card { border-radius:14px; padding:18px 16px; color:#fff; position:relative; overflow:hidden; }
+.stat-card::after { content:''; position:absolute; right:-16px; top:-16px; width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,.12); }
+.sk-purple { background:linear-gradient(135deg,#7c3aed,#9333ea); }
+.sk-green  { background:linear-gradient(135deg,#059669,#10b981); }
+.sk-blue   { background:linear-gradient(135deg,#2563eb,#3b82f6); }
+.sk-orange { background:linear-gradient(135deg,#d97706,#f59e0b); }
+.progress-wrap { height:8px; border-radius:999px; background:#e9d5ff; overflow:hidden; margin-top:8px; }
+.progress-bar  { height:100%; border-radius:999px; background:linear-gradient(135deg,#7c3aed,#9333ea); transition:width .5s ease; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.spin { animation:spin .8s linear infinite; display:inline-block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation:fadeIn .22s ease; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- Toast -->
+<div id="toastWrap" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 items-center pointer-events-none min-w-max"></div>
+
+<!-- Gate overlay -->
+<div id="gateOverlay" style="display:none" class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-8 text-center">
+    <div class="text-5xl mb-4">💾</div>
+    <div class="text-xl font-bold text-violet-800 mb-2" id="gateTitle">กำลังตรวจสอบ...</div>
+    <div class="text-sm text-slate-500 mb-5" id="gateMsg"></div>
+    <div id="loginForm" class="hidden space-y-3 mb-4 text-left">
+      <input id="loginEmail" type="email" class="w-full p-3 border border-slate-200 rounded-xl text-sm font-[Sarabun]" placeholder="อีเมล">
+      <input id="loginPassword" type="password" class="w-full p-3 border border-slate-200 rounded-xl text-sm font-[Sarabun]" placeholder="รหัสผ่าน">
+      <div id="loginErr" class="text-xs text-rose-500 hidden"></div>
+      <button onclick="doLogin()" class="btn btn-primary w-full">เข้าสู่ระบบ</button>
+    </div>
+    <div id="gateLinks" class="hidden space-y-2">
+      <a href="index.html" class="btn btn-ghost w-full justify-center">🏠 กลับหน้าหลัก</a>
+    </div>
+  </div>
+</div>
+
+<!-- ====== HEADER ====== -->
+<header class="grad-hero text-white sticky top-0 z-30 shadow-lg">
+  <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between gap-2">
+    <div>
+      <div class="text-lg font-bold">💾 สำรองข้อมูล</div>
+      <div class="text-white/70 text-xs" id="userInfo">กำลังโหลด...</div>
+    </div>
+    <div class="flex gap-2 items-center flex-shrink-0">
+      <a href="admin.html"   class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🛡️ Admin</a>
+      <a href="index.html"   class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
+      <button onclick="doSignOut()" class="bg-rose-500/80 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
+    </div>
+  </div>
+</header>
+
+<!-- ====== MAIN ====== -->
+<main class="max-w-4xl mx-auto px-3 sm:px-4 py-4 space-y-4 pb-10">
+
+  <!-- Summary cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="stat-card sk-purple"><div class="text-2xl font-bold" id="cnt-tables">—</div><div class="text-white/80 text-xs mt-1">ตารางทั้งหมด</div></div>
+    <div class="stat-card sk-green"> <div class="text-2xl font-bold" id="cnt-records">—</div><div class="text-white/80 text-xs mt-1">รายการรวม</div></div>
+    <div class="stat-card sk-blue">  <div class="text-2xl font-bold" id="last-backup">—</div><div class="text-white/80 text-xs mt-1">Backup ล่าสุด</div></div>
+    <div class="stat-card sk-orange"><div class="text-2xl font-bold" id="backup-size">—</div><div class="text-white/80 text-xs mt-1">ขนาดไฟล์ล่าสุด</div></div>
+  </div>
+
+  <!-- Main backup button -->
+  <div class="card p-5">
+    <div class="section-h mb-3">Export ข้อมูลทั้งหมด</div>
+    <p class="text-sm text-slate-500 mb-4">ดาวน์โหลดข้อมูลทุกส่วนในระบบเป็นไฟล์ Excel เดียว — แต่ละหัวข้อแยก Sheet<br>แนะนำ: ทำ Backup สม่ำเสมออย่างน้อย <strong>เดือนละ 1 ครั้ง</strong></p>
+    <div id="progress-area" class="hidden mb-4">
+      <div class="text-sm text-violet-700 font-medium mb-1" id="progress-label">กำลังดึงข้อมูล...</div>
+      <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+    </div>
+    <div class="flex gap-3 flex-wrap">
+      <button id="btnBackupAll" onclick="backupAll()" class="btn btn-green">
+        📥 Download Backup ทั้งหมด (.xlsx)
+      </button>
+      <button onclick="loadTableCounts()" class="btn btn-ghost">🔄 รีเฟรชข้อมูล</button>
+    </div>
+  </div>
+
+  <!-- Table details -->
+  <div class="card p-4">
+    <div class="section-h mb-4">รายการข้อมูลในระบบ</div>
+    <div class="scroll-x">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>หมวดข้อมูล</th>
+            <th>ตาราง</th>
+            <th>จำนวนรายการ</th>
+            <th>สถานะ</th>
+            <th>Export เฉพาะส่วน</th>
+          </tr>
+        </thead>
+        <tbody id="table-list-body">
+          <tr><td colspan="5" class="text-center text-slate-400 py-8">กำลังโหลด...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Info box -->
+  <div class="card p-4 bg-blue-50 border border-blue-100">
+    <div class="font-semibold text-blue-800 mb-2">ℹ️ ข้อมูลเกี่ยวกับ Supabase Free Tier</div>
+    <div class="text-sm text-blue-700 space-y-1">
+      <div>• <strong>พื้นที่ฐานข้อมูล:</strong> 500 MB (ระบบนี้ใช้ ~36 MB/ปี — ใช้ได้ 13 ปี+)</div>
+      <div>• <strong>ข้อมูลไม่หาย</strong> แต่ถ้าไม่มีการใช้งานเกิน 1 สัปดาห์ Project อาจ Pause อัตโนมัติ → เข้าไป Resume ที่ supabase.com ได้ตลอด ข้อมูลยังครบ</div>
+      <div>• <strong>ป้องกันการ Pause:</strong> เข้าระบบอย่างน้อยสัปดาห์ละครั้ง หรืออัปเกรด Pro ($25/เดือน) เพื่อ daily backup + ไม่ pause</div>
+      <div>• <strong>แนะนำ:</strong> Backup Excel ทุกต้นเดือน เก็บไว้ที่คอมและ Google Drive</div>
+    </div>
+  </div>
+
+</main>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+// ── Table definitions ─────────────────────────────────────────
+const TABLE_DEFS = [
+  { label:'ยอดบริการรายวัน',     table:'service_logs',       icon:'📋', sheetName:'ยอดบริการ' },
+  { label:'ตรวจเครื่องมือ',       table:'daily_inspections',  icon:'🔧', sheetName:'ตรวจเครื่อง' },
+  { label:'KPI',                  table:'kpis',               icon:'📈', sheetName:'KPI' },
+  { label:'ค่า KPI รายปี',        table:'kpi_history',        icon:'📊', sheetName:'KPI History' },
+  { label:'สถิติการผ่าตัด',       table:'operation_stats',    icon:'🏥', sheetName:'สถิติผ่าตัด' },
+  { label:'ทะเบียนเครื่องมือ',    table:'equipment',          icon:'🩺', sheetName:'เครื่องมือ' },
+  { label:'บุคลากร',              table:'nurses',             icon:'👥', sheetName:'บุคลากร' },
+  { label:'ผังองค์กร',            table:'org_chart',          icon:'🏢', sheetName:'ผังองค์กร' },
+  { label:'บัญชีผู้ใช้งาน',       table:'profiles',           icon:'🔐', sheetName:'บัญชีผู้ใช้' },
+  { label:'ประกาศ',               table:'announcements',      icon:'📢', sheetName:'ประกาศ' },
+  { label:'ประชุมวิชาการ',         table:'meetings',           icon:'🎓', sheetName:'ประชุม' },
+  { label:'กิจกรรม',              table:'activities',         icon:'🎯', sheetName:'กิจกรรม' },
+  { label:'QR Links',             table:'qr_links',           icon:'📱', sheetName:'QR Links' },
+  { label:'รับเข้าคลังเวชภัณฑ์',  table:'supply_receipts',    icon:'📥', sheetName:'รับเข้าคลัง' },
+  { label:'เบิกออกคลังเวชภัณฑ์',  table:'supply_transfers',   icon:'📤', sheetName:'เบิกออกคลัง' },
+  { label:'Master เวชภัณฑ์',      table:'supply_items',       icon:'📦', sheetName:'Master คลัง' },
+  { label:'คลังย่อย',             table:'sub_warehouses',     icon:'🏷️', sheetName:'คลังย่อย' },
+];
+
+let tableCounts = {};
+let lastBackupDate = null;
+let lastBackupSize = null;
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  const bg = { success:'linear-gradient(135deg,#059669,#10b981)', error:'linear-gradient(135deg,#dc2626,#ef4444)', info:'linear-gradient(135deg,#6d28d9,#9333ea)', warn:'linear-gradient(135deg,#d97706,#f59e0b)' };
+  el.style.cssText = `background:${bg[type]||bg.info};color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:auto;white-space:nowrap;`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Auth ──────────────────────────────────────────────────────
+async function initAuth() {
+  document.getElementById('gateOverlay').style.display = 'flex';
+  const u = await sbAuth.getUser();
+
+  if (!u) {
+    document.getElementById('gateTitle').textContent = '🔐 เข้าสู่ระบบ';
+    document.getElementById('gateMsg').textContent   = 'ต้องเข้าสู่ระบบเพื่อสำรองข้อมูล';
+    document.getElementById('loginForm').classList.remove('hidden');
+    return;
+  }
+
+  const p = await sbAuth.getProfile();
+  if (!p || p.status !== 'approved') {
+    document.getElementById('gateTitle').textContent = 'ไม่ได้รับอนุญาต';
+    document.getElementById('gateMsg').textContent   = 'บัญชียังไม่ได้รับการอนุมัติ';
+    document.getElementById('gateLinks').classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('gateOverlay').style.display = 'none';
+  document.getElementById('userInfo').textContent = (p.full_name || u.email) + (p.is_admin ? ' (Admin)' : '');
+
+  // โหลด backup date จาก localStorage
+  lastBackupDate = localStorage.getItem('lastBackupDate');
+  lastBackupSize = localStorage.getItem('lastBackupSize');
+  if (lastBackupDate) document.getElementById('last-backup').textContent = lastBackupDate;
+  if (lastBackupSize) document.getElementById('backup-size').textContent = lastBackupSize;
+
+  loadTableCounts();
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw    = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.classList.add('hidden');
+  try {
+    await sbAuth.signIn(email, pw);
+    location.reload();
+  } catch(e) {
+    errEl.textContent = e.message || 'ล็อกอินไม่สำเร็จ';
+    errEl.classList.remove('hidden');
+  }
+}
+document.getElementById('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+async function doSignOut() { await sbAuth.signOut(); location.reload(); }
+
+// ── Load counts ───────────────────────────────────────────────
+async function loadTableCounts() {
+  const body = document.getElementById('table-list-body');
+  body.innerHTML = '<tr><td colspan="5" class="text-center text-slate-400 py-6">กำลังนับรายการ...</td></tr>';
+
+  // ดึง count ทุกตารางพร้อมกัน
+  const results = await Promise.allSettled(
+    TABLE_DEFS.map(def =>
+      sb.from(def.table).select('*', { count: 'exact', head: true })
+        .then(r => ({ table: def.table, count: r.count ?? 0, ok: !r.error }))
+        .catch(() => ({ table: def.table, count: 0, ok: false }))
+    )
+  );
+
+  tableCounts = {};
+  results.forEach(r => {
+    if (r.status === 'fulfilled') tableCounts[r.value.table] = r.value;
+  });
+
+  const totalRecords = Object.values(tableCounts).reduce((s, v) => s + (v.count || 0), 0);
+  const available    = TABLE_DEFS.filter(d => tableCounts[d.table]?.ok).length;
+
+  document.getElementById('cnt-tables').textContent  = `${available}/${TABLE_DEFS.length}`;
+  document.getElementById('cnt-records').textContent = totalRecords.toLocaleString('th-TH');
+
+  body.innerHTML = TABLE_DEFS.map(def => {
+    const info  = tableCounts[def.table];
+    const count = info?.count ?? 0;
+    const ok    = info?.ok ?? false;
+    const badge = !ok ? '<span class="badge" style="background:#f1f5f9;color:#94a3b8">ไม่พบ</span>'
+                  : count > 0 ? `<span class="badge badge-green">${count.toLocaleString('th-TH')} รายการ</span>`
+                  : '<span class="badge badge-yellow">ว่าง</span>';
+    return `
+      <tr>
+        <td class="font-medium">${def.icon} ${def.label}</td>
+        <td class="text-xs text-slate-400 font-mono">${def.table}</td>
+        <td>${count > 0 ? count.toLocaleString('th-TH') : '—'}</td>
+        <td>${badge}</td>
+        <td>
+          ${ok && count > 0
+            ? `<button onclick="exportSingle('${def.table}','${def.sheetName}','${def.label}')" class="btn btn-ghost btn-sm">📥 Export</button>`
+            : '<span class="text-xs text-slate-300">—</span>'
+          }
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ── Flatten row (convert objects/arrays to string) ────────────
+function flattenRow(row) {
+  const out = {};
+  Object.entries(row).forEach(([k, v]) => {
+    if (v === null || v === undefined) { out[k] = ''; }
+    else if (typeof v === 'object') { out[k] = JSON.stringify(v, null, 0); }
+    else { out[k] = v; }
+  });
+  return out;
+}
+
+// ── Fetch all rows from a table ───────────────────────────────
+async function fetchAll(table) {
+  const { data, error } = await sb.from(table).select('*').order('created_at', { ascending: true }).limit(50000);
+  if (error) throw new Error(`${table}: ${error.message}`);
+  return (data || []).map(flattenRow);
+}
+
+// ── Export single table ───────────────────────────────────────
+async function exportSingle(table, sheetName, label) {
+  toast(`กำลังดึง ${label}...`, 'info');
+  try {
+    const rows = await fetchAll(table);
+    if (!rows.length) { toast('ไม่มีข้อมูล', 'warn'); return; }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), sheetName.slice(0, 31));
+    const date = new Date().toLocaleDateString('th-TH').replace(/\//g, '-');
+    XLSX.writeFile(wb, `${label}_${date}.xlsx`);
+    toast(`✅ Export ${label} สำเร็จ`, 'success');
+  } catch(e) {
+    toast('Export ไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+// ── Export ALL tables ─────────────────────────────────────────
+async function backupAll() {
+  const btn = document.getElementById('btnBackupAll');
+  const prog = document.getElementById('progress-area');
+  const label = document.getElementById('progress-label');
+  const bar   = document.getElementById('progress-bar');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⏳</span> กำลังดึงข้อมูล...';
+  prog.classList.remove('hidden');
+
+  const wb = XLSX.utils.book_new();
+  const summary = [];
+  let totalRows = 0;
+  let doneCount = 0;
+
+  // Sheet: สรุป
+  const summaryPlaceholder = [['หมวด','ตาราง','จำนวน','สถานะ']];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryPlaceholder), 'สรุป');
+
+  const validDefs = TABLE_DEFS.filter(d => tableCounts[d.table]?.ok);
+  const totalDefs = validDefs.length;
+
+  for (const def of validDefs) {
+    label.textContent = `กำลังดึง: ${def.label}...`;
+    bar.style.width   = Math.round((doneCount / totalDefs) * 100) + '%';
+
+    try {
+      const rows = await fetchAll(def.table);
+      if (rows.length > 0) {
+        const ws = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, def.sheetName.slice(0, 31));
+      }
+      totalRows += rows.length;
+      summary.push({ หมวด: def.label, ตาราง: def.table, จำนวน: rows.length, สถานะ: rows.length > 0 ? 'OK' : 'ว่าง' });
+    } catch(e) {
+      summary.push({ หมวด: def.label, ตาราง: def.table, จำนวน: 0, สถานะ: 'Error: ' + e.message });
+    }
+    doneCount++;
+  }
+
+  // อัปเดต sheet สรุป
+  wb.Sheets['สรุป'] = XLSX.utils.json_to_sheet([
+    { หมวดข้อมูล: 'วันที่ Backup', รายละเอียด: new Date().toLocaleString('th-TH') },
+    { หมวดข้อมูล: 'ผู้ทำ Backup',  รายละเอียด: document.getElementById('userInfo').textContent },
+    { หมวดข้อมูล: 'รายการรวม',     รายละเอียด: totalRows.toLocaleString('th-TH') },
+    { หมวดข้อมูล: '---', รายละเอียด: '' },
+    ...summary.map(s => ({ หมวดข้อมูล: s.หมวด, ตาราง: s.ตาราง, จำนวนรายการ: s.จำนวน, สถานะ: s.สถานะ }))
+  ]);
+
+  bar.style.width = '100%';
+  label.textContent = 'กำลังสร้างไฟล์...';
+
+  const now       = new Date();
+  const dateStr   = now.toLocaleDateString('th-TH').replace(/\//g, '-');
+  const timeStr   = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  const fileName  = `AnesSKH_Backup_${dateStr}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+
+  // บันทึก metadata ลง localStorage
+  const shortDate = `${dateStr} ${timeStr}`;
+  const kbSize    = Math.round(totalRows * 0.5) + ' KB ประมาณ';
+  localStorage.setItem('lastBackupDate', shortDate);
+  localStorage.setItem('lastBackupSize', kbSize);
+  document.getElementById('last-backup').textContent = shortDate;
+  document.getElementById('backup-size').textContent = kbSize;
+
+  toast(`✅ Backup สำเร็จ — ${totalRows.toLocaleString('th-TH')} รายการ`, 'success');
+  btn.disabled   = false;
+  btn.innerHTML  = '📥 Download Backup ทั้งหมด (.xlsx)';
+  setTimeout(() => prog.classList.add('hidden'), 2000);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+initAuth();
+</script>
+</body>
+</html>

@@ -178,7 +178,8 @@ async function doSignup() {
     if (data?.user?.id) {
       await new Promise(r => setTimeout(r, 600)); // รอ trigger รัน
       await sb.from('profiles').update({
-        full_name: fullName, nickname, position, phone
+        full_name: fullName, nickname, position, phone,
+        status: 'pending'
       }).eq('id', data.user.id);
 
       // 3. ค้นหา nurse record ที่ชื่อตรงกัน → link อัตโนมัติ
