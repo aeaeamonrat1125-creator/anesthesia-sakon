@@ -102,6 +102,7 @@ select.input { cursor:pointer; }
       <div class="text-white/70 text-xs" id="userInfo">กรุณาเข้าสู่ระบบ</div>
     </div>
     <div class="flex gap-2 items-center flex-shrink-0">
+      <a href="staff.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">👥 ระบบบุคลากร</a>
       <a href="index.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
       <button id="signOutBtn" onclick="doSignOut()" class="hidden bg-rose-500/80 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
     </div>
@@ -480,13 +481,6 @@ async function initAuth() {
   // approved
   document.getElementById('userInfo').textContent = p.full_name || u.email;
   document.getElementById('signOutBtn').classList.remove('hidden');
-  if (p.is_admin) {
-    const adminLink = document.createElement('a');
-    adminLink.href = 'admin.html';
-    adminLink.className = 'bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg';
-    adminLink.textContent = '🛡️ Admin';
-    document.getElementById('signOutBtn').insertAdjacentElement('beforebegin', adminLink);
-  }
 }
 
 async function doSignIn() {
