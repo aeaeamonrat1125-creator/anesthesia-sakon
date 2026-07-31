@@ -367,8 +367,8 @@ select.input { cursor:pointer; }
       <div class="section-h mb-3">ยอดคลังใหญ่วิสัญญี</div>
       <div class="scroll-x">
         <table class="tbl">
-          <thead><tr><th>#</th><th>ชื่อเวชภัณฑ์</th><th>รับเข้า</th><th>เบิกออก</th><th>คงเหลือ</th><th>หน่วย</th><th>สถานะ</th></tr></thead>
-          <tbody id="stock-body"><tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังโหลด...</td></tr></tbody>
+          <thead><tr><th>#</th><th>ชื่อเวชภัณฑ์</th><th>รับเข้า</th><th>เบิกออก</th><th>คงเหลือ</th><th>หน่วย</th><th>Min/Max</th><th>สถานะ</th><th></th></tr></thead>
+          <tbody id="stock-body"><tr><td colspan="9" class="text-center text-slate-400 py-8">กำลังโหลด...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -940,7 +940,7 @@ function renderStock() {
   const q = document.getElementById('s-search').value.toLowerCase();
   const data = q ? stockData.filter(i => i.name.toLowerCase().includes(q)||(i.category||'').toLowerCase().includes(q)) : stockData;
   const body = document.getElementById('stock-body');
-  if (!data.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">ไม่พบรายการ</td></tr>'; return; }
+  if (!data.length) { body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-8">ไม่พบรายการ</td></tr>'; return; }
   body.innerHTML = data.map((item,i) => {
     const s   = item.current_stock;
     const pct = item.total_in > 0 ? Math.max(0, Math.min(100, s/item.total_in*100)) : 0;
@@ -950,16 +950,52 @@ function renderStock() {
       : s<=item.min_stock ? '<span class="badge badge-yellow">ต่ำ</span>'
       : overStock ? '<span class="badge badge-blue">เกิน Max</span>'
       : '<span class="badge badge-green">ปกติ</span>';
-    return `<tr>
+    const minTxt = item.min_stock > 0 ? `<span class="text-amber-600">▼${item.min_stock}</span>` : '—';
+    const maxTxt = item.max_stock > 0 ? `<span class="text-blue-500">▲${item.max_stock}</span>` : '—';
+    return `<tr id="stock-row-${item.id}">
       <td class="text-slate-400 text-xs">${i+1}</td>
-      <td><div class="font-medium text-sm">${item.name}</div>${item.barcode?`<div class="text-xs text-slate-400 font-mono">${item.barcode}</div>`:''}<div class="stock-bar-wrap"><div class="stock-bar" style="width:${pct}%;background:${barColor}"></div></div></td>
+      <td><div class="font-medium text-sm">${item.name}</div>${item.barcode?`<div class="text-xs text-slate-400 font-mono">${item.barcode}</div>`:item.req_code?`<div class="text-xs text-slate-300">รหัสเบิก: ${item.req_code}</div>`:''}<div class="stock-bar-wrap"><div class="stock-bar" style="width:${pct}%;background:${barColor}"></div></div></td>
       <td class="text-green-700 font-semibold">${item.total_in}</td>
       <td class="text-blue-600 font-semibold">${item.total_out}</td>
       <td class="font-bold text-lg ${s<=0?'text-red-600':s<=item.min_stock?'text-amber-600':'text-violet-700'}">${s}</td>
       <td class="text-slate-500 text-xs">${item.unit||'—'}</td>
+      <td class="text-xs">${minTxt} / ${maxTxt}</td>
       <td>${badge}</td>
+      <td><button onclick="toggleAlertEdit('${item.id}',${item.min_stock||0},${item.max_stock||0})" class="text-xs text-violet-500 hover:text-violet-700 px-2 py-1 rounded hover:bg-violet-50">✏️ แก้ไข</button></td>
+    </tr>
+    <tr id="alert-edit-${item.id}" class="hidden bg-violet-50">
+      <td colspan="9" class="px-4 py-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-xs font-semibold text-violet-700">${item.name}</span>
+          <label class="text-xs text-slate-500">แจ้งเตือนต่ำกว่า (Min):</label>
+          <input id="min-${item.id}" type="number" value="${item.min_stock||0}" min="0" class="input text-sm" style="width:80px;padding:5px 8px;">
+          <label class="text-xs text-slate-500">แจ้งเตือนเกิน (Max):</label>
+          <input id="max-${item.id}" type="number" value="${item.max_stock||0}" min="0" class="input text-sm" style="width:80px;padding:5px 8px;">
+          <button onclick="saveAlert('${item.id}')" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">💾 บันทึก</button>
+          <button onclick="toggleAlertEdit('${item.id}')" class="btn btn-ghost" style="padding:6px 14px;font-size:13px;">ยกเลิก</button>
+        </div>
+      </td>
     </tr>`;
   }).join('');
+}
+
+function toggleAlertEdit(id) {
+  const row = document.getElementById('alert-edit-'+id);
+  if (!row) return;
+  row.classList.toggle('hidden');
+  if (!row.classList.contains('hidden')) document.getElementById('min-'+id)?.focus();
+}
+
+async function saveAlert(id) {
+  if (!currentUser) { toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const minVal = parseInt(document.getElementById('min-'+id)?.value) || 0;
+  const maxVal = parseInt(document.getElementById('max-'+id)?.value) || 0;
+  try {
+    await sbDB.update('supply_items', id, { min_stock: minVal, max_stock: maxVal });
+    toast('✅ บันทึกการแจ้งเตือนแล้ว', 'success');
+    document.getElementById('alert-edit-'+id)?.classList.add('hidden');
+    loadStock();
+  } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
 }
 
 async function loadSubWhSummary() {
