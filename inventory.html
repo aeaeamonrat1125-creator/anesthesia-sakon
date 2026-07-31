@@ -60,6 +60,11 @@ select.input { cursor:pointer; }
 .lookup-box { border-radius:10px; padding:10px 12px; display:flex; align-items:flex-start; gap:8px; }
 .lookup-found { background:#f0fdf4; border:1.5px solid #86efac; }
 .lookup-new   { background:#fefce8; border:1.5px solid #fde047; }
+.link-panel { background:#fff; border:1.5px solid #e9d5ff; border-radius:10px; padding:10px 12px; margin-top:8px; }
+.link-result-item { padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; display:flex; justify-content:space-between; align-items:center; }
+.link-result-item:hover { background:#f5f3ff; }
+.diff-short { background:#fef3c7; color:#92400e; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.diff-ok    { background:#dcfce7; color:#15803d; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
 /* Scanner Modal */
 #scannerModal { display:none; position:fixed; inset:0; z-index:60; background:#000; flex-direction:column; }
 #scannerModal.open { display:flex; }
@@ -179,6 +184,13 @@ select.input { cursor:pointer; }
         <button class="btn-scan" onclick="openScanner('receive')">📷 <span class="hidden sm:inline">สแกน</span></button>
       </div>
       <div id="r-lookup-info" class="hidden mt-3 text-sm"></div>
+      <div id="r-link-panel" class="hidden mt-2">
+        <div class="link-panel">
+          <div class="text-xs font-semibold text-violet-700 mb-2">🔗 เชื่อมบาร์โค้ดนี้กับรายการที่มีในระบบ</div>
+          <input id="r-link-search" type="text" class="input mb-2" placeholder="พิมพ์ชื่อหรือรหัสเบิก..." oninput="searchLink(this.value,'r')" autocomplete="off" style="font-size:13px;padding:8px 10px;">
+          <div id="r-link-results" class="space-y-1 max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
     </div>
 
     <div class="card p-4">
@@ -197,8 +209,15 @@ select.input { cursor:pointer; }
           <input id="r-name" type="text" class="input" placeholder="กรอกหรือสแกน Barcode เพื่อดึงอัตโนมัติ">
         </div>
         <div>
-          <label class="lbl">จำนวนรับเข้า *</label>
-          <input id="r-qty" type="number" class="input" placeholder="0" min="1">
+          <label class="lbl">จำนวนที่เบิกจาก รพ. (ที่คีย์เบิก)</label>
+          <input id="r-qty-ordered" type="number" class="input" placeholder="0" min="0">
+        </div>
+        <div>
+          <label class="lbl">จำนวนที่ได้รับจริง *</label>
+          <input id="r-qty" type="number" class="input" placeholder="0" min="1" oninput="checkQtyDiff()">
+        </div>
+        <div id="r-qty-diff-box" class="sm:col-span-2 hidden">
+          <div id="r-qty-diff" class="text-xs p-2 rounded-lg"></div>
         </div>
         <div>
           <label class="lbl">หน่วยนับ</label>
@@ -238,8 +257,8 @@ select.input { cursor:pointer; }
       </div>
       <div class="scroll-x">
         <table class="tbl">
-          <thead><tr><th>วันที่</th><th>ชื่อเวชภัณฑ์</th><th>จำนวน</th><th>Lot</th><th>หมดอายุ</th><th>ผู้รับ</th><th></th></tr></thead>
-          <tbody id="r-hist-body"><tr><td colspan="7" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
+          <thead><tr><th>วันที่</th><th>ชื่อเวชภัณฑ์</th><th>เบิก</th><th>ได้รับ</th><th>Lot</th><th>หมดอายุ</th><th>ผู้รับ</th><th></th></tr></thead>
+          <tbody id="r-hist-body"><tr><td colspan="8" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -256,6 +275,13 @@ select.input { cursor:pointer; }
         <button class="btn-scan" onclick="openScanner('transfer')">📷 <span class="hidden sm:inline">สแกน</span></button>
       </div>
       <div id="t-lookup-info" class="hidden mt-3 text-sm"></div>
+      <div id="t-link-panel" class="hidden mt-2">
+        <div class="link-panel">
+          <div class="text-xs font-semibold text-violet-700 mb-2">🔗 เชื่อมบาร์โค้ดนี้กับรายการที่มีในระบบ</div>
+          <input id="t-link-search" type="text" class="input mb-2" placeholder="พิมพ์ชื่อหรือรหัสเบิก..." oninput="searchLink(this.value,'t')" autocomplete="off" style="font-size:13px;padding:8px 10px;">
+          <div id="t-link-results" class="space-y-1 max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
       <div id="t-stock-info" class="hidden mt-2 p-3 bg-violet-50 rounded-xl border border-violet-100 text-sm">
         <span class="text-violet-600 font-semibold">ยอดคงเหลือในคลังใหญ่: </span>
         <span id="t-stock-val" class="font-bold text-violet-900">—</span>
@@ -382,8 +408,12 @@ select.input { cursor:pointer; }
           <input id="m-cat" type="text" class="input" placeholder="ยาสลบ, อุปกรณ์, สิ้นเปลือง">
         </div>
         <div>
-          <label class="lbl">จุดแจ้งเตือนสต็อกต่ำ</label>
+          <label class="lbl">แจ้งเตือนเมื่อต่ำกว่า (Min)</label>
           <input id="m-min" type="number" class="input" placeholder="0" min="0">
+        </div>
+        <div>
+          <label class="lbl">แจ้งเตือนเมื่อเกิน (Max) <span class="text-slate-400 font-normal text-xs">0 = ไม่แจ้ง</span></label>
+          <input id="m-max" type="number" class="input" placeholder="0" min="0">
         </div>
       </div>
       <button onclick="addItem()" class="btn btn-primary">➕ เพิ่มรายการ</button>
@@ -596,14 +626,29 @@ async function lookupBarcode(raw, target) {
   // Set parsed barcode as data attribute for form submission
   document.getElementById(prefix+'-barcode-input').dataset.parsed = barcode;
 
+  const linkPanel = document.getElementById(prefix+'-link-panel');
+
   // Info box
   if (item) {
     const extras = [parsed.lot && 'Lot: '+parsed.lot, parsed.expiry && 'หมดอายุ: '+fmtDate(parsed.expiry)].filter(Boolean).join(' · ');
     const reqInfo = item.req_code ? ` · รหัสเบิก: ${item.req_code}` : '';
     infoEl.innerHTML = `<div class="lookup-box lookup-found"><span class="text-lg">✅</span><div><div class="font-semibold text-green-800">${item.name}</div><div class="text-xs text-green-600">พบในฐานข้อมูล · ${item.unit}${reqInfo}${extras ? ' · '+extras : ''}</div></div></div>`;
+    if (linkPanel) linkPanel.classList.add('hidden');
   } else {
     const extras = [parsed.lot && 'Lot: '+parsed.lot, parsed.expiry && 'หมดอายุ: '+fmtDate(parsed.expiry)].filter(Boolean).join(' · ');
-    infoEl.innerHTML = `<div class="lookup-box lookup-new"><span class="text-lg">ℹ️</span><div><div class="font-semibold text-amber-800">บาร์โค้ด: ${barcode}</div><div class="text-xs text-amber-700">ยังไม่มีในฐานข้อมูล — กรอกชื่อเอง หรือเพิ่มใน "ตั้งค่า"${extras ? '<br>'+extras : ''}</div></div></div>`;
+    infoEl.innerHTML = `<div class="lookup-box lookup-new">
+      <span class="text-lg">📦</span>
+      <div class="flex-1">
+        <div class="font-semibold text-amber-800">บาร์โค้ด: ${barcode}</div>
+        <div class="text-xs text-amber-700">ยังไม่ได้เชื่อมกับรายการใด${extras ? '<br>'+extras : ''}</div>
+        <button onclick="toggleLinkPanel('${prefix}')" class="mt-2 text-xs bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg font-semibold">🔗 เชื่อมกับรายการที่มี</button>
+      </div>
+    </div>`;
+    // Store barcode for linking
+    if (linkPanel) {
+      linkPanel.dataset.barcode = barcode;
+      linkPanel.dataset.prefix  = prefix;
+    }
   }
   infoEl.classList.remove('hidden');
 
@@ -699,7 +744,7 @@ document.getElementById('manual-scan').addEventListener('keydown', e => {
 
 // ── รับเข้า Form ──────────────────────────────────────────────
 function clearReceiptForm() {
-  ['r-barcode-input','r-req','r-name','r-qty','r-unit','r-lot','r-expiry','r-receiver','r-location','r-notes'].forEach(id => {
+  ['r-barcode-input','r-req','r-name','r-qty-ordered','r-qty','r-unit','r-lot','r-expiry','r-receiver','r-location','r-notes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.value = ''; delete el.dataset.parsed; }
   });
@@ -724,6 +769,8 @@ async function submitReceipt() {
     }
   }
 
+  const qtyOrdered = parseInt(document.getElementById('r-qty-ordered').value) || null;
+
   try {
     await sbDB.insert('supply_receipts', {
       receipt_date:     document.getElementById('r-date').value || TODAY,
@@ -731,6 +778,7 @@ async function submitReceipt() {
       item_id:          itemId,
       barcode_raw:      document.getElementById('r-barcode-input').value.trim() || null,
       item_name:        name,
+      quantity_ordered: qtyOrdered,
       quantity:         qty,
       unit:             document.getElementById('r-unit').value.trim() || null,
       lot:              document.getElementById('r-lot').value.trim() || null,
@@ -808,16 +856,22 @@ async function loadReceiptHistory() {
   try {
     const rows = await sbDB.list('supply_receipts', { eq:{ receipt_date:date }, order:'created_at', asc:false });
     if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">ไม่มีรายการ</td></tr>'; return; }
-    body.innerHTML = rows.map(r => `
-      <tr>
+    body.innerHTML = rows.map(r => {
+      const diff = r.quantity_ordered ? r.quantity - r.quantity_ordered : null;
+      const diffBadge = diff === null ? '—'
+        : diff === 0 ? '<span class="diff-ok">ครบ</span>'
+        : diff < 0   ? `<span class="diff-short">ขาด ${Math.abs(diff)}</span>`
+        :               `<span class="diff-ok">+${diff}</span>`;
+      return `<tr>
         <td class="text-slate-500 text-xs">${fmtDate(r.receipt_date)}</td>
         <td class="font-medium">${r.item_name}<br>${r.barcode_raw?`<span class="text-xs text-slate-400 font-mono">${r.barcode_raw.slice(0,20)}</span>`:''}</td>
-        <td class="font-semibold text-green-700">${r.quantity} <span class="text-slate-400 font-normal">${r.unit||''}</span></td>
+        <td class="text-slate-500 text-xs">${r.quantity_ordered ? r.quantity_ordered+' '+( r.unit||'') : '—'}</td>
+        <td class="font-semibold text-green-700">${r.quantity} <span class="text-slate-400 font-normal text-xs">${r.unit||''}</span> ${diffBadge}</td>
         <td>${r.lot?`<span class="badge badge-purple">${r.lot}</span>`:'—'}</td>
         <td>${r.expiry_date ? expiryBadge(r.expiry_date) : '—'}</td>
         <td class="text-xs">${r.received_by||'—'}</td>
         <td><button onclick="deleteRow('supply_receipts','${r.id}',loadReceiptHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button></td>
-      </tr>`).join('');
+      </tr>`;}).join('');
   } catch(e) { body.innerHTML = '<tr><td colspan="7" class="text-center text-rose-400 py-4">โหลดไม่ได้</td></tr>'; }
 }
 
@@ -891,7 +945,11 @@ function renderStock() {
     const s   = item.current_stock;
     const pct = item.total_in > 0 ? Math.max(0, Math.min(100, s/item.total_in*100)) : 0;
     const barColor = s<=0 ? '#ef4444' : s<=item.min_stock ? '#f59e0b' : '#7c3aed';
-    const badge = s<=0 ? '<span class="badge badge-red">หมด</span>' : s<=item.min_stock ? '<span class="badge badge-yellow">ต่ำ</span>' : '<span class="badge badge-green">ปกติ</span>';
+    const overStock = item.max_stock > 0 && s > item.max_stock;
+    const badge = s<=0 ? '<span class="badge badge-red">หมด</span>'
+      : s<=item.min_stock ? '<span class="badge badge-yellow">ต่ำ</span>'
+      : overStock ? '<span class="badge badge-blue">เกิน Max</span>'
+      : '<span class="badge badge-green">ปกติ</span>';
     return `<tr>
       <td class="text-slate-400 text-xs">${i+1}</td>
       <td><div class="font-medium text-sm">${item.name}</div>${item.barcode?`<div class="text-xs text-slate-400 font-mono">${item.barcode}</div>`:''}<div class="stock-bar-wrap"><div class="stock-bar" style="width:${pct}%;background:${barColor}"></div></div></td>
@@ -965,6 +1023,7 @@ async function addItem() {
       unit:         document.getElementById('m-unit').value.trim()     || 'ชิ้น',
       category:     document.getElementById('m-cat').value.trim()      || null,
       min_stock:    parseInt(document.getElementById('m-min').value)   || 0,
+      max_stock:    parseInt(document.getElementById('m-max').value)   || 0,
     });
     toast('✅ เพิ่มรายการแล้ว', 'success');
     ['m-barcode','m-name','m-generic','m-unit','m-cat','m-min'].forEach(id => document.getElementById(id).value = '');
@@ -1099,6 +1158,76 @@ async function exportBackup() {
   }
 }
 
+// ── Barcode Linking ────────────────────────────────────────────
+function toggleLinkPanel(prefix) {
+  const panel = document.getElementById(prefix+'-link-panel');
+  if (!panel) return;
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) {
+    document.getElementById(prefix+'-link-search')?.focus();
+  }
+}
+
+async function searchLink(q, prefix) {
+  const resultsEl = document.getElementById(prefix+'-link-results');
+  if (!q || q.length < 1) { resultsEl.innerHTML = ''; return; }
+  const { data } = await sb.from('supply_items')
+    .select('id,name,unit,req_code,barcode')
+    .or(`name.ilike.%${q}%,req_code.ilike.%${q}%`)
+    .order('name').limit(15);
+  if (!data?.length) {
+    resultsEl.innerHTML = '<div class="text-xs text-slate-400 px-2 py-2">ไม่พบรายการ</div>';
+    return;
+  }
+  const panel = document.getElementById(prefix+'-link-panel');
+  const scannedBarcode = panel?.dataset.barcode || '';
+  resultsEl.innerHTML = data.map(item => `
+    <div class="link-result-item" onclick="linkBarcode('${item.id}','${scannedBarcode}','${prefix}')">
+      <div>
+        <div class="font-medium text-slate-800">${item.name}</div>
+        <div class="text-xs text-slate-400">${item.req_code ? 'รหัสเบิก: '+item.req_code : ''} · ${item.unit}</div>
+      </div>
+      <span class="text-xs ${item.barcode ? 'text-green-600' : 'text-slate-300'}">${item.barcode ? '✅ มีบาร์โค้ด' : 'ยังไม่มีบาร์โค้ด'}</span>
+    </div>`).join('');
+}
+
+async function linkBarcode(itemId, barcode, prefix) {
+  if (!currentUser) { toast('กรุณาเข้าสู่ระบบก่อน', 'error'); return; }
+  if (!barcode) { toast('ไม่พบบาร์โค้ดที่จะเชื่อม', 'error'); return; }
+  try {
+    await sbDB.update('supply_items', itemId, { barcode });
+    toast('✅ เชื่อมบาร์โค้ดสำเร็จ — สแกนครั้งต่อไปจะดึงข้อมูลอัตโนมัติ', 'success');
+    document.getElementById(prefix+'-link-panel').classList.add('hidden');
+    // Re-lookup with the same barcode to auto-fill form
+    const inputEl = document.getElementById(prefix+'-barcode-input');
+    if (inputEl) lookupBarcode(inputEl.value, prefix === 'r' ? 'receive' : 'transfer');
+  } catch(e) {
+    if (e.message.includes('unique')) toast('บาร์โค้ดนี้ถูกใช้กับรายการอื่นแล้ว', 'error');
+    else toast('เกิดข้อผิดพลาด: '+e.message, 'error');
+  }
+}
+
+// ── Qty Diff Checker ──────────────────────────────────────────
+function checkQtyDiff() {
+  const ordered  = parseInt(document.getElementById('r-qty-ordered')?.value) || 0;
+  const received = parseInt(document.getElementById('r-qty')?.value) || 0;
+  const box = document.getElementById('r-qty-diff-box');
+  const el  = document.getElementById('r-qty-diff');
+  if (!box || !el || !ordered || !received) { box?.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  const diff = received - ordered;
+  if (diff === 0) {
+    el.className = 'text-xs p-2 rounded-lg diff-ok';
+    el.textContent = '✅ ได้รับครบตามที่เบิก';
+  } else if (diff < 0) {
+    el.className = 'text-xs p-2 rounded-lg diff-short';
+    el.textContent = `⚠️ ได้รับน้อยกว่าที่เบิก ${Math.abs(diff)} ${document.getElementById('r-unit').value||''}`;
+  } else {
+    el.className = 'text-xs p-2 rounded-lg diff-ok';
+    el.textContent = `ℹ️ ได้รับมากกว่าที่เบิก ${diff} ${document.getElementById('r-unit').value||''}`;
+  }
+}
+
 // ── Alerts: หมดอายุ / สต็อกต่ำ ──────────────────────────────
 async function loadAlerts() {
   const banner = document.getElementById('alert-banner');
@@ -1124,20 +1253,19 @@ async function loadAlerts() {
 
     // 2. ดึง stock ต่ำ (ต้องคำนวณ)
     const [itemsRes, rAll, tAll] = await Promise.all([
-      sb.from('supply_items').select('id,name,unit,min_stock').gt('min_stock', 0),
+      sb.from('supply_items').select('id,name,unit,min_stock,max_stock'),
       sb.from('supply_receipts').select('item_id,quantity'),
       sb.from('supply_transfers').select('item_id,quantity'),
     ]);
     const rMap = {}, tMap = {};
     (rAll.data||[]).forEach(r => rMap[r.item_id] = (rMap[r.item_id]||0) + r.quantity);
     (tAll.data||[]).forEach(r => tMap[r.item_id] = (tMap[r.item_id]||0) + r.quantity);
-    const lowStock = (itemsRes.data||[]).filter(item => {
-      const stock = (rMap[item.id]||0) - (tMap[item.id]||0);
-      return stock <= item.min_stock;
-    }).map(item => ({
+    const allItemsWithStock = (itemsRes.data||[]).map(item => ({
       ...item,
       stock: (rMap[item.id]||0) - (tMap[item.id]||0)
     }));
+    const lowStock  = allItemsWithStock.filter(i => i.min_stock > 0 && i.stock <= i.min_stock);
+    const overStock = allItemsWithStock.filter(i => i.max_stock > 0 && i.stock > i.max_stock);
 
     const parts = [];
 
@@ -1179,6 +1307,18 @@ async function loadAlerts() {
             <div class="al-title text-orange-700">สต็อกต่ำ / หมด — ${lowStock.length} รายการ</div>
             <div class="alert-item-list">
               ${lowStock.map(item => `<span class="alert-chip chip-lowstock">${item.name} <span class="font-normal">(เหลือ ${item.stock} ${item.unit} · จุดเตือน ${item.min_stock})</span></span>`).join('')}
+            </div>
+          </div>
+        </div>`);
+    }
+    if (overStock.length) {
+      parts.push(`
+        <div class="alert-box" style="background:#eff6ff;border:1.5px solid #93c5fd;">
+          <span class="al-icon">🔵</span>
+          <div class="flex-1">
+            <div class="al-title text-blue-700">สต็อกเกินกำหนด Max — ${overStock.length} รายการ</div>
+            <div class="alert-item-list">
+              ${overStock.map(item => `<span class="alert-chip" style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;">${item.name} <span class="font-normal">(มี ${item.stock} · Max ${item.max_stock} ${item.unit})</span></span>`).join('')}
             </div>
           </div>
         </div>`);
