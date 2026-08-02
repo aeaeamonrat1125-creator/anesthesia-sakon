@@ -982,26 +982,32 @@ async function deleteRow(table, id, reload) {
 }
 
 // ── Stock ─────────────────────────────────────────────────────
+// SNAPSHOT_DATE = วันที่นับยอดจริง (ยอดคงคลัง ณ 16 กค 2569)
+// stock = snapshot − transfer จริงหลัง snapshot เท่านั้น
+const SNAPSHOT_DATE = '2026-07-16';
+
 async function loadStock() {
   document.getElementById('stock-body').innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังคำนวณ...</td></tr>';
   try {
-    const [itemsRes, rAll, tAll, rToday, tToday] = await Promise.all([
+    const [itemsRes, snapRes, realTRes, rToday, tToday] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
-      sb.from('supply_receipts').select('item_id,quantity'),
-      sb.from('supply_transfers').select('item_id,quantity'),
+      // เฉพาะ receipt ที่เป็น snapshot ยอดคงคลัง
+      sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
+      // เฉพาะ transfer จริงหลัง snapshot (ยังไม่มีก็ได้)
+      sb.from('supply_transfers').select('item_id,quantity').gt('transfer_date', SNAPSHOT_DATE),
       sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
       sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
     ]);
 
-    const rMap = {}, tMap = {};
-    (rAll.data||[]).forEach(r => rMap[r.item_id] = (rMap[r.item_id]||0) + r.quantity);
-    (tAll.data||[]).forEach(r => tMap[r.item_id] = (tMap[r.item_id]||0) + r.quantity);
+    const snapMap = {}, tMap = {};
+    (snapRes.data||[]).forEach(r => snapMap[r.item_id] = (snapMap[r.item_id]||0) + r.quantity);
+    (realTRes.data||[]).forEach(r => tMap[r.item_id]  = (tMap[r.item_id]||0)  + r.quantity);
 
     stockData = (itemsRes.data||[]).map(item => ({
       ...item,
-      total_in:  rMap[item.id]||0,
-      total_out: tMap[item.id]||0,
-      current_stock: (rMap[item.id]||0) - (tMap[item.id]||0),
+      total_in:      snapMap[item.id]||0,
+      total_out:     tMap[item.id]||0,
+      current_stock: (snapMap[item.id]||0) - (tMap[item.id]||0),
     }));
 
     document.getElementById('s-total').textContent = stockData.length;
@@ -1367,18 +1373,18 @@ async function loadAlerts() {
     const expired  = (receipts||[]).filter(r => r.expiry_date <= todayStr);
     const expiring = (receipts||[]).filter(r => r.expiry_date > todayStr);
 
-    // 2. ดึง stock ต่ำ (ต้องคำนวณ)
-    const [itemsRes, rAll, tAll] = await Promise.all([
+    // 2. ดึง stock ต่ำ — ใช้ snapshot − transfer จริงหลัง snapshot
+    const [itemsRes, snapRes2, realT2] = await Promise.all([
       sb.from('supply_items').select('id,name,unit,min_stock,max_stock'),
-      sb.from('supply_receipts').select('item_id,quantity'),
-      sb.from('supply_transfers').select('item_id,quantity'),
+      sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
+      sb.from('supply_transfers').select('item_id,quantity').gt('transfer_date', SNAPSHOT_DATE),
     ]);
-    const rMap = {}, tMap = {};
-    (rAll.data||[]).forEach(r => rMap[r.item_id] = (rMap[r.item_id]||0) + r.quantity);
-    (tAll.data||[]).forEach(r => tMap[r.item_id] = (tMap[r.item_id]||0) + r.quantity);
+    const snapMap2 = {}, tMap2 = {};
+    (snapRes2.data||[]).forEach(r => snapMap2[r.item_id] = (snapMap2[r.item_id]||0) + r.quantity);
+    (realT2.data||[]).forEach(r  => tMap2[r.item_id]    = (tMap2[r.item_id]||0)    + r.quantity);
     const allItemsWithStock = (itemsRes.data||[]).map(item => ({
       ...item,
-      stock: (rMap[item.id]||0) - (tMap[item.id]||0)
+      stock: (snapMap2[item.id]||0) - (tMap2[item.id]||0)
     }));
     const lowStock  = allItemsWithStock.filter(i => i.min_stock > 0 && i.stock <= i.min_stock);
     const overStock = allItemsWithStock.filter(i => i.max_stock > 0 && i.stock > i.max_stock);
@@ -1462,20 +1468,23 @@ async function loadAnalysis() {
   const cutoffStr = cutoff.toISOString().split('T')[0];
 
   try {
-    const [itemsRes, rAll, tAll, tRecent] = await Promise.all([
+    const [itemsRes, snapRes, realTRes, tRecent] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
-      sb.from('supply_receipts').select('item_id,quantity'),
-      sb.from('supply_transfers').select('item_id,quantity'),
-      sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoffStr),
+      // snapshot ยอดคงคลัง
+      sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
+      // transfer จริงหลัง snapshot เท่านั้น
+      sb.from('supply_transfers').select('item_id,quantity').gt('transfer_date', SNAPSHOT_DATE),
+      // ยอดใช้ 3 เดือนล่าสุด (จากประวัติ) สำหรับคำนวณ Safety Stock
+      sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoffStr).lte('transfer_date', SNAPSHOT_DATE),
     ]);
 
-    const rMap = {}, tMap = {}, tRecentMap = {};
-    (rAll.data||[]).forEach(r => { rMap[r.item_id] = (rMap[r.item_id]||0) + r.quantity; });
-    (tAll.data||[]).forEach(r => { tMap[r.item_id] = (tMap[r.item_id]||0) + r.quantity; });
+    const snapMap = {}, tMap = {}, tRecentMap = {};
+    (snapRes.data||[]).forEach(r => { snapMap[r.item_id] = (snapMap[r.item_id]||0) + r.quantity; });
+    (realTRes.data||[]).forEach(r => { tMap[r.item_id]   = (tMap[r.item_id]||0)   + r.quantity; });
     (tRecent.data||[]).forEach(r => { tRecentMap[r.item_id] = (tRecentMap[r.item_id]||0) + r.quantity; });
 
     const items = (itemsRes.data||[]).map(item => {
-      const stock    = (rMap[item.id]||0) - (tMap[item.id]||0);
+      const stock    = (snapMap[item.id]||0) - (tMap[item.id]||0);
       const used3mo  = tRecentMap[item.id]||0;
       const avgMonth = used3mo / 3;
       const safety   = Math.ceil(avgMonth * 1.5);
