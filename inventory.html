@@ -166,6 +166,7 @@ select.input { cursor:pointer; }
       <button class="tab-pill active" id="tbtn-receive"  onclick="switchTab('receive')">📥 รับเข้า</button>
       <button class="tab-pill"        id="tbtn-transfer" onclick="switchTab('transfer')">📤 เบิกออก</button>
       <button class="tab-pill"        id="tbtn-stock"    onclick="switchTab('stock')">📊 ยอดคลัง</button>
+      <button class="tab-pill"        id="tbtn-analyze"  onclick="switchTab('analyze')">📋 วิเคราะห์</button>
       <button class="tab-pill"        id="tbtn-settings" onclick="switchTab('settings')">⚙️ ตั้งค่า</button>
     </div>
   </div>
@@ -378,6 +379,83 @@ select.input { cursor:pointer; }
     </div>
   </div>
 
+  <!-- ========== TAB: วิเคราะห์ ========== -->
+  <div id="tab-analyze" class="space-y-3 fade-in hidden">
+
+    <!-- Status Overview -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="stat-card sk-purple"><div class="text-2xl font-bold" id="an-total">—</div><div class="text-white/75 text-xs mt-1">รายการทั้งหมด</div></div>
+      <div class="stat-card" style="background:linear-gradient(135deg,#dc2626,#ef4444)"><div class="text-2xl font-bold" id="an-order">—</div><div class="text-white/75 text-xs mt-1">🔴 สั่งซื้อด่วน</div></div>
+      <div class="stat-card" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><div class="text-2xl font-bold" id="an-warn">—</div><div class="text-white/75 text-xs mt-1">🟡 เฝ้าระวัง</div></div>
+      <div class="stat-card sk-green"><div class="text-2xl font-bold" id="an-ok">—</div><div class="text-white/75 text-xs mt-1">🟢 ปกติ</div></div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="card p-3 flex gap-2 items-center flex-wrap">
+      <button onclick="loadAnalysis()" class="btn btn-ghost" style="padding:7px 14px;font-size:13px;">🔄 คำนวณใหม่</button>
+      <button onclick="openSnapshotForm()" class="btn btn-primary" style="padding:7px 14px;font-size:13px;">📝 บันทึกยอดนับ 2 สัปดาห์</button>
+      <a href="inventory-report.html" class="btn" style="padding:7px 14px;font-size:13px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;">📊 เปิด Dashboard เต็ม</a>
+    </div>
+
+    <!-- Analysis table -->
+    <div class="card p-4">
+      <div class="section-h mb-3">สถานะสต็อกและ Safety Stock</div>
+      <div class="text-xs text-slate-400 mb-3">Safety Stock = ยอดจ่ายเฉลี่ย 3 เดือนล่าสุด × 1.5 · 🔴 = คงเหลือ &lt; 50% Safety · 🟡 = 50-99% · 🟢 = ≥ 100%</div>
+      <div class="scroll-x">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>ชื่อเวชภัณฑ์</th><th>จ่าย/เดือน</th><th>Safety Stock</th><th>คงเหลือ</th><th>หน่วย</th><th>สถานะ</th></tr></thead>
+          <tbody id="analyze-body"><tr><td colspan="7" class="text-center text-slate-400 py-8">กด "คำนวณใหม่" เพื่อโหลดข้อมูล</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Snapshot history -->
+    <div class="card p-4">
+      <div class="section-h mb-3">ประวัติการนับสต็อก</div>
+      <div class="scroll-x">
+        <table class="tbl">
+          <thead><tr><th>วันที่นับ</th><th>รายการ</th><th>รับเข้า</th><th>จ่ายออก</th><th>ยอดนับจริง</th><th>Safety Stock</th><th>หมายเหตุ</th><th></th></tr></thead>
+          <tbody id="snapshot-body"><tr><td colspan="8" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Snapshot Modal -->
+  <div id="snapshotModal" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+    <div class="card w-full max-w-2xl p-5 max-h-screen overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div class="section-h">📝 บันทึกยอดนับสต็อก</div>
+        <button onclick="closeSnapshotModal()" class="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="lbl">วันที่นับ</label>
+          <input id="snap-date" type="date" class="input">
+        </div>
+        <div>
+          <label class="lbl">ค้นหารายการ</label>
+          <input id="snap-search" type="text" class="input" placeholder="พิมพ์ชื่อหรือรหัสเบิก..." oninput="searchSnapItem(this.value)">
+        </div>
+      </div>
+      <div id="snap-item-results" class="hidden mb-3 border border-violet-100 rounded-xl overflow-hidden max-h-40 overflow-y-auto"></div>
+      <div id="snap-form-area" class="hidden space-y-3">
+        <div class="bg-violet-50 rounded-xl p-3 text-sm font-semibold text-violet-800" id="snap-item-name">—</div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><label class="lbl">รับเข้าช่วงนี้</label><input id="snap-in" type="number" class="input" placeholder="0" min="0"></div>
+          <div><label class="lbl">จ่ายออกช่วงนี้</label><input id="snap-out" type="number" class="input" placeholder="0" min="0"></div>
+          <div><label class="lbl">ยอดนับจริง *</label><input id="snap-counted" type="number" class="input" placeholder="0" min="0"></div>
+        </div>
+        <div><label class="lbl">หมายเหตุ</label><input id="snap-notes" type="text" class="input" placeholder="หมายเหตุ (ถ้ามี)"></div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 hidden" id="snap-safety-info"></div>
+        <div class="flex gap-2">
+          <button onclick="saveSnapshot()" class="btn btn-primary flex-1">💾 บันทึก</button>
+          <button onclick="closeSnapshotModal()" class="btn btn-ghost">ยกเลิก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== TAB: ตั้งค่า ========== -->
   <div id="tab-settings" class="space-y-3 fade-in hidden">
 
@@ -533,13 +611,14 @@ async function doSignOut() { await sbAuth.signOut(); location.reload(); }
 
 // ── Tabs ──────────────────────────────────────────────────────
 function switchTab(tab) {
-  ['receive','transfer','stock','settings'].forEach(t => {
+  ['receive','transfer','stock','analyze','settings'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab);
     document.getElementById('tbtn-'+t).classList.toggle('active', t===tab);
   });
   if (tab==='stock')    loadStock();
   if (tab==='settings') loadSettings();
   if (tab==='transfer') populateWarehouseSelect();
+  if (tab==='analyze')  loadSnapshotHistory();
 }
 
 // ── GS1 Parser ───────────────────────────────────────────────
@@ -1366,6 +1445,214 @@ async function loadAlerts() {
     }
   } catch(e) {
     console.warn('loadAlerts:', e.message);
+  }
+}
+
+// ── Analyze: Safety Stock ─────────────────────────────────────
+let snapSelectedItem = null;
+let snapCandidates   = [];
+
+async function loadAnalysis() {
+  const body = document.getElementById('analyze-body');
+  body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังคำนวณ...</td></tr>';
+
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - 3);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+
+  try {
+    const [itemsRes, rAll, tAll, tRecent] = await Promise.all([
+      sb.from('supply_items').select('*').order('name'),
+      sb.from('supply_receipts').select('item_id,quantity'),
+      sb.from('supply_transfers').select('item_id,quantity'),
+      sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoffStr),
+    ]);
+
+    const rMap = {}, tMap = {}, tRecentMap = {};
+    (rAll.data||[]).forEach(r => { rMap[r.item_id] = (rMap[r.item_id]||0) + r.quantity; });
+    (tAll.data||[]).forEach(r => { tMap[r.item_id] = (tMap[r.item_id]||0) + r.quantity; });
+    (tRecent.data||[]).forEach(r => { tRecentMap[r.item_id] = (tRecentMap[r.item_id]||0) + r.quantity; });
+
+    const items = (itemsRes.data||[]).map(item => {
+      const stock    = (rMap[item.id]||0) - (tMap[item.id]||0);
+      const used3mo  = tRecentMap[item.id]||0;
+      const avgMonth = used3mo / 3;
+      const safety   = Math.ceil(avgMonth * 1.5);
+      const ratio    = safety > 0 ? stock / safety : null;
+      const status   = ratio === null ? 'no-data'
+        : ratio < 0.5  ? 'order'
+        : ratio < 1.0  ? 'warn' : 'ok';
+      return { ...item, stock, avgMonth, safety, status };
+    });
+
+    document.getElementById('an-total').textContent = items.length;
+    document.getElementById('an-order').textContent = items.filter(i=>i.status==='order').length;
+    document.getElementById('an-warn').textContent  = items.filter(i=>i.status==='warn').length;
+    document.getElementById('an-ok').textContent    = items.filter(i=>i.status==='ok').length;
+
+    if (!items.length) {
+      body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">ยังไม่มีรายการ</td></tr>';
+      return;
+    }
+
+    const ord = { order:0, warn:1, ok:2, 'no-data':3 };
+    items.sort((a,b) => (ord[a.status]||3) - (ord[b.status]||3));
+
+    body.innerHTML = items.map((item,i) => {
+      const badge = item.status==='order' ? '<span class="badge badge-red">🔴 สั่งซื้อด่วน</span>'
+        : item.status==='warn'   ? '<span class="badge badge-yellow">🟡 เฝ้าระวัง</span>'
+        : item.status==='ok'     ? '<span class="badge badge-green">🟢 ปกติ</span>'
+        : '<span class="badge badge-purple">ไม่มีข้อมูลจ่าย</span>';
+      return `<tr>
+        <td class="text-slate-400 text-xs">${i+1}</td>
+        <td class="font-medium text-sm">${item.name}</td>
+        <td class="text-blue-600 text-sm">${item.avgMonth.toFixed(1)}</td>
+        <td class="font-semibold text-amber-600">${item.safety > 0 ? item.safety : '—'}</td>
+        <td class="font-bold text-lg ${item.stock<=0?'text-red-600':item.stock<=item.min_stock?'text-amber-600':'text-violet-700'}">${item.stock}</td>
+        <td class="text-slate-500 text-xs">${item.unit||'—'}</td>
+        <td>${badge}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="7" class="text-center text-rose-400 py-8">โหลดไม่ได้: ${e.message}</td></tr>`;
+  }
+}
+
+function openSnapshotForm() {
+  snapSelectedItem = null;
+  snapCandidates   = [];
+  document.getElementById('snap-date').value = TODAY;
+  document.getElementById('snap-search').value = '';
+  document.getElementById('snap-item-results').innerHTML = '';
+  document.getElementById('snap-item-results').classList.add('hidden');
+  document.getElementById('snap-form-area').classList.add('hidden');
+  document.getElementById('snap-safety-info').classList.add('hidden');
+  ['snap-in','snap-out','snap-counted','snap-notes'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('snapshotModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('snap-search')?.focus(), 200);
+}
+
+function closeSnapshotModal() {
+  document.getElementById('snapshotModal').style.display = 'none';
+}
+
+async function searchSnapItem(q) {
+  const res = document.getElementById('snap-item-results');
+  if (!q || q.length < 1) { res.classList.add('hidden'); return; }
+  const { data } = await sb.from('supply_items')
+    .select('id,name,unit,req_code')
+    .or(`name.ilike.%${q}%,req_code.ilike.%${q}%`)
+    .order('name').limit(10);
+  if (!data?.length) {
+    res.innerHTML = '<div class="text-xs text-slate-400 p-3">ไม่พบรายการ</div>';
+    res.classList.remove('hidden');
+    return;
+  }
+  snapCandidates = data;
+  res.innerHTML = data.map((item, i) => `
+    <div class="p-3 hover:bg-violet-50 cursor-pointer text-sm border-b border-violet-50 last:border-0" onclick="selectSnapItem(${i})">
+      <div class="font-semibold">${item.name}</div>
+      ${item.req_code ? `<div class="text-xs text-slate-400">รหัสเบิก: ${item.req_code}</div>` : ''}
+    </div>`).join('');
+  res.classList.remove('hidden');
+}
+
+async function selectSnapItem(idx) {
+  const item = snapCandidates[idx];
+  if (!item) return;
+  snapSelectedItem = { ...item };
+  document.getElementById('snap-search').value = item.name;
+  document.getElementById('snap-item-results').classList.add('hidden');
+  document.getElementById('snap-item-name').textContent = item.name + (item.unit ? ' ('+item.unit+')' : '');
+  document.getElementById('snap-form-area').classList.remove('hidden');
+
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - 3);
+  const { data: tRecent } = await sb.from('supply_transfers')
+    .select('quantity')
+    .eq('item_id', item.id)
+    .gte('transfer_date', cutoff.toISOString().split('T')[0]);
+  const used3mo  = (tRecent||[]).reduce((s,r)=>s+r.quantity, 0);
+  const avgMonth = used3mo / 3;
+  const safety   = Math.ceil(avgMonth * 1.5);
+  snapSelectedItem.safety   = safety;
+  snapSelectedItem.avgMonth = avgMonth;
+
+  const infoEl = document.getElementById('snap-safety-info');
+  if (safety > 0) {
+    infoEl.textContent = `Safety Stock ≈ ${safety} ${item.unit||''} (จ่ายเฉลี่ย ${avgMonth.toFixed(1)} ${item.unit||''}/เดือน × 1.5)`;
+    infoEl.classList.remove('hidden');
+  } else {
+    infoEl.classList.add('hidden');
+  }
+  document.getElementById('snap-counted')?.focus();
+}
+
+async function saveSnapshot() {
+  if (!currentUser)      { toast('กรุณาเข้าสู่ระบบก่อน', 'error'); return; }
+  if (!snapSelectedItem) { toast('กรุณาเลือกรายการเวชภัณฑ์', 'error'); return; }
+  const date    = document.getElementById('snap-date').value;
+  const counted = parseInt(document.getElementById('snap-counted').value);
+  if (!date)         { toast('กรุณาระบุวันที่นับ', 'error'); return; }
+  if (isNaN(counted)) { toast('กรุณาระบุยอดนับจริง', 'error'); return; }
+
+  try {
+    await sbDB.insert('stock_snapshots', {
+      snapshot_date: date,
+      item_id:       snapSelectedItem.id,
+      item_name:     snapSelectedItem.name,
+      unit:          snapSelectedItem.unit || null,
+      qty_in:        parseInt(document.getElementById('snap-in').value) || 0,
+      qty_out:       parseInt(document.getElementById('snap-out').value) || 0,
+      qty_counted:   counted,
+      safety_stock:  snapSelectedItem.safety || null,
+      notes:         document.getElementById('snap-notes').value.trim() || null,
+      created_by:    currentUser.id,
+    });
+    toast('✅ บันทึกยอดนับสำเร็จ', 'success');
+    closeSnapshotModal();
+    loadSnapshotHistory();
+  } catch(e) {
+    if (/does not exist|relation/i.test(e.message)) {
+      toast('ยังไม่มีตาราง stock_snapshots — สร้างใน Supabase ก่อน', 'error');
+    } else {
+      toast('บันทึกไม่สำเร็จ: '+e.message, 'error');
+    }
+  }
+}
+
+async function loadSnapshotHistory() {
+  const body = document.getElementById('snapshot-body');
+  if (!body) return;
+  body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr>';
+  try {
+    const { data, error } = await sb.from('stock_snapshots')
+      .select('*')
+      .order('snapshot_date', { ascending: false })
+      .order('created_at',    { ascending: false })
+      .limit(60);
+    if (error) throw error;
+    if (!data?.length) {
+      body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-6">ยังไม่มีการนับสต็อก</td></tr>';
+      return;
+    }
+    body.innerHTML = data.map(r => `
+      <tr>
+        <td class="text-xs text-slate-500">${fmtDate(r.snapshot_date)}</td>
+        <td class="font-medium text-sm">${r.item_name}</td>
+        <td class="text-green-700 font-semibold">${r.qty_in}</td>
+        <td class="text-blue-600 font-semibold">${r.qty_out}</td>
+        <td class="font-bold text-violet-700">${r.qty_counted} <span class="text-slate-400 font-normal text-xs">${r.unit||''}</span></td>
+        <td class="text-amber-600">${r.safety_stock || '—'}</td>
+        <td class="text-xs text-slate-500">${r.notes||'—'}</td>
+        <td><button onclick="deleteRow('stock_snapshots','${r.id}',loadSnapshotHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button></td>
+      </tr>`).join('');
+  } catch(e) {
+    if (/does not exist|relation/i.test(e.message)) {
+      body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-6">ยังไม่มีตาราง stock_snapshots</td></tr>';
+    } else {
+      body.innerHTML = '<tr><td colspan="8" class="text-center text-rose-400 py-6">โหลดไม่ได้</td></tr>';
+    }
   }
 }
 
