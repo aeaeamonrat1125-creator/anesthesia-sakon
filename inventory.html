@@ -993,8 +993,8 @@ async function loadStock() {
       sb.from('supply_items').select('*').order('name'),
       // เฉพาะ receipt ที่เป็น snapshot ยอดคงคลัง
       sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
-      // เฉพาะ transfer จริงหลัง snapshot (ยังไม่มีก็ได้)
-      sb.from('supply_transfers').select('item_id,quantity').gt('transfer_date', SNAPSHOT_DATE),
+      // transfer จริง = ไม่ใช่ประวัติ (not notes like 'ประวัติการใช้%')
+      sb.from('supply_transfers').select('item_id,quantity').not('notes','like','ประวัติการใช้%'),
       sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
       sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
     ]);
@@ -1377,7 +1377,7 @@ async function loadAlerts() {
     const [itemsRes, snapRes2, realT2] = await Promise.all([
       sb.from('supply_items').select('id,name,unit,min_stock,max_stock'),
       sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
-      sb.from('supply_transfers').select('item_id,quantity').gt('transfer_date', SNAPSHOT_DATE),
+      sb.from('supply_transfers').select('item_id,quantity').not('notes','like','ประวัติการใช้%'),
     ]);
     const snapMap2 = {}, tMap2 = {};
     (snapRes2.data||[]).forEach(r => snapMap2[r.item_id] = (snapMap2[r.item_id]||0) + r.quantity);
@@ -1472,8 +1472,8 @@ async function loadAnalysis() {
       sb.from('supply_items').select('*').order('name'),
       // snapshot ยอดคงคลัง
       sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
-      // transfer จริงหลัง snapshot เท่านั้น
-      sb.from('supply_transfers').select('item_id,quantity').gt('transfer_date', SNAPSHOT_DATE),
+      // transfer จริง = ไม่ใช่ประวัติ
+      sb.from('supply_transfers').select('item_id,quantity').not('notes','like','ประวัติการใช้%'),
       // ยอดใช้ 3 เดือนล่าสุด (จากประวัติ) สำหรับคำนวณ Safety Stock
       sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoffStr).lte('transfer_date', SNAPSHOT_DATE),
     ]);

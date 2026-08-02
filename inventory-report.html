@@ -206,25 +206,25 @@ async function loadAll() {
 
   const SNAPSHOT_DATE = '2026-07-16';
 
-  // Fetch items, snapshot receipts, historical transfers (charts/safety), real transfers (stock deduction)
+  // Fetch items, snapshot receipts, all transfers (with notes เพื่อแยกประวัติ vs จริง)
   const [items, snapReceipts, transfers] = await Promise.all([
     fetchAllRows('supply_items', '*'),
-    // เฉพาะ snapshot ยอดคงคลัง
     fetchAllRows('supply_receipts', 'item_id,quantity,notes'),
-    // ประวัติทั้งหมด (ใช้ chart + safety stock)
-    fetchAllRows('supply_transfers', 'item_id,quantity,transfer_date'),
+    fetchAllRows('supply_transfers', 'item_id,quantity,transfer_date,notes'),
   ]);
+
+  const isHistorical = r => (r.notes||'').includes('ประวัติการใช้');
 
   // Stock maps
   const snapMap={}, tActualMap={}, tRecentMap={};
-  // snapshot only
-  snapReceipts.filter(r=>r.notes&&r.notes.includes('ยอดคงคลัง'))
+  // snapshot receipt เท่านั้น
+  snapReceipts.filter(r=>(r.notes||'').includes('ยอดคงคลัง'))
     .forEach(r=>{ snapMap[r.item_id]=(snapMap[r.item_id]||0)+r.quantity; });
-  // transfer จริงหลัง snapshot (ยังไม่มี = 0)
-  transfers.filter(r=>r.transfer_date > SNAPSHOT_DATE)
+  // transfer จริง = ไม่ใช่ประวัติ (ตอนนี้ยังไม่มี → tActualMap = 0)
+  transfers.filter(r=>!isHistorical(r))
     .forEach(r=>{ tActualMap[r.item_id]=(tActualMap[r.item_id]||0)+r.quantity; });
-  // recent (3 เดือน ก่อน snapshot) สำหรับ safety stock
-  transfers.filter(r=>r.transfer_date>=cutoff3mStr && r.transfer_date<=SNAPSHOT_DATE)
+  // 3 เดือนล่าสุดของประวัติ สำหรับคำนวณ safety stock
+  transfers.filter(r=>isHistorical(r) && r.transfer_date>=cutoff3mStr)
     .forEach(r=>{ tRecentMap[r.item_id]=(tRecentMap[r.item_id]||0)+r.quantity; });
 
   // Per-year usage maps (2024=ปี67, 2025=ปี68, 2026=ปี69)
