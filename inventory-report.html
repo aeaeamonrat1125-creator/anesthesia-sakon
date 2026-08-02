@@ -179,42 +179,58 @@ async function doSignIn() {
   catch(e) { errEl.textContent=e.message||'ล็อกอินไม่สำเร็จ'; errEl.classList.remove('hidden'); }
 }
 
+// ── Paginated fetch (bypass 1000-row Supabase default limit) ──
+async function fetchAllRows(table, columns) {
+  const CHUNK = 1000;
+  let all = [], from = 0;
+  while (true) {
+    const { data, error } = await sb.from(table).select(columns).range(from, from+CHUNK-1);
+    if (error) throw error;
+    all = all.concat(data||[]);
+    if (!data || data.length < CHUNK) break;
+    from += CHUNK;
+  }
+  return all;
+}
+
 // ── Load All ──────────────────────────────────────────────────
 async function loadAll() {
   const ok = await initAuth();
   if (!ok) return;
 
+  document.getElementById('userInfo').textContent += ' · กำลังโหลดข้อมูล...';
+
   const cutoff3m = new Date();
   cutoff3m.setMonth(cutoff3m.getMonth()-3);
   const cutoff3mStr = cutoff3m.toISOString().split('T')[0];
 
-  // Fetch everything in parallel
-  const [itemsRes, rAll, tAll, tRecent, tMonthly] = await Promise.all([
-    sb.from('supply_items').select('*').order('name'),
-    sb.from('supply_receipts').select('item_id,quantity'),
-    sb.from('supply_transfers').select('item_id,quantity'),
-    sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoff3mStr),
-    sb.from('supply_transfers').select('item_id,quantity,transfer_date,item_name,notes'),
+  // Fetch: items และ receipts ปกติ, transfers ใช้ paginator
+  const [items, receipts, transfers] = await Promise.all([
+    fetchAllRows('supply_items', '*'),
+    fetchAllRows('supply_receipts', 'item_id,quantity'),
+    fetchAllRows('supply_transfers', 'item_id,quantity,transfer_date'),
   ]);
 
-  // Current stock map
+  // Stock maps
   const rMap={}, tMap={}, tRecentMap={};
-  (rAll.data||[]).forEach(r=>{ rMap[r.item_id]=(rMap[r.item_id]||0)+r.quantity; });
-  (tAll.data||[]).forEach(r=>{ tMap[r.item_id]=(tMap[r.item_id]||0)+r.quantity; });
-  (tRecent.data||[]).forEach(r=>{ tRecentMap[r.item_id]=(tRecentMap[r.item_id]||0)+r.quantity; });
+  receipts.forEach(r=>{ rMap[r.item_id]=(rMap[r.item_id]||0)+r.quantity; });
+  transfers.forEach(r=>{ tMap[r.item_id]=(tMap[r.item_id]||0)+r.quantity; });
+  transfers.forEach(r=>{
+    if (r.transfer_date >= cutoff3mStr)
+      tRecentMap[r.item_id]=(tRecentMap[r.item_id]||0)+r.quantity;
+  });
 
-  // Per-year usage maps
+  // Per-year usage maps (2024=ปี67, 2025=ปี68, 2026=ปี69)
   const use67Map={}, use68Map={}, use69Map={};
-  (tMonthly.data||[]).forEach(r=>{
+  transfers.forEach(r=>{
     const yr = r.transfer_date?.slice(0,4);
-    const n  = r.notes||'';
-    if (yr==='2024'||n.includes('2567')) use67Map[r.item_id]=(use67Map[r.item_id]||0)+r.quantity;
-    if (yr==='2025'||n.includes('2568')) use68Map[r.item_id]=(use68Map[r.item_id]||0)+r.quantity;
-    if (yr==='2026'||n.includes('2569')) use69Map[r.item_id]=(use69Map[r.item_id]||0)+r.quantity;
+    if (yr==='2024') use67Map[r.item_id]=(use67Map[r.item_id]||0)+r.quantity;
+    if (yr==='2025') use68Map[r.item_id]=(use68Map[r.item_id]||0)+r.quantity;
+    if (yr==='2026') use69Map[r.item_id]=(use69Map[r.item_id]||0)+r.quantity;
   });
 
   // Compute per-item
-  allItemData = (itemsRes.data||[]).map(item => {
+  allItemData = items.map(item => {
     const stock    = (rMap[item.id]||0)-(tMap[item.id]||0);
     const used3mo  = tRecentMap[item.id]||0;
     const avgMonth = used3mo/3;
@@ -227,7 +243,11 @@ async function loadAll() {
       use68: use68Map[item.id]||0,
       use69: use69Map[item.id]||0,
     };
-  });
+  }).sort((a,b)=>a.name.localeCompare(b.name,'th'));
+
+  const p = await sbAuth.getProfile();
+  document.getElementById('userInfo').textContent =
+    (p?.full_name||'') + ` · ${transfers.length.toLocaleString()} รายการ transfer`;
 
   renderKPI();
   renderOrderTable();
@@ -235,7 +255,7 @@ async function loadAll() {
   renderStatusChart();
   renderTop10Chart();
   renderYearlyChart();
-  await renderTrendChart(tMonthly.data||[]);
+  renderTrendChart(transfers);
 }
 
 // ── KPI ───────────────────────────────────────────────────────
@@ -330,7 +350,7 @@ function renderYearlyChart() {
 }
 
 // ── Monthly Trend ─────────────────────────────────────────────
-async function renderTrendChart(transfers) {
+function renderTrendChart(transfers) {
   // สร้าง monthly total จาก transfers
   const monthly = {};
   transfers.forEach(r => {
