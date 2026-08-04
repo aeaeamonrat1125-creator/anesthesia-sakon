@@ -1665,14 +1665,17 @@ function renderNursesList() {
             ${arr.map(n => {
               const init = (n.nickname || n.name || '?').charAt(0).toUpperCase();
               const canEdit = !!currentUser;
-              const isTouch = `'ontouchstart' in window`;
+              const photoEsc = (n.photo_url||'').replace(/'/g,"&#39;");
+              const nameEsc  = (n.name||'').replace(/'/g,"&#39;");
               return `<div class="nurse-card group/card ${canEdit ? 'cursor-pointer' : ''}" ${canEdit ? `onclick="openNurseForm(${n.id})"` : ''}>
-                <div class="relative flex-shrink-0 group/photo ${canEdit ? 'cursor-pointer' : ''}" onclick="${canEdit ? `event.stopPropagation();triggerNursePhoto(${n.id})` : ''}">
+                <div class="relative flex-shrink-0">
                   ${n.photo_url
-                    ? `<img src="${n.photo_url}" class="nurse-avatar object-cover cursor-zoom-in" style="background:${s.av}" onclick="event.stopPropagation();openLightbox('${n.photo_url}','${(n.name||'').replace(/'/g,"&#39;")}')">`
+                    ? `<img src="${n.photo_url}" class="nurse-avatar object-cover cursor-zoom-in" style="background:${s.av}" onclick="event.stopPropagation();openLightbox('${photoEsc}','${nameEsc}')">`
                     : `<div class="nurse-avatar" style="background:${s.av}">${init}</div>`
                   }
-                  ${canEdit ? `<div class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 transition-opacity pointer-events-none">📷</div>` : ''}
+                  ${canEdit ? `<button onclick="event.stopPropagation();triggerNursePhoto(${n.id})"
+                    style="position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-radius:999px;background:#7c3aed;border:2px solid #fff;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);"
+                    title="เปลี่ยนรูป">📷</button>` : ''}
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold text-slate-800 truncate">${n.name || '-'}</div>
@@ -1700,8 +1703,27 @@ function openNurseForm(id) {
   // หา next id ใหม่
   const ids = cache.nurses.map(x => x.id);
   const nextId = id || (Math.max(0, ...ids.filter(i => i < 100)) + 1);
+  const photoEscM = (n.photo_url||'').replace(/'/g,"&#39;");
+  const initM = (n.nickname||n.name||'?').charAt(0).toUpperCase();
   document.getElementById('modalBody').innerHTML = `
     <div class="space-y-2">
+      ${id ? `
+      <div style="background:#f5f3ff;border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;">
+        ${n.photo_url
+          ? `<img src="${photoEscM}" style="width:52px;height:52px;border-radius:999px;object-fit:cover;border:2px solid #e9d5ff;cursor:zoom-in;" onclick="openLightbox('${photoEscM}','${(n.name||'').replace(/'/g,'&#39;')}')">`
+          : `<div style="width:52px;height:52px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#9333ea);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px;flex-shrink:0;">${initM}</div>`
+        }
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="triggerNursePhoto(${id})"
+            style="background:#f5f3ff;color:#7c3aed;border:1.5px solid #e9d5ff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;">
+            📷 ${n.photo_url ? 'เปลี่ยนรูป' : 'ใส่รูปภาพ'}
+          </button>
+          ${n.photo_url ? `<button onclick="removeNursePhoto(${id})"
+            style="background:#fff1f2;color:#e11d48;border:1.5px solid #fecdd3;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;">
+            🗑 ลบรูป
+          </button>` : ''}
+        </div>
+      </div>` : ''}
       <div class="grid grid-cols-3 gap-2">
         <div>
           <label class="text-xs text-slate-500">ID</label>
@@ -1746,6 +1768,21 @@ function openNurseForm(id) {
   };
   openModal();
 }
+async function removeNursePhoto(id) {
+  if (!confirm('ลบรูปภาพนี้?')) return;
+  try {
+    await sbDB.update('nurses', id, { photo_url: null });
+    const nurse = cache.nurses.find(n => n.id === id);
+    if (nurse) {
+      nurse.photo_url = null;
+      if (nurse.user_id) await sb.from('profiles').update({ photo_url: null }).eq('id', nurse.user_id);
+    }
+    sbUtils.toast('ลบรูปแล้ว ✅', 'success');
+    renderNursesList();
+    openNurseForm(id);
+  } catch(e) { sbUtils.toast(e.message, 'error'); }
+}
+
 async function deleteNurse(id) {
   if (!confirm(`ลบบุคลากร ID #${id}?`)) return;
   try { await sbDB.remove('nurses', id); closeModal(); loadAll(); }
