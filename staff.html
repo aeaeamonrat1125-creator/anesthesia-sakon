@@ -58,14 +58,15 @@
   .staff-tabbar {
     background:#fff; border-bottom:2px solid #e9d5ff;
     position:sticky; top:60px; z-index:40;
+  }
+  .staff-tabbar-inner {
+    display:flex; align-items:center;
+    max-width:1400px; margin:0 auto;
+    padding:0 16px;
     overflow-x:auto; -webkit-overflow-scrolling:touch;
     scrollbar-width:none;
   }
-  .staff-tabbar::-webkit-scrollbar { display:none; }
-  .staff-tabbar-inner {
-    display:flex; align-items:center;
-    padding:0 16px; min-width:max-content;
-  }
+  .staff-tabbar-inner::-webkit-scrollbar { display:none; }
   .staff-tab {
     display:flex; align-items:center; gap:5px;
     padding:13px 14px; font-size:13px; font-weight:500;
