@@ -29,59 +29,73 @@
   .btn-ghost { background:#f5f3ff; color:#7c3aed; border:1.5px solid #e9d5ff; } .btn-ghost:hover { background:#ede9fe; }
   .btn-danger { background:#ef4444; color:#fff; } .btn-danger:hover { background:#dc2626; }
 
-  /* ===== STAFF NAVBAR ===== */
-  .staff-navbar {
-    background:linear-gradient(135deg,#6d28d9,#9333ea);
-    position:sticky; top:0; z-index:50; height:60px;
-    box-shadow:0 4px 20px rgba(109,40,217,.3);
+  /* ===== SIDEBAR ===== */
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:49; }
+  .sidebar-overlay.open { display:block; }
+  .sidebar {
+    width:220px; background:#fff; border-right:1.5px solid #e9d5ff;
+    position:fixed; top:0; left:0; bottom:0; z-index:50;
+    display:flex; flex-direction:column;
+    box-shadow:2px 0 16px rgba(109,40,217,.07);
   }
-  .staff-navbar-inner {
-    max-width:1400px; margin:0 auto; padding:0 20px;
-    height:100%; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  .sidebar-logo {
+    display:flex; align-items:center; gap:10px; text-decoration:none;
+    padding:16px; border-bottom:1px solid #f3e8ff; flex-shrink:0;
   }
-  .staff-nav-logo {
-    display:flex; align-items:center; gap:10px; text-decoration:none; flex-shrink:0;
-  }
-  .staff-nav-logo img { height:34px; width:auto; }
-  .staff-nav-brand { line-height:1.2; }
-  .staff-nav-title { font-size:14px; font-weight:800; color:#fff; }
-  .staff-nav-sub { font-size:10px; color:rgba(255,255,255,.7); }
-  .staff-nav-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
-  .staff-nav-user { font-size:12px; color:rgba(255,255,255,.85); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .staff-nav-btn { padding:6px 14px; border-radius:999px; font-size:12px; font-weight:600; border:none; cursor:pointer; font-family:'Sarabun',sans-serif; transition:.15s; }
-  .staff-nav-btn-home { background:rgba(255,255,255,.15); color:#fff; }
-  .staff-nav-btn-home:hover { background:rgba(255,255,255,.25); }
-  .staff-nav-btn-out { background:rgba(239,68,68,.8); color:#fff; }
-  .staff-nav-btn-out:hover { background:#ef4444; }
-
-  /* ===== STAFF TAB BAR ===== */
-  .staff-tabbar {
-    background:#fff; border-bottom:2px solid #e9d5ff;
-    position:sticky; top:60px; z-index:40;
-  }
-  .staff-tabbar-inner {
-    display:flex; align-items:center;
-    max-width:1400px; margin:0 auto;
-    padding:0 16px;
-    overflow-x:auto; -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-  }
-  .staff-tabbar-inner::-webkit-scrollbar { display:none; }
-  .staff-tab {
-    display:flex; align-items:center; gap:5px;
-    padding:13px 14px; font-size:13px; font-weight:500;
+  .sidebar-logo img { height:34px; width:auto; }
+  .sidebar-brand { line-height:1.2; }
+  .sidebar-brand-title { font-size:13px; font-weight:800; color:#4c1d95; }
+  .sidebar-brand-sub { font-size:10px; color:#a78bfa; }
+  .sidebar-nav { flex:1; overflow-y:auto; padding:6px 0 24px; scrollbar-width:none; }
+  .sidebar-nav::-webkit-scrollbar { display:none; }
+  .sidebar-group { font-size:9px; font-weight:700; color:#a78bfa; letter-spacing:.1em; text-transform:uppercase; padding:14px 16px 4px; }
+  .sidebar-item {
+    display:flex; align-items:center; gap:9px;
+    padding:9px 16px; font-size:13px; font-weight:500;
     color:#64748b; background:none; border:none; cursor:pointer;
-    border-bottom:3px solid transparent; white-space:nowrap;
-    transition:all .15s; font-family:'Sarabun',sans-serif;
+    text-decoration:none; width:100%; text-align:left;
+    font-family:'Sarabun',sans-serif; transition:.12s;
+    border-right:3px solid transparent; white-space:nowrap;
   }
-  .staff-tab:hover { color:#7c3aed; background:#faf5ff; }
-  .staff-tab.active { color:#6d28d9; font-weight:700; border-bottom-color:#7c3aed; background:#faf5ff; }
-  .staff-tab-sep { width:1px; height:18px; background:#e2e8f0; margin:0 6px; flex-shrink:0; align-self:center; }
-  .staff-tab-group { font-size:9px; font-weight:700; color:#a78bfa; letter-spacing:.08em; padding:0 6px 0 12px; white-space:nowrap; text-transform:uppercase; }
+  .sidebar-item:hover { background:#faf5ff; color:#7c3aed; }
+  .sidebar-item.active { background:#ede9fe; color:#6d28d9; font-weight:700; border-right-color:#7c3aed; }
+  .sidebar-icon { width:20px; text-align:center; flex-shrink:0; font-size:14px; }
 
-  body.fs-mode .staff-navbar, body.fs-mode .staff-tabbar { display:none !important; }
-  .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:50; background:#6d28d9; color:#fff; padding:8px 12px; border-radius:999px; box-shadow:0 6px 16px rgba(0,0,0,.18); font-size:13px; border:none; cursor:pointer; }
+  /* ===== TOPBAR ===== */
+  .topbar {
+    height:56px; background:#fff; border-bottom:1.5px solid #e9d5ff;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 24px; position:fixed; top:0; left:220px; right:0; z-index:40;
+    box-shadow:0 1px 8px rgba(109,40,217,.06);
+  }
+  .topbar-left { display:flex; align-items:center; gap:12px; }
+  .topbar-menu-btn { display:none; background:none; border:none; cursor:pointer; padding:6px; font-size:22px; color:#6d28d9; line-height:1; }
+  .topbar-title { font-size:15px; font-weight:700; color:#1e1b4b; }
+  .topbar-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .topbar-user { font-size:12px; color:#64748b; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .topbar-btn { padding:6px 14px; border-radius:999px; font-size:12px; font-weight:600; border:none; cursor:pointer; font-family:'Sarabun',sans-serif; transition:.15s; text-decoration:none; display:inline-flex; align-items:center; }
+  .topbar-btn-home { background:#f5f3ff; color:#7c3aed; border:1.5px solid #e9d5ff; }
+  .topbar-btn-home:hover { background:#ede9fe; }
+  .topbar-btn-out { background:#ef4444; color:#fff; }
+  .topbar-btn-out:hover { background:#dc2626; }
+
+  /* ===== MAIN CONTENT ===== */
+  .staff-content { margin-left:220px; margin-top:56px; padding:24px; min-height:calc(100vh - 56px); }
+
+  /* ===== FULLSCREEN ===== */
+  body.fs-mode .sidebar, body.fs-mode .topbar { display:none !important; }
+  body.fs-mode .staff-content { margin-left:0 !important; margin-top:0 !important; }
+  .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:55; background:#6d28d9; color:#fff; padding:8px 12px; border-radius:999px; box-shadow:0 6px 16px rgba(0,0,0,.18); font-size:13px; border:none; cursor:pointer; }
   body.fs-mode .show-menu-btn { display:inline-flex; gap:6px; align-items:center; }
+
+  /* ===== MOBILE ===== */
+  @media (max-width:768px) {
+    .sidebar { transform:translateX(-220px); transition:transform .28s cubic-bezier(.4,0,.2,1); box-shadow:none; }
+    .sidebar.open { transform:translateX(0); box-shadow:4px 0 24px rgba(0,0,0,.15); }
+    .topbar { left:0; }
+    .staff-content { margin-left:0; }
+    .topbar-menu-btn { display:flex !important; }
+  }
   .status-ok { background:#dcfce7; color:#15803d; }
   .status-warn { background:#fef3c7; color:#a16207; }
   .status-bad { background:#fee2e2; color:#b91c1c; }
@@ -110,55 +124,98 @@
 
 <button class="show-menu-btn" onclick="toggleFullscreen(false)">▼ แสดงเมนู</button>
 
-<!-- ===== STAFF NAVBAR ===== -->
-<nav class="staff-navbar">
-  <div class="staff-navbar-inner">
-    <a href="index.html" class="staff-nav-logo">
-      <img src="logo-new.png" alt="AN sakon">
-      <div class="staff-nav-brand">
-        <div class="staff-nav-title">ระบบบุคลากร</div>
-        <div class="staff-nav-sub">วิสัญญีพยาบาล รพ.สกลนคร</div>
-      </div>
-    </a>
-    <div class="staff-nav-right">
-      <span class="staff-nav-user" id="user-info">กรุณาเข้าสู่ระบบ</span>
-      <button id="signOutBtn" onclick="signOut()" class="staff-nav-btn staff-nav-btn-out hidden">ออก</button>
-      <a href="index.html" class="staff-nav-btn staff-nav-btn-home">🏠 หน้าหลัก</a>
-    </div>
-  </div>
-</nav>
+<!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-<!-- ===== STAFF TAB BAR ===== -->
-<div class="staff-tabbar" id="staffTabbar">
-  <div class="staff-tabbar-inner">
-    <span class="staff-tab-group">ข้อมูลหน่วยงาน</span>
-    <button class="staff-tab tab-btn active" data-tab="announce" onclick="switchTab('announce')">📣 ประกาศ</button>
-    <button class="staff-tab tab-btn" data-tab="nurses" onclick="switchTab('nurses')">📒 บุคลากร</button>
-    <button class="staff-tab tab-btn" data-tab="activities" onclick="switchTab('activities')">🎯 กิจกรรม</button>
-    <button class="staff-tab tab-btn" data-tab="meetings" onclick="switchTab('meetings')">📚 ประชุมวิชาการ</button>
-    <button class="staff-tab tab-btn" data-tab="schedule" onclick="switchTab('schedule')">📅 ตารางเวร</button>
-    <button class="staff-tab tab-btn" data-tab="refers" onclick="switchTab('refers')">↪ Refer</button>
-    <button class="staff-tab tab-btn" data-tab="docs" onclick="switchTab('docs')">📄 เอกสาร</button>
-    <div class="staff-tab-sep"></div>
-    <span class="staff-tab-group">KPI & ข้อมูล</span>
-    <button class="staff-tab tab-btn" data-tab="kpi-edit" onclick="switchTab('kpi-edit')">📝 ลง KPI</button>
-    <button class="staff-tab tab-btn" data-tab="kpi-dashboard" onclick="switchTab('kpi-dashboard')">📊 Dashboard</button>
-    <button class="staff-tab tab-btn" data-tab="ops" onclick="switchTab('ops')">📈 สถิติ</button>
-    <a href="service-report.html" class="staff-tab">📅 ยอดรายวัน</a>
-    <a href="inspection-summary.html" class="staff-tab">📋 สรุปตรวจเครื่อง</a>
-    <div class="staff-tab-sep"></div>
-    <span class="staff-tab-group">เครื่องมือ</span>
-    <button class="staff-tab tab-btn" data-tab="equipment" onclick="switchTab('equipment')">🔧 เครื่องมือ</button>
-    <a href="inventory.html" class="staff-tab">📦 คลังเวชภัณฑ์</a>
-    <a href="service-log.html" class="staff-tab">📋 ลงยอด</a>
-    <a href="inspection.html" class="staff-tab">🔬 ตรวจเครื่อง</a>
-    <div class="staff-tab-sep"></div>
-    <span class="staff-tab-group">ระบบ</span>
-    <button class="staff-tab tab-btn" data-tab="staff" onclick="switchTab('staff')">👤 บัญชี Login</button>
-    <div id="adminSidebarSection" class="hidden" style="display:none">
-      <button id="auditTabBtn" class="staff-tab tab-btn" data-tab="audit" onclick="switchTab('audit')">🔍 ประวัติ</button>
-      <a href="admin.html" class="staff-tab">🛡️ ยืนยันสมาชิก</a>
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+  <a href="index.html" class="sidebar-logo">
+    <img src="logo-new.png" alt="AN sakon">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-title">ระบบบุคลากร</div>
+      <div class="sidebar-brand-sub">วิสัญญีพยาบาล รพ.สกลนคร</div>
     </div>
+  </a>
+  <nav class="sidebar-nav">
+    <div class="sidebar-group">ข้อมูลหน่วยงาน</div>
+    <button class="sidebar-item tab-btn active" data-tab="announce" onclick="switchTab('announce');closeSidebar()">
+      <span class="sidebar-icon">📣</span> ประกาศ
+    </button>
+    <button class="sidebar-item tab-btn" data-tab="nurses" onclick="switchTab('nurses');closeSidebar()">
+      <span class="sidebar-icon">📒</span> บุคลากร
+    </button>
+    <button class="sidebar-item tab-btn" data-tab="activities" onclick="switchTab('activities');closeSidebar()">
+      <span class="sidebar-icon">🎯</span> กิจกรรม
+    </button>
+    <button class="sidebar-item tab-btn" data-tab="meetings" onclick="switchTab('meetings');closeSidebar()">
+      <span class="sidebar-icon">📚</span> ประชุมวิชาการ
+    </button>
+    <button class="sidebar-item tab-btn" data-tab="schedule" onclick="switchTab('schedule');closeSidebar()">
+      <span class="sidebar-icon">📅</span> ตารางเวร
+    </button>
+    <button class="sidebar-item tab-btn" data-tab="refers" onclick="switchTab('refers');closeSidebar()">
+      <span class="sidebar-icon">↪</span> Refer
+    </button>
+    <button class="sidebar-item tab-btn" data-tab="docs" onclick="switchTab('docs');closeSidebar()">
+      <span class="sidebar-icon">📄</span> เอกสาร
+    </button>
+
+    <div class="sidebar-group">KPI & ข้อมูล</div>
+    <button class="sidebar-item tab-btn" data-tab="kpi-edit" onclick="switchTab('kpi-edit');closeSidebar()">
+      <span class="sidebar-icon">📝</span> ลง KPI
+    </button>
+    <button class="sidebar-item tab-btn" data-tab="kpi-dashboard" onclick="switchTab('kpi-dashboard');closeSidebar()">
+      <span class="sidebar-icon">📊</span> Dashboard
+    </button>
+    <button class="sidebar-item tab-btn" data-tab="ops" onclick="switchTab('ops');closeSidebar()">
+      <span class="sidebar-icon">📈</span> สถิติ
+    </button>
+    <a href="service-report.html" class="sidebar-item">
+      <span class="sidebar-icon">📅</span> ยอดรายวัน
+    </a>
+    <a href="inspection-summary.html" class="sidebar-item">
+      <span class="sidebar-icon">📋</span> สรุปตรวจเครื่อง
+    </a>
+
+    <div class="sidebar-group">เครื่องมือ</div>
+    <button class="sidebar-item tab-btn" data-tab="equipment" onclick="switchTab('equipment');closeSidebar()">
+      <span class="sidebar-icon">🔧</span> เครื่องมือ
+    </button>
+    <a href="inventory.html" class="sidebar-item">
+      <span class="sidebar-icon">📦</span> คลังเวชภัณฑ์
+    </a>
+    <a href="service-log.html" class="sidebar-item">
+      <span class="sidebar-icon">📋</span> ลงยอด
+    </a>
+    <a href="inspection.html" class="sidebar-item">
+      <span class="sidebar-icon">🔬</span> ตรวจเครื่อง
+    </a>
+
+    <div class="sidebar-group">ระบบ</div>
+    <button class="sidebar-item tab-btn" data-tab="staff" onclick="switchTab('staff');closeSidebar()">
+      <span class="sidebar-icon">👤</span> บัญชี Login
+    </button>
+    <div id="adminSidebarSection" class="hidden" style="display:none">
+      <button id="auditTabBtn" class="sidebar-item tab-btn" data-tab="audit" onclick="switchTab('audit');closeSidebar()">
+        <span class="sidebar-icon">🔍</span> ประวัติ
+      </button>
+      <a href="admin.html" class="sidebar-item">
+        <span class="sidebar-icon">🛡️</span> ยืนยันสมาชิก
+      </a>
+    </div>
+  </nav>
+</aside>
+
+<!-- ===== TOPBAR ===== -->
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="topbar-menu-btn" onclick="openSidebar()">☰</button>
+    <span class="topbar-title" id="pageTitle">📣 ประกาศ</span>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-user" id="user-info">กรุณาเข้าสู่ระบบ</span>
+    <button id="signOutBtn" onclick="signOut()" class="topbar-btn topbar-btn-out hidden">ออก</button>
+    <a href="index.html" class="topbar-btn topbar-btn-home">🏠 หน้าหลัก</a>
   </div>
 </div>
 <!-- ===================== LOGIN OVERLAY ===================== -->
@@ -195,7 +252,7 @@
   </div>
 </div>
 
-<main style="max-width:1400px;margin:0 auto;padding:24px 16px 40px;width:100%;">
+<main class="staff-content">
 
   <!-- STAFF -->
   <section data-page="staff" class="space-y-4 hidden">
@@ -808,16 +865,18 @@ const _STAFF_TAB_LABELS = {
   meetings:'📚 ประชุมวิชาการ', activities:'🎯 กิจกรรม', refers:'↪ Refer',
   docs:'📄 เอกสารวิชาการ', ops:'📊 สถิติบริการ', staff:'👤 บัญชี Login', audit:'🔍 ประวัติ'
 };
+const _TAB_TITLES = {
+  announce:'📣 ประกาศ', nurses:'📒 บุคลากร', activities:'🎯 กิจกรรม',
+  meetings:'📚 ประชุมวิชาการ', schedule:'📅 ตารางเวร', refers:'↪ Refer',
+  docs:'📄 เอกสาร', 'kpi-edit':'📝 ลง KPI', 'kpi-dashboard':'📊 Dashboard',
+  ops:'📈 สถิติ', equipment:'🔧 ทะเบียนเครื่องมือ', staff:'👤 บัญชี Login',
+  audit:'🔍 ประวัติการใช้งาน', line:'🔔 LINE Notify'
+};
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(x => {
-    const on = x.dataset.tab === tab;
-    x.classList.toggle('active', on);
-    // scroll active tab into view
-    if (on && x.classList.contains('staff-tab')) {
-      x.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
-    }
-  });
+  document.querySelectorAll('.tab-btn').forEach(x => x.classList.toggle('active', x.dataset.tab === tab));
   document.querySelectorAll('section[data-page]').forEach(s => s.classList.toggle('hidden', s.dataset.page !== tab));
+  const t = document.getElementById('pageTitle');
+  if (t) t.textContent = _TAB_TITLES[tab] || tab;
   if (tab === 'staff') renderStaff();
   if (tab === 'kpi-edit') renderKpiPicker();
   if (tab === 'kpi-dashboard') renderKpiDashboard();
@@ -833,6 +892,14 @@ function switchTab(tab) {
   if (tab === 'announce') renderAnnouncements();
   if (tab === 'nurses') renderNursesList();
   try { history.replaceState(null, '', '#'+tab); } catch(e){}
+}
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
 }
 document.querySelectorAll('.tab-btn').forEach(b => {
   b.addEventListener('click', () => switchTab(b.dataset.tab));
