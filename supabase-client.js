@@ -40,6 +40,12 @@
       const { error } = await client.auth.signOut();
       if (error) throw error;
     },
+    async resetPasswordForEmail(email) {
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://anesthesia-sakon.vercel.app/reset-password.html'
+      });
+      if (error) throw error;
+    },
     async getUser() {
       const { data } = await client.auth.getUser();
       return data?.user || null;

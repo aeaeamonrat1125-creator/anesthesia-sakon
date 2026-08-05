@@ -61,14 +61,29 @@ body { font-family:'Sarabun',system-ui,sans-serif; background:#f5f3ff; }
 <!-- LOGIN OVERLAY -->
 <div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
   <div class="card max-w-sm w-full p-6">
-    <div class="text-xl font-bold text-violet-800 mb-4">🔐 เข้าสู่ระบบ</div>
-    <div class="space-y-3 mb-4">
-      <input id="loginEmail" type="email" class="w-full px-3 py-2.5 border-1.5 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-violet-500" placeholder="อีเมล" style="border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;width:100%;box-sizing:border-box;">
-      <input id="loginPassword" type="password" class="w-full" placeholder="รหัสผ่าน" style="border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter')doSignIn()">
+    <div id="loginPanel">
+      <div class="text-xl font-bold text-violet-800 mb-4">🔐 เข้าสู่ระบบ</div>
+      <div class="space-y-3 mb-4">
+        <input id="loginEmail" type="email" class="w-full px-3 py-2.5 border-1.5 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-violet-500" placeholder="อีเมล" style="border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;width:100%;box-sizing:border-box;">
+        <input id="loginPassword" type="password" class="w-full" placeholder="รหัสผ่าน" style="border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter')doSignIn()">
+      </div>
+      <div id="loginError" class="text-xs text-rose-500 mb-3 hidden"></div>
+      <button onclick="doSignIn()" style="width:100%;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:11px;border-radius:10px;font-weight:600;font-size:15px;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;" class="mb-3">เข้าสู่ระบบ</button>
+      <div class="flex justify-between text-xs">
+        <button onclick="showForgotPw(true)" style="background:none;border:none;cursor:pointer;padding:0;font-family:'Sarabun',sans-serif;font-size:12px;" class="text-violet-600 font-semibold">ลืมรหัสผ่าน?</button>
+        <a href="index.html" class="text-slate-400">กลับหน้าหลัก</a>
+      </div>
     </div>
-    <div id="loginError" class="text-xs text-rose-500 mb-3 hidden"></div>
-    <button onclick="doSignIn()" style="width:100%;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:11px;border-radius:10px;font-weight:600;font-size:15px;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;">เข้าสู่ระบบ</button>
-    <a href="index.html" class="block text-center text-slate-400 text-xs mt-3">กลับหน้าหลัก</a>
+    <div id="forgotPanel" style="display:none">
+      <div class="text-xl font-bold text-violet-800 mb-2">ลืมรหัสผ่าน</div>
+      <div class="text-sm text-slate-500 mb-4">ใส่อีเมลที่ใช้สมัคร ระบบจะส่งลิ้งก์รีเซ็ตให้</div>
+      <div class="space-y-3 mb-4">
+        <input id="resetEmail" type="email" class="w-full" placeholder="you@example.com" style="border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;width:100%;box-sizing:border-box;" autocomplete="email">
+      </div>
+      <div id="resetMsg" class="text-xs mb-2" style="display:none"></div>
+      <button onclick="sendPasswordReset()" style="width:100%;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:11px;border-radius:10px;font-weight:600;font-size:15px;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;" class="mb-3">ส่งลิ้งก์รีเซ็ต</button>
+      <button onclick="showForgotPw(false)" style="background:none;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:12px;display:block;width:100%;text-align:center;color:#94a3b8;">← กลับเข้าสู่ระบบ</button>
+    </div>
   </div>
 </div>
 
@@ -184,6 +199,25 @@ async function doSignIn() {
   errEl.classList.add('hidden');
   try { await sbAuth.signIn(email,pw); location.reload(); }
   catch(e) { errEl.textContent=e.message||'ล็อกอินไม่สำเร็จ'; errEl.classList.remove('hidden'); }
+}
+function showForgotPw(show) {
+  document.getElementById('loginPanel').style.display = show ? 'none' : '';
+  document.getElementById('forgotPanel').style.display = show ? '' : 'none';
+  if (show) setTimeout(() => document.getElementById('resetEmail').focus(), 50);
+}
+async function sendPasswordReset() {
+  const email = document.getElementById('resetEmail').value.trim();
+  const msg = document.getElementById('resetMsg');
+  msg.style.display = '';
+  if (!email) { msg.textContent = 'กรุณาใส่อีเมล'; msg.style.color = '#ef4444'; return; }
+  try {
+    await sbAuth.resetPasswordForEmail(email);
+    msg.textContent = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว กรุณาเช็คกล่องจดหมาย';
+    msg.style.color = '#16a34a';
+  } catch(e) {
+    msg.textContent = e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    msg.style.color = '#ef4444';
+  }
 }
 
 // ── Paginated fetch (bypass 1000-row Supabase default limit) ──

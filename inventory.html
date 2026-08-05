@@ -119,17 +119,30 @@ select.input { cursor:pointer; }
 <!-- ====== LOGIN OVERLAY ====== -->
 <div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
   <div class="card max-w-sm w-full p-6">
-    <div class="text-xl font-bold text-violet-800 mb-1">🔐 เข้าสู่ระบบ</div>
-    <div class="text-sm text-slate-500 mb-4">ระบบคลังเวชภัณฑ์ — สำหรับเจ้าหน้าที่เท่านั้น</div>
-    <div class="space-y-3 mb-4">
-      <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
-      <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+    <div id="loginPanel">
+      <div class="text-xl font-bold text-violet-800 mb-1">🔐 เข้าสู่ระบบ</div>
+      <div class="text-sm text-slate-500 mb-4">ระบบคลังเวชภัณฑ์ — สำหรับเจ้าหน้าที่เท่านั้น</div>
+      <div class="space-y-3 mb-4">
+        <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
+        <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+      </div>
+      <div id="loginError" class="text-xs text-rose-500 mb-3 hidden"></div>
+      <button onclick="doSignIn()" class="btn btn-primary w-full text-base mb-2">เข้าสู่ระบบ</button>
+      <div class="flex justify-between text-xs">
+        <button onclick="showForgotPw(true)" style="background:none;border:none;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;" class="text-violet-600 font-semibold">ลืมรหัสผ่าน?</button>
+        <a href="signup.html" class="text-violet-600">สมัครสมาชิก</a>
+        <a href="index.html" class="text-slate-400">กลับหน้าหลัก</a>
+      </div>
     </div>
-    <div id="loginError" class="text-xs text-rose-500 mb-3 hidden"></div>
-    <button onclick="doSignIn()" class="btn btn-primary w-full text-base">เข้าสู่ระบบ</button>
-    <div class="flex justify-between mt-3 text-xs">
-      <a href="signup.html" class="text-violet-600">สมัครสมาชิก</a>
-      <a href="index.html" class="text-slate-400">กลับหน้าหลัก</a>
+    <div id="forgotPanel" style="display:none">
+      <div class="text-xl font-bold text-violet-800 mb-1">ลืมรหัสผ่าน</div>
+      <div class="text-sm text-slate-500 mb-4">ใส่อีเมลที่ใช้สมัคร ระบบจะส่งลิ้งก์รีเซ็ตให้</div>
+      <div class="space-y-3 mb-4">
+        <input id="resetEmail" type="email" class="input" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div id="resetMsg" class="text-xs mb-2" style="display:none"></div>
+      <button onclick="sendPasswordReset()" class="btn btn-primary w-full text-base mb-2">ส่งลิ้งก์รีเซ็ต</button>
+      <button onclick="showForgotPw(false)" style="background:none;border:none;cursor:pointer;font-family:inherit;" class="block w-full text-center text-xs text-slate-500">← กลับเข้าสู่ระบบ</button>
     </div>
   </div>
 </div>
@@ -609,6 +622,25 @@ async function doSignIn() {
 }
 document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key==='Enter') doSignIn(); });
 async function doSignOut() { await sbAuth.signOut(); location.reload(); }
+function showForgotPw(show) {
+  document.getElementById('loginPanel').style.display = show ? 'none' : '';
+  document.getElementById('forgotPanel').style.display = show ? '' : 'none';
+  if (show) setTimeout(() => document.getElementById('resetEmail').focus(), 50);
+}
+async function sendPasswordReset() {
+  const email = document.getElementById('resetEmail').value.trim();
+  const msg = document.getElementById('resetMsg');
+  msg.style.display = '';
+  if (!email) { msg.textContent = 'กรุณาใส่อีเมล'; msg.style.color = '#ef4444'; return; }
+  try {
+    await sbAuth.resetPasswordForEmail(email);
+    msg.textContent = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว กรุณาเช็คกล่องจดหมาย';
+    msg.style.color = '#16a34a';
+  } catch(e) {
+    msg.textContent = e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    msg.style.color = '#ef4444';
+  }
+}
 
 // ── Tabs ──────────────────────────────────────────────────────
 function switchTab(tab) {

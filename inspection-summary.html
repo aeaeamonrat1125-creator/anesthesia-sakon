@@ -53,15 +53,30 @@
 
 <div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/80 z-40 items-center justify-center p-4">
   <div class="card p-6 max-w-sm w-full">
-    <div class="text-xl font-bold mb-1">เข้าสู่ระบบ</div>
-    <div class="text-sm text-slate-400 mb-4">เพื่อดูและแก้ไขข้อมูลการตรวจ</div>
-    <div class="space-y-3 mb-3">
-      <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
-      <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+    <div id="loginPanel">
+      <div class="text-xl font-bold mb-1">เข้าสู่ระบบ</div>
+      <div class="text-sm text-slate-400 mb-4">เพื่อดูและแก้ไขข้อมูลการตรวจ</div>
+      <div class="space-y-3 mb-3">
+        <input id="loginEmail" type="email" class="input" placeholder="อีเมล" autocomplete="username">
+        <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+      </div>
+      <div id="loginError" class="text-xs text-rose-400 mb-2 hidden"></div>
+      <button onclick="signIn()" class="btn btn-primary w-full mb-2">เข้าสู่ระบบ</button>
+      <div class="text-center text-xs text-slate-400">
+        <button onclick="showForgotPw(true)" style="background:none;border:none;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;" class="text-violet-400 font-semibold">ลืมรหัสผ่าน?</button> ·
+        <a href="index.html" class="text-blue-400">กลับหน้าหลัก</a>
+      </div>
     </div>
-    <div id="loginError" class="text-xs text-rose-400 mb-2 hidden"></div>
-    <button onclick="signIn()" class="btn btn-primary w-full mb-2">เข้าสู่ระบบ</button>
-    <a href="index.html" class="block text-center text-xs text-blue-400">กลับหน้าหลัก</a>
+    <div id="forgotPanel" style="display:none">
+      <div class="text-xl font-bold mb-1">ลืมรหัสผ่าน</div>
+      <div class="text-sm text-slate-400 mb-4">ใส่อีเมลที่ใช้สมัคร ระบบจะส่งลิ้งก์รีเซ็ตให้</div>
+      <div class="space-y-3 mb-3">
+        <input id="resetEmail" type="email" class="input" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div id="resetMsg" class="text-xs mb-2" style="display:none"></div>
+      <button onclick="sendPasswordReset()" class="btn btn-primary w-full mb-2">ส่งลิ้งก์รีเซ็ต</button>
+      <button onclick="showForgotPw(false)" style="background:none;border:none;cursor:pointer;font-family:inherit;" class="block w-full text-center text-xs text-slate-400">← กลับเข้าสู่ระบบ</button>
+    </div>
   </div>
 </div>
 
@@ -187,6 +202,25 @@ async function signIn() {
   catch(e) { err.textContent = e.message; err.classList.remove('hidden'); }
 }
 async function signOut() { await sbAuth.signOut(); location.reload(); }
+function showForgotPw(show) {
+  document.getElementById('loginPanel').style.display = show ? 'none' : '';
+  document.getElementById('forgotPanel').style.display = show ? '' : 'none';
+  if (show) setTimeout(() => document.getElementById('resetEmail').focus(), 50);
+}
+async function sendPasswordReset() {
+  const email = document.getElementById('resetEmail').value.trim();
+  const msg = document.getElementById('resetMsg');
+  msg.style.display = '';
+  if (!email) { msg.textContent = 'กรุณาใส่อีเมล'; msg.style.color = '#ef4444'; return; }
+  try {
+    await sbAuth.resetPasswordForEmail(email);
+    msg.textContent = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว กรุณาเช็คกล่องจดหมาย';
+    msg.style.color = '#16a34a';
+  } catch(e) {
+    msg.textContent = e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    msg.style.color = '#ef4444';
+  }
+}
 
 let _allInsp = [];
 
