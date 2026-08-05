@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; }
 body { font-family:'Sarabun',system-ui,sans-serif; margin:0; background:#fff; color:#1e1b4b; scroll-behavior:smooth; }
@@ -478,33 +479,40 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
 
     <!-- Dashboard ผลสำรวจ -->
     <div style="background:#fff;border-radius:20px;padding:28px;margin-bottom:28px;border:1.5px solid #e9d5ff;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
         <div style="font-size:15px;font-weight:700;color:#4c1d95;">📊 ผลสำรวจความพึงพอใจ</div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="font-size:12px;color:#94a3b8;" id="sat-year-label">ปีงบประมาณล่าสุด</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:11px;color:#94a3b8;" id="sat-year-label">กำลังโหลด...</span>
           <a href="satisfaction-results.html" style="font-size:12px;color:#7c3aed;font-weight:700;text-decoration:none;background:#f3e8ff;padding:4px 12px;border-radius:999px;">ดูรายงานเต็ม →</a>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
-        <div style="text-align:center;background:#f5f3ff;border-radius:14px;padding:18px;">
-          <div style="font-size:32px;font-weight:800;color:#6d28d9;" id="sat-internal-pct">—</div>
-          <div style="font-size:11px;color:#7c3aed;font-weight:600;margin-top:4px;">ความพึงพอใจหน่วยงาน</div>
+
+      <!-- KPI 3 ช่อง -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">
+        <div style="text-align:center;background:#f5f3ff;border-radius:14px;padding:16px;">
+          <div style="font-size:28px;font-weight:800;color:#6d28d9;" id="sat-internal-pct">—</div>
+          <div style="font-size:11px;color:#7c3aed;font-weight:600;margin-top:3px;">หน่วยงาน</div>
           <div style="font-size:10px;color:#94a3b8;">Internal</div>
         </div>
-        <div style="text-align:center;background:#f0f9ff;border-radius:14px;padding:18px;">
-          <div style="font-size:32px;font-weight:800;color:#0369a1;" id="sat-patient-pct">—</div>
-          <div style="font-size:11px;color:#0369a1;font-weight:600;margin-top:4px;">ความพึงพอใจผู้ป่วย</div>
+        <div style="text-align:center;background:#f0f9ff;border-radius:14px;padding:16px;">
+          <div style="font-size:28px;font-weight:800;color:#0369a1;" id="sat-patient-pct">—</div>
+          <div style="font-size:11px;color:#0369a1;font-weight:600;margin-top:3px;">ผู้ป่วย</div>
           <div style="font-size:10px;color:#94a3b8;">Patient</div>
         </div>
-        <div style="text-align:center;background:#f0fdf4;border-radius:14px;padding:18px;">
-          <div style="font-size:32px;font-weight:800;color:#15803d;">≥ 80%</div>
-          <div style="font-size:11px;color:#15803d;font-weight:600;margin-top:4px;">เป้าหมาย</div>
+        <div style="text-align:center;background:#f0fdf4;border-radius:14px;padding:16px;">
+          <div style="font-size:28px;font-weight:800;color:#15803d;">≥ 80%</div>
+          <div style="font-size:11px;color:#15803d;font-weight:600;margin-top:3px;">เป้าหมาย</div>
           <div style="font-size:10px;color:#94a3b8;">Target</div>
         </div>
       </div>
+
+      <!-- Mini chart แนวโน้มรายปีงบ -->
+      <div style="position:relative;height:180px;margin-bottom:16px;">
+        <canvas id="satTrendChart"></canvas>
+      </div>
       <div style="text-align:center;">
-        <a href="satisfaction-results.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:10px 24px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">
-          📈 ดูกราฟและรายงานผลสำรวจ
+        <a href="satisfaction-results.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:9px 22px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;">
+          📈 ดูรายละเอียด + ความคิดเห็น
         </a>
       </div>
     </div>
@@ -895,36 +903,77 @@ async function loadStaffStats() {
   } catch(e) {}
 }
 
-// ── SATISFACTION STATS ────────────────────────────────────
+// ── SATISFACTION STATS + CHART ────────────────────────────
+let _satChartInst = null;
 async function loadSatStats() {
   try {
-    const { data } = await sb.from('ops_data')
-      .select('fiscal_year,satisfaction')
-      .not('satisfaction','is',null)
-      .order('fiscal_year',{ascending:false})
-      .limit(1);
-    if (data?.[0]) {
-      const s = data[0];
-      document.getElementById('sat-year-label').textContent = `ปีงบประมาณ ${s.fiscal_year}`;
-      const pct = parseFloat(s.satisfaction).toFixed(1);
-      document.getElementById('sat-internal-pct').textContent = pct + '%';
-      document.getElementById('sat-patient-pct').textContent = pct + '%';
-    }
-  } catch(e) {
-    // ไม่มีตาราง ops_data — ใช้ค่าจาก KPI
-    try {
-      const { data: kpi } = await sb.from('kpi_data')
-        .select('fiscal_year,actual_value')
-        .eq('kpi_code','SAT')
-        .order('fiscal_year',{ascending:false})
-        .limit(1);
-      if (kpi?.[0]) {
-        const pct = parseFloat(kpi[0].actual_value).toFixed(1);
-        document.getElementById('sat-internal-pct').textContent = pct + '%';
-        document.getElementById('sat-year-label').textContent = `ปีงบประมาณ ${kpi[0].fiscal_year}`;
+    const { data } = await sb.from('sat_responses')
+      .select('fiscal_year,form_type,sat_pct')
+      .gte('fiscal_year', 2560).lte('fiscal_year', 2580)
+      .gt('sat_pct', 0);
+    if (!data?.length) return;
+
+    // จัดกลุ่มตามปีงบ + ประเภท
+    const byFY = {};
+    data.forEach(r => {
+      if (!byFY[r.fiscal_year]) byFY[r.fiscal_year] = { staff:[], patient:[] };
+      byFY[r.fiscal_year][r.form_type].push(r.sat_pct);
+    });
+    const fyList = Object.keys(byFY).map(Number).sort((a,b)=>a-b);
+    const avg = arr => arr.length ? +(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : null;
+
+    // KPI จากปีล่าสุด
+    const latestFY = fyList[fyList.length-1];
+    const latest = byFY[latestFY];
+    const staffPct   = avg(latest.staff);
+    const patientPct = avg(latest.patient);
+    document.getElementById('sat-year-label').textContent = `ปีงบประมาณ ${latestFY}`;
+    document.getElementById('sat-internal-pct').textContent = staffPct   ? staffPct+'%'   : '—';
+    document.getElementById('sat-patient-pct').textContent  = patientPct ? patientPct+'%' : '—';
+
+    // Mini bar chart แนวโน้มรายปี
+    const staffData   = fyList.map(fy => avg(byFY[fy].staff));
+    const patientData = fyList.map(fy => avg(byFY[fy].patient));
+    const labels      = fyList.map(fy => 'ปีงบ '+fy);
+    const ctx = document.getElementById('satTrendChart');
+    if (!ctx) return;
+    if (_satChartInst) _satChartInst.destroy();
+    _satChartInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label:'หน่วยงาน', data:staffData,   backgroundColor:'#a78bfa', borderRadius:6 },
+          { label:'ผู้ป่วย',  data:patientData, backgroundColor:'#38bdf8', borderRadius:6 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: {
+          legend:{ position:'top', labels:{ font:{family:'Sarabun',size:11}, boxWidth:12 } },
+          tooltip:{ callbacks:{ label: ctx => `${ctx.dataset.label}: ${ctx.raw}%` } }
+        },
+        scales: {
+          y: { min:70, max:100, ticks:{ callback: v=>v+'%', stepSize:5, font:{size:10} }, grid:{color:'#f3f4f6'} },
+          x: { grid:{ display:false }, ticks:{ font:{size:10} } }
+        }
       }
-    } catch(e2) {}
-  }
+    });
+
+    // เส้น target 80%
+    Chart.register({
+      id:'targetLine',
+      afterDraw(chart) {
+        const {ctx:c,chartArea:{left,right,top},scales:{y}} = chart;
+        const y80 = y.getPixelForValue(80);
+        c.save();
+        c.strokeStyle='#ef4444'; c.lineWidth=1.5; c.setLineDash([4,4]);
+        c.beginPath(); c.moveTo(left,y80); c.lineTo(right,y80); c.stroke();
+        c.fillStyle='#ef4444'; c.font='10px Sarabun'; c.fillText('เป้า 80%',right-52,y80-4);
+        c.restore();
+      }
+    });
+  } catch(e) { console.warn('loadSatStats',e); }
 }
 
 // ── ACTIVITIES ────────────────────────────────────────────
