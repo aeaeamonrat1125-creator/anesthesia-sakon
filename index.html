@@ -237,6 +237,7 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
 .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
 @media(max-width:900px) { .grid-4 { grid-template-columns:repeat(2,1fr); } .grid-3 { grid-template-columns:repeat(2,1fr); } }
 @media(max-width:600px) { .grid-4,.grid-3,.grid-2 { grid-template-columns:1fr; } }
+@media(max-width:768px) { .more-grid { grid-template-columns:1fr !important; gap:24px !important; } }
 </style>
 </head>
 <body>
@@ -599,7 +600,7 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
 <!-- ══════════════ MORE (Activities + Learning Center + Downloads) ══════════════ -->
 <section id="more" class="section section-alt">
   <div class="section-inner">
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:40px;align-items:start;">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:40px;align-items:start;" class="more-grid">
 
       <!-- Activities (read-only) -->
       <div>
