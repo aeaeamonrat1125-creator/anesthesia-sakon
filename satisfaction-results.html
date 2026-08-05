@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ผลสำรวจความพึงพอใจ — วิสัญญีพยาบาล รพ.สกลนคร</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Sarabun',sans-serif;background:#f5f3ff;min-height:100vh;color:#1e1b4b;}
+    .navbar{background:#fff;border-bottom:1px solid #e9d5ff;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+    .nav-logo{font-weight:800;font-size:18px;color:#6d28d9;text-decoration:none;}
+    .nav-back{font-size:13px;color:#7c3aed;text-decoration:none;display:flex;align-items:center;gap:6px;font-weight:600;}
+    .container{max-width:900px;margin:0 auto;padding:32px 16px;}
+    .card{background:#fff;border-radius:20px;padding:24px;border:1.5px solid #e9d5ff;box-shadow:0 2px 12px rgba(109,40,217,.06);margin-bottom:24px;}
+    .section-label{font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:.1em;margin-bottom:6px;}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+    .kpi-box{text-align:center;border-radius:14px;padding:16px 12px;}
+    .kpi-val{font-size:28px;font-weight:800;margin-bottom:4px;}
+    .kpi-label{font-size:11px;font-weight:600;}
+    .kpi-sub{font-size:10px;color:#94a3b8;margin-top:2px;}
+    .tab-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+    .tab-btn{padding:7px 18px;border-radius:999px;font-size:13px;font-weight:700;border:2px solid #e9d5ff;background:#fff;color:#7c3aed;cursor:pointer;font-family:'Sarabun',sans-serif;transition:.15s;}
+    .tab-btn.active{background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;border-color:transparent;}
+    .chart-wrap{position:relative;height:260px;}
+    .comment-item{padding:12px 16px;background:#fafafa;border-radius:12px;border-left:3px solid #a855f7;margin-bottom:10px;}
+    .comment-meta{font-size:11px;color:#94a3b8;margin-bottom:4px;}
+    .comment-text{font-size:13px;color:#1e1b4b;line-height:1.6;}
+    .empty-msg{text-align:center;padding:40px;color:#94a3b8;font-size:14px;}
+    .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;}
+    .badge-ok{background:#d1fae5;color:#065f46;}
+    .badge-warn{background:#fee2e2;color:#991b1b;}
+    @media(max-width:600px){.kpi-val{font-size:22px;}}
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html#satisfaction" class="nav-back">← กลับหน้าหลัก</a>
+  <div style="font-weight:800;font-size:16px;color:#6d28d9;">📊 ผลสำรวจความพึงพอใจ</div>
+  <div style="font-size:12px;color:#94a3b8;">หน่วยงานวิสัญญีพยาบาล รพ.สกลนคร</div>
+</nav>
+
+<div class="container">
+
+  <!-- Loading -->
+  <div id="loadingMsg" class="card" style="text-align:center;padding:48px;">
+    <div style="font-size:32px;margin-bottom:12px;">📊</div>
+    <div style="font-size:15px;color:#94a3b8;">กำลังโหลดข้อมูล...</div>
+  </div>
+
+  <!-- No data -->
+  <div id="noDataMsg" class="card" style="display:none;text-align:center;padding:48px;">
+    <div style="font-size:48px;margin-bottom:12px;">📋</div>
+    <div style="font-size:16px;font-weight:700;color:#4c1d95;margin-bottom:8px;">ยังไม่มีข้อมูลผลสำรวจ</div>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:20px;">ข้อมูลจะแสดงเมื่อมีผู้กรอกแบบประเมินและเจ้าหน้าที่บันทึกผลเรียบร้อยแล้ว</div>
+    <a href="index.html#satisfaction" style="color:#7c3aed;font-weight:700;font-size:14px;">← กลับหน้าหลัก</a>
+  </div>
+
+  <!-- Main content -->
+  <div id="mainContent" style="display:none;">
+
+    <!-- KPI header -->
+    <div class="card">
+      <div class="section-label">SATISFACTION SURVEY RESULTS</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <div style="font-size:20px;font-weight:800;">ผลสำรวจความพึงพอใจ</div>
+        <div id="yearBadge" style="font-size:12px;color:#94a3b8;background:#f5f3ff;padding:4px 12px;border-radius:999px;"></div>
+      </div>
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <!-- Tab switch: หน่วยงาน / ผู้ป่วย -->
+      <div class="tab-row" id="typeTabs"></div>
+    </div>
+
+    <!-- กราฟคะแนนรายข้อ -->
+    <div class="card">
+      <div class="section-label">QUESTION SCORES</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:16px;">📊 คะแนนเฉลี่ยรายข้อ (เต็ม 5)</div>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+
+    <!-- กราฟการกระจาย -->
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;">
+        <div>
+          <div class="section-label">DISTRIBUTION</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:16px;">🎯 การกระจายตัวของคะแนน</div>
+          <div id="distList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+        <div style="max-width:200px;margin:0 auto;">
+          <canvas id="pieChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ความคิดเห็น -->
+    <div class="card">
+      <div class="section-label">COMMENTS</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:16px;">💬 ความคิดเห็น / ข้อเสนอแนะ</div>
+      <div id="commentsList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const Q_LABELS = [
+  'เจ้าหน้าที่พูดจาสุภาพ','เจ้าหน้าที่เอาใจใส่','ความเชี่ยวชาญ',
+  'ความสะอาดสถานที่','ความเพียงพออุปกรณ์','จำนวนบุคลากรเพียงพอ',
+  'การจัดสถานที่','ป้ายบอกทาง','ประสานงานรวดเร็ว','ให้บริการรวดเร็ว'
+];
+const DIST_LABELS = ['ควรปรับปรุง','พอใช้','ปานกลาง','ดี','ดีเยี่ยม'];
+const DIST_COLORS = ['#ef4444','#f97316','#f59e0b','#3b82f6','#10b981'];
+
+let _allData = [], _type = 'all';
+let barChartInst, pieChartInst;
+
+function calcStats(rows) {
+  if (!rows.length) return null;
+  const SCORE_COLS = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10'];
+  const qAvg = SCORE_COLS.map(c => {
+    const vals = rows.map(r => parseFloat(r[c]||0)).filter(v => v > 0);
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  });
+  let total=0, cnt=0;
+  SCORE_COLS.forEach(c => rows.forEach(r => { const v=parseFloat(r[c]||0); if(v>0){total+=v;cnt++;} }));
+  const avg = cnt ? total/cnt : 0;
+  const pct = (avg/5)*100;
+  const dist = [0,0,0,0,0];
+  SCORE_COLS.forEach(c => rows.forEach(r => { const v=parseInt(r[c]||0); if(v>=1&&v<=5) dist[v-1]++; }));
+  return { n: rows.length, qAvg, avg, pct, dist };
+}
+
+function renderKpi(s) {
+  const pass = s.pct >= 80;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-box" style="background:#f5f3ff;">
+      <div class="kpi-val" style="color:#6d28d9;">${s.pct.toFixed(1)}%</div>
+      <div class="kpi-label" style="color:#7c3aed;">ความพึงพอใจรวม</div>
+      <div class="kpi-sub"><span class="badge ${pass?'badge-ok':'badge-warn'}">${pass?'✅ บรรลุเป้า':'❌ ต่ำกว่าเป้า'}</span></div>
+    </div>
+    <div class="kpi-box" style="background:#f0f9ff;">
+      <div class="kpi-val" style="color:#0369a1;">${s.avg.toFixed(2)}</div>
+      <div class="kpi-label" style="color:#0369a1;">คะแนนเฉลี่ย (/5)</div>
+      <div class="kpi-sub">Overall Score</div>
+    </div>
+    <div class="kpi-box" style="background:#f0fdf4;">
+      <div class="kpi-val" style="color:#15803d;">${s.n}</div>
+      <div class="kpi-label" style="color:#15803d;">ผู้ตอบแบบสอบถาม</div>
+      <div class="kpi-sub">Respondents</div>
+    </div>
+    <div class="kpi-box" style="background:#fff7ed;">
+      <div class="kpi-val" style="color:#c2410c;">≥ 80%</div>
+      <div class="kpi-label" style="color:#c2410c;">เป้าหมาย</div>
+      <div class="kpi-sub">Target</div>
+    </div>`;
+}
+
+function renderBar(s) {
+  if (barChartInst) barChartInst.destroy();
+  const colors = s.qAvg.map(v => v>=4?'#10b981':v>=3?'#3b82f6':'#f97316');
+  barChartInst = new Chart(document.getElementById('barChart'), {
+    type:'bar',
+    data:{
+      labels: Q_LABELS.map((l,i)=>`ข้อ${i+1}`),
+      datasets:[{ label:'คะแนนเฉลี่ย', data: s.qAvg.map(v=>+v.toFixed(2)), backgroundColor: colors, borderRadius:6 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>`${ctx.raw} / 5.00  (${Q_LABELS[ctx.dataIndex]})`}}},
+      scales:{ y:{min:0,max:5,ticks:{stepSize:1},grid:{color:'#f3f4f6'}}, x:{grid:{display:false}} }
+    }
+  });
+}
+
+function renderPie(s) {
+  if (pieChartInst) pieChartInst.destroy();
+  pieChartInst = new Chart(document.getElementById('pieChart'), {
+    type:'doughnut',
+    data:{ labels: DIST_LABELS, datasets:[{ data: s.dist, backgroundColor: DIST_COLORS, borderWidth:2, borderColor:'#fff' }] },
+    options:{ responsive:true, plugins:{ legend:{position:'bottom', labels:{font:{family:'Sarabun',size:11}}} } }
+  });
+  const total = s.dist.reduce((a,b)=>a+b,0);
+  document.getElementById('distList').innerHTML = DIST_LABELS.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:${DIST_COLORS[i]};flex-shrink:0;"></div>
+      <div style="flex:1;font-size:13px;">${l}</div>
+      <div style="font-size:13px;font-weight:700;color:#1e1b4b;">${s.dist[i]}</div>
+      <div style="font-size:11px;color:#94a3b8;">${total?((s.dist[i]/total)*100).toFixed(0)+'%':'-'}</div>
+    </div>`).join('');
+}
+
+function renderComments(rows) {
+  const comments = rows.filter(r => r.comment && r.comment.trim());
+  const el = document.getElementById('commentsList');
+  if (!comments.length) { el.innerHTML = '<div class="empty-msg">ไม่มีความคิดเห็นในช่วงนี้</div>'; return; }
+  el.innerHTML = comments.slice(0,20).map(r => `
+    <div class="comment-item">
+      <div class="comment-meta">${r.type||'ไม่ระบุประเภท'} · ${r.created_at ? new Date(r.created_at).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}) : ''}</div>
+      <div class="comment-text">${r.comment}</div>
+    </div>`).join('');
+}
+
+function renderAll() {
+  const rows = _type === 'all' ? _allData : _allData.filter(r => (r.type||'').includes(_type));
+  const s = calcStats(rows);
+  if (!s) return;
+  renderKpi(s);
+  renderBar(s);
+  renderPie(s);
+  renderComments(rows);
+}
+
+async function loadData() {
+  try {
+    // ลองโหลดจาก Supabase ตาราง sat_responses
+    const { data, error } = await sb.from('sat_responses')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    if (error || !data?.length) {
+      // fallback: โหลดจาก ops_data สำหรับ % รวม
+      await loadFallbackStats();
+      return;
+    }
+
+    _allData = data;
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('mainContent').style.display = '';
+
+    // หาปีงบประมาณ
+    const latestDate = data[0]?.created_at ? new Date(data[0].created_at) : new Date();
+    const m = latestDate.getMonth()+1;
+    const fy = m >= 10 ? latestDate.getFullYear()+543 : latestDate.getFullYear()+542;
+    document.getElementById('yearBadge').textContent = `ปีงบประมาณ ${fy} · ข้อมูล ${data.length} รายการ`;
+
+    // สร้าง type tabs
+    const types = [...new Set(data.map(r => r.type||'').filter(Boolean))];
+    const tabsEl = document.getElementById('typeTabs');
+    tabsEl.innerHTML = `<button class="tab-btn active" onclick="switchType('all',this)">ทั้งหมด (${data.length})</button>` +
+      types.map(t => `<button class="tab-btn" onclick="switchType('${t}',this)">${t} (${data.filter(r=>r.type===t).length})</button>`).join('');
+
+    renderAll();
+  } catch(e) {
+    await loadFallbackStats();
+  }
+}
+
+async function loadFallbackStats() {
+  // ดึงจาก ops_data หรือ kpi_data ถ้าไม่มี sat_responses
+  try {
+    const { data } = await sb.from('ops_data')
+      .select('fiscal_year,satisfaction,sat_patient,responses')
+      .not('satisfaction','is',null)
+      .order('fiscal_year',{ascending:false})
+      .limit(1);
+    if (data?.[0]) {
+      const d = data[0];
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('mainContent').style.display = '';
+      document.getElementById('yearBadge').textContent = `ปีงบประมาณ ${d.fiscal_year}`;
+      document.getElementById('typeTabs').style.display = 'none';
+      document.getElementById('kpiGrid').innerHTML = `
+        <div class="kpi-box" style="background:#f5f3ff;">
+          <div class="kpi-val" style="color:#6d28d9;">${parseFloat(d.satisfaction||0).toFixed(1)}%</div>
+          <div class="kpi-label" style="color:#7c3aed;">ความพึงพอใจหน่วยงาน</div>
+        </div>
+        <div class="kpi-box" style="background:#f0f9ff;">
+          <div class="kpi-val" style="color:#0369a1;">${parseFloat(d.sat_patient||d.satisfaction||0).toFixed(1)}%</div>
+          <div class="kpi-label" style="color:#0369a1;">ความพึงพอใจผู้ป่วย</div>
+        </div>
+        <div class="kpi-box" style="background:#f0fdf4;">
+          <div class="kpi-val" style="color:#15803d;">≥ 80%</div>
+          <div class="kpi-label" style="color:#15803d;">เป้าหมาย</div>
+        </div>`;
+      document.getElementById('commentsList').innerHTML = '<div class="empty-msg">ข้อมูลรายละเอียดยังไม่พร้อม — กรุณาติดต่อเจ้าหน้าที่</div>';
+      // ซ่อนส่วนกราฟที่ไม่มีข้อมูลรายข้อ
+      document.querySelectorAll('.card').forEach((c,i) => { if(i>1) c.style.display='none'; });
+      return;
+    }
+  } catch(e2) {}
+  document.getElementById('loadingMsg').style.display = 'none';
+  document.getElementById('noDataMsg').style.display = '';
+}
+
+function switchType(type, btn) {
+  _type = type;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+
+loadData();
+</script>
+</body>
+</html>

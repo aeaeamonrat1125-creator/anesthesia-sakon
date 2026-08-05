@@ -480,9 +480,12 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
     <div style="background:#fff;border-radius:20px;padding:28px;margin-bottom:28px;border:1.5px solid #e9d5ff;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
         <div style="font-size:15px;font-weight:700;color:#4c1d95;">📊 ผลสำรวจความพึงพอใจ</div>
-        <div style="font-size:12px;color:#94a3b8;" id="sat-year-label">ปีงบประมาณล่าสุด</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-size:12px;color:#94a3b8;" id="sat-year-label">ปีงบประมาณล่าสุด</div>
+          <a href="satisfaction-results.html" style="font-size:12px;color:#7c3aed;font-weight:700;text-decoration:none;background:#f3e8ff;padding:4px 12px;border-radius:999px;">ดูรายงานเต็ม →</a>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
         <div style="text-align:center;background:#f5f3ff;border-radius:14px;padding:18px;">
           <div style="font-size:32px;font-weight:800;color:#6d28d9;" id="sat-internal-pct">—</div>
           <div style="font-size:11px;color:#7c3aed;font-weight:600;margin-top:4px;">ความพึงพอใจหน่วยงาน</div>
@@ -498,6 +501,11 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
           <div style="font-size:11px;color:#15803d;font-weight:600;margin-top:4px;">เป้าหมาย</div>
           <div style="font-size:10px;color:#94a3b8;">Target</div>
         </div>
+      </div>
+      <div style="text-align:center;">
+        <a href="satisfaction-results.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;padding:10px 24px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">
+          📈 ดูกราฟและรายงานผลสำรวจ
+        </a>
       </div>
     </div>
 
@@ -597,59 +605,13 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
         <!-- ศูนย์เรียนรู้ทางการพยาบาล -->
         <div style="background:#fff;border-radius:16px;padding:20px;border:1.5px solid #e9d5ff;">
           <div style="font-size:16px;font-weight:700;color:#1e1b4b;margin-bottom:8px;">🎓 ศูนย์เรียนรู้ทางการพยาบาล</div>
-          <div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:14px;">แหล่งรวมองค์ความรู้ คู่มือ แนวปฏิบัติ และสื่อการเรียนรู้ทางการพยาบาลวิสัญญี</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;align-items:center;gap:10px;background:#f5f3ff;border-radius:10px;padding:10px 12px;">
-              <span style="font-size:18px;">📋</span>
-              <div>
-                <div style="font-size:12px;font-weight:700;color:#4c1d95;">Clinical Practice Guidelines</div>
-                <div style="font-size:11px;color:#94a3b8;">แนวปฏิบัติทางคลินิก</div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;background:#f0fdf4;border-radius:10px;padding:10px 12px;">
-              <span style="font-size:18px;">🔬</span>
-              <div>
-                <div style="font-size:12px;font-weight:700;color:#065f46;">งานวิจัยและนวัตกรรม</div>
-                <div style="font-size:11px;color:#94a3b8;">CQI · R2R · Innovation</div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;background:#fff7ed;border-radius:10px;padding:10px 12px;">
-              <span style="font-size:18px;">🎥</span>
-              <div>
-                <div style="font-size:12px;font-weight:700;color:#9a3412;">สื่อการเรียนรู้</div>
-                <div style="font-size:11px;color:#94a3b8;">วิดีโอ · สไลด์ · บทความ</div>
-              </div>
-            </div>
-          </div>
+          <div style="font-size:13px;color:#94a3b8;text-align:center;padding:24px 0;">เร็วๆ นี้</div>
         </div>
 
         <!-- เอกสาร Download -->
         <div style="background:#fff;border-radius:16px;padding:20px;border:1.5px solid #e9d5ff;">
-          <div style="font-size:16px;font-weight:700;color:#1e1b4b;margin-bottom:14px;">📥 เอกสาร Download</div>
-          <div style="display:flex;flex-direction:column;gap:8px;" id="docDownloadList">
-            <a href="#" onclick="return false;" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;text-decoration:none;transition:.15s;" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor='#e2e8f0'">
-              <span style="font-size:20px;flex-shrink:0;">📄</span>
-              <div style="min-width:0;">
-                <div style="font-size:12px;font-weight:700;color:#1e1b4b;">คู่มือการให้บริการวิสัญญี</div>
-                <div style="font-size:10px;color:#7c3aed;font-weight:600;">ดาวน์โหลด PDF →</div>
-              </div>
-            </a>
-            <a href="#" onclick="return false;" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;text-decoration:none;transition:.15s;" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor='#e2e8f0'">
-              <span style="font-size:20px;flex-shrink:0;">📊</span>
-              <div style="min-width:0;">
-                <div style="font-size:12px;font-weight:700;color:#1e1b4b;">แบบฟอร์มบันทึกทางการพยาบาล</div>
-                <div style="font-size:10px;color:#7c3aed;font-weight:600;">ดาวน์โหลด PDF →</div>
-              </div>
-            </a>
-            <a href="#" onclick="return false;" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;text-decoration:none;transition:.15s;" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor='#e2e8f0'">
-              <span style="font-size:20px;flex-shrink:0;">📋</span>
-              <div style="min-width:0;">
-                <div style="font-size:12px;font-weight:700;color:#1e1b4b;">ขั้นตอนการให้บริการ Pre/Post Op</div>
-                <div style="font-size:10px;color:#7c3aed;font-weight:600;">ดาวน์โหลด PDF →</div>
-              </div>
-            </a>
-          </div>
-          <div style="margin-top:12px;font-size:11px;color:#94a3b8;text-align:center;">📧 ติดต่อขอเอกสารเพิ่มเติม: ชั้น 2-3 อาคารศัลยกรรม</div>
+          <div style="font-size:16px;font-weight:700;color:#1e1b4b;margin-bottom:8px;">📥 เอกสาร Download</div>
+          <div style="font-size:13px;color:#94a3b8;text-align:center;padding:24px 0;">เร็วๆ นี้</div>
         </div>
 
       </div>
@@ -860,14 +822,22 @@ async function loadOrgChart() {
   try {
     const [{ data: orgRows }, { data: nurses }] = await Promise.all([
       sb.from('org_chart').select('*').order('sort_order'),
-      sb.from('nurses').select('*').eq('active', true).order('sort_order')
+      sb.from('nurses').select('id,name,nickname,photo_url,role').eq('active', true)
     ]);
 
     // ── ผังองค์กร (vertical tree) ─────────────────────────
     const dbMap = {};
     (orgRows||[]).forEach(r => { dbMap[r.id] = r; });
-    document.getElementById('orgPhotoWrap').innerHTML = '';
 
+    // ดึงรูป+ชื่อจาก nurses table สำหรับ 2 ตำแหน่งในหน่วยงาน
+    const findNurse = (kw) => (nurses||[]).find(n =>
+      (n.name||'').includes(kw) || (n.nickname||'').includes(kw));
+    const anesHead = findNurse('พัชริดา');
+    const anesSup  = findNurse('ละมัยศิลป์');
+    if (anesHead) dbMap['anes_head'] = { ...dbMap['anes_head'], name: anesHead.name, photo_url: anesHead.photo_url };
+    if (anesSup)  dbMap['anes_sup']  = { ...dbMap['anes_sup'],  name: anesSup.name,  photo_url: anesSup.photo_url };
+
+    document.getElementById('orgPhotoWrap').innerHTML = '';
     wrap.innerHTML = `
       <div style="text-align:center;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:12px;letter-spacing:.06em;">🏛 สายบังคับบัญชา</div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
@@ -877,11 +847,12 @@ async function loadOrgChart() {
           const pos   = db.position || p.pos;
           const photo = db.photo_url;
           const init  = name.charAt(0);
+          const photoEsc = (photo||'').replace(/'/g,"&#39;");
           return `
             ${i > 0 ? `<div style="width:2px;height:24px;background:#e2e8f0;"></div>` : ''}
             <div style="display:flex;flex-direction:column;align-items:center;">
               ${photo
-                ? `<img src="${photo}" style="width:64px;height:64px;border-radius:999px;object-fit:cover;border:3px solid ${p.border};margin-bottom:6px;cursor:zoom-in;" onclick="openLb('${photo}')">`
+                ? `<img src="${photoEsc}" style="width:64px;height:64px;border-radius:999px;object-fit:cover;border:3px solid ${p.border};margin-bottom:6px;cursor:zoom-in;" onclick="openLb('${photoEsc}')">`
                 : `<div style="width:64px;height:64px;border-radius:999px;background:${p.bg};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;border:3px solid ${p.border};margin-bottom:6px;">${init}</div>`}
               <div style="background:${p.bg};color:#fff;border-radius:10px;padding:8px 20px;text-align:center;min-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.1);">
                 <div style="font-size:13px;font-weight:700;">${name}</div>
