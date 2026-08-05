@@ -208,10 +208,10 @@ body { font-family:'Sarabun',system-ui,sans-serif; margin:0; background:#fff; co
 .act-body { padding:14px 16px; }
 
 /* ── ACTIVITY SLIDESHOW ──────────────────────────────────── */
-.act-slideshow { position:relative; border-radius:20px; overflow:hidden; background:#1e1b4b; box-shadow:0 8px 32px rgba(109,40,217,.18); }
+.act-slideshow { position:relative; border-radius:20px; overflow:hidden; background:#0f0a1e; box-shadow:0 8px 32px rgba(109,40,217,.18); }
 .act-slide { display:none; position:relative; }
 .act-slide.active { display:block; animation:actSlideIn .5s ease; }
-.act-slide img { width:100%; height:100vh; object-fit:cover; display:block; }
+.act-slide img { width:100%; height:100vh; object-fit:contain; display:block; background:#0f0a1e; }
 .act-slide-placeholder { width:100%; height:100vh; background:linear-gradient(135deg,#2d1b69,#4c1d95); display:flex; align-items:center; justify-content:center; font-size:48px; }
 .act-slide-caption { position:absolute; bottom:0; left:0; right:0; padding:80px 40px 36px; background:linear-gradient(0deg,rgba(0,0,0,.8) 0%,rgba(0,0,0,.3) 60%,transparent 100%); color:#fff; }
 .act-slide-caption .ac-label { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.6); margin-bottom:8px; }
