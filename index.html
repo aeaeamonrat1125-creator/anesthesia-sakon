@@ -1026,7 +1026,7 @@ async function loadSatStats() {
 let _actIdx = 0, _actTimer = null, _actItems = [];
 
 function _actFmt(a) {
-  const d = a.event_date ? new Date(a.event_date).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}) : '';
+  const d = a.date ? new Date(a.date).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}) : '';
   const loc = a.location ? ' · ' + a.location : '';
   return { name: a.name||'', meta: d + loc, img: a.image_url||'' };
 }
@@ -1047,7 +1047,7 @@ async function loadActivities() {
   const wrap = document.getElementById('actSlideshow');
   const empty = document.getElementById('actEmpty');
   try {
-    const res = await sb.from('activities').select('*').order('event_date', { ascending: false });
+    const res = await sb.from('activities').select('*').order('date', { ascending: false });
     console.log('[activities] data:', res.data?.length, 'error:', res.error?.message);
     if (res.error) { console.warn('[activities] Supabase error:', res.error.message); }
     const data = res.data || [];
