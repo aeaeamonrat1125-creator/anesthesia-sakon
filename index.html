@@ -829,7 +829,7 @@ async function loadOrgChart() {
 
   try {
     const [{ data: orgRows }, { data: nurses }] = await Promise.all([
-      sb.from('org_chart').select('*').order('sort_order'),
+      sb.from('org_chart').select('*'),
       sb.from('nurses').select('id,name,nickname,photo_url,role').eq('active', true)
     ]);
 
@@ -842,8 +842,10 @@ async function loadOrgChart() {
       (n.name||'').includes(kw) || (n.nickname||'').includes(kw));
     const anesHead = findNurse('พัชริดา');
     const anesSup  = findNurse('ละมัยศิลป์');
-    if (anesHead) dbMap['anes_head'] = { ...dbMap['anes_head'], name: anesHead.name, photo_url: anesHead.photo_url };
-    if (anesSup)  dbMap['anes_sup']  = { ...dbMap['anes_sup'],  name: anesSup.name,  photo_url: anesSup.photo_url };
+    if (anesHead) dbMap['anes_head'] = { ...dbMap['anes_head'], name: anesHead.name,
+      photo_url: anesHead.photo_url || dbMap['anes_head']?.photo_url };
+    if (anesSup)  dbMap['anes_sup']  = { ...dbMap['anes_sup'],  name: anesSup.name,
+      photo_url: anesSup.photo_url  || dbMap['anes_sup']?.photo_url };
 
     document.getElementById('orgPhotoWrap').innerHTML = '';
     wrap.innerHTML = `
