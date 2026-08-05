@@ -117,7 +117,7 @@ const Q_LABELS = [
 const DIST_LABELS = ['ควรปรับปรุง','พอใช้','ปานกลาง','ดี','ดีเยี่ยม'];
 const DIST_COLORS = ['#ef4444','#f97316','#f59e0b','#3b82f6','#10b981'];
 
-let _allData = [], _type = 'all';
+let _allData = [], _type = 'all', _fy = 'all';
 let barChartInst, pieChartInst;
 
 function calcStats(rows) {
@@ -207,7 +207,9 @@ function renderComments(rows) {
 }
 
 function renderAll() {
-  const rows = _type === 'all' ? _allData : _allData.filter(r => (r.type||'').includes(_type));
+  let rows = _allData;
+  if (_fy !== 'all') rows = rows.filter(r => r.fiscal_year === _fy);
+  if (_type !== 'all') rows = rows.filter(r => (r.type||'').includes(_type));
   const s = calcStats(rows);
   if (!s) return;
   renderKpi(s);
@@ -218,14 +220,15 @@ function renderAll() {
 
 async function loadData() {
   try {
-    // ลองโหลดจาก Supabase ตาราง sat_responses
     const { data, error } = await sb.from('sat_responses')
       .select('*')
+      .gte('fiscal_year', 2560)   // กรองข้อมูล timestamp ผิด
+      .lte('fiscal_year', 2580)
+      .gt('score_avg', 0)         // กรองแถวที่ไม่มีคะแนน
       .order('created_at', { ascending: false })
       .limit(500);
 
     if (error || !data?.length) {
-      // fallback: โหลดจาก ops_data สำหรับ % รวม
       await loadFallbackStats();
       return;
     }
@@ -234,17 +237,21 @@ async function loadData() {
     document.getElementById('loadingMsg').style.display = 'none';
     document.getElementById('mainContent').style.display = '';
 
-    // หาปีงบประมาณ
-    const latestDate = data[0]?.created_at ? new Date(data[0].created_at) : new Date();
-    const m = latestDate.getMonth()+1;
-    const fy = m >= 10 ? latestDate.getFullYear()+543 : latestDate.getFullYear()+542;
-    document.getElementById('yearBadge').textContent = `ปีงบประมาณ ${fy} · ข้อมูล ${data.length} รายการ`;
+    // ปีงบประมาณที่มีข้อมูล
+    const fyList = [...new Set(data.map(r=>r.fiscal_year).filter(Boolean))].sort((a,b)=>b-a);
+    document.getElementById('yearBadge').textContent = `${data.length} รายการ · ปีงบ ${fyList[fyList.length-1]}–${fyList[0]}`;
 
-    // สร้าง type tabs
-    const types = [...new Set(data.map(r => r.type||'').filter(Boolean))];
+    // year tabs + type tabs
     const tabsEl = document.getElementById('typeTabs');
-    tabsEl.innerHTML = `<button class="tab-btn active" onclick="switchType('all',this)">ทั้งหมด (${data.length})</button>` +
-      types.map(t => `<button class="tab-btn" onclick="switchType('${t}',this)">${t} (${data.filter(r=>r.type===t).length})</button>`).join('');
+    const types = [...new Set(data.map(r => r.type||'').filter(Boolean))];
+    tabsEl.innerHTML =
+      `<span style="font-size:11px;color:#94a3b8;font-weight:600;align-self:center;">ปีงบ:</span>` +
+      `<button class="tab-btn active" onclick="switchFY('all',this)">ทั้งหมด</button>` +
+      fyList.map(fy=>`<button class="tab-btn" onclick="switchFY(${fy},this)">${fy}</button>`).join('') +
+      `<span style="width:1px;background:#e9d5ff;height:20px;display:inline-block;margin:0 4px;"></span>` +
+      `<span style="font-size:11px;color:#94a3b8;font-weight:600;align-self:center;">ประเภท:</span>` +
+      `<button class="tab-btn active" data-group="type" onclick="switchType('all',this)">ทั้งหมด</button>` +
+      types.map(t=>`<button class="tab-btn" data-group="type" onclick="switchType('${t}',this)">${t}</button>`).join('');
 
     renderAll();
   } catch(e) {
@@ -289,9 +296,15 @@ async function loadFallbackStats() {
   document.getElementById('noDataMsg').style.display = '';
 }
 
+function switchFY(fy, btn) {
+  _fy = fy;
+  document.querySelectorAll('.tab-btn:not([data-group="type"])').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
 function switchType(type, btn) {
   _type = type;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn[data-group="type"]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderAll();
 }
