@@ -158,6 +158,8 @@
       <button id="auditTabBtn" class="staff-tab tab-btn" data-tab="audit" onclick="switchTab('audit')">🔍 ประวัติ</button>
       <a href="admin.html" class="staff-tab">🛡️ ยืนยันสมาชิก</a>
     </div>
+  </div>
+</div>
 <!-- ===================== LOGIN OVERLAY ===================== -->
 <div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/60 z-40 items-center justify-center p-4">
   <div class="card max-w-sm w-full p-6">
@@ -325,11 +327,17 @@
 
   <!-- EQUIPMENT -->
   <section data-page="equipment" class="space-y-4 hidden">
-    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div class="font-semibold">เครื่องมือทั้งหมด (<span id="eq-count">0</span>)</div>
-      <div class="flex gap-2">
-        <button onclick="exportEquipExcelStaff()" class="btn btn-ghost">📥 Excel</button>
-        <button class="btn btn-primary" onclick="openEqForm()">+ เพิ่มเครื่องมือ</button>
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">Equipment</div>
+          <div class="text-xl sm:text-2xl font-bold">🔧 ทะเบียนเครื่องมือ</div>
+          <div class="text-white/70 text-sm mt-1">ทั้งหมด <span id="eq-count" class="font-bold text-white">0</span> รายการ</div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="exportEquipExcelStaff()" class="bg-white/15 border border-white/25 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-white/25 transition">📥 Excel</button>
+          <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition" onclick="openEqForm()">+ เพิ่มเครื่องมือ</button>
+        </div>
       </div>
     </div>
     <!-- ตัวกรอง -->
@@ -359,21 +367,36 @@
 
   <!-- SCHEDULE -->
   <section data-page="schedule" class="space-y-4 hidden">
-    <div class="card p-4 flex items-center gap-3 flex-wrap">
-      <label class="text-sm">ปี-เดือน:</label>
-      <input id="schYM" type="text" placeholder="2569-01" class="input w-32" value="2569-01">
-      <label class="text-sm">ทีม:</label>
-      <select id="schTeam" class="input w-40">
-        <option value="ทีม 1">ทีม 1</option>
-        <option value="ทีม 2">ทีม 2</option>
-        <option value="ทีม 3">ทีม 3</option>
-        <option value="CVT">CVT</option>
-        <option value="Vascular">Vascular</option>
-        <option value="ERCP">ERCP</option>
-      </select>
-      <button class="btn btn-primary" onclick="loadSchedule()">โหลด</button>
-      <button class="btn btn-ghost" onclick="addSchEntry()">+ เพิ่ม</button>
-      <button class="btn btn-ghost" onclick="exportScheduleExcel()">📥 Excel</button>
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">Work Schedule</div>
+          <div class="text-xl sm:text-2xl font-bold">📅 ตารางเวร</div>
+          <div class="text-white/70 text-sm mt-1">บันทึกและดูตารางเวรแต่ละทีม</div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="bg-white/15 border border-white/25 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-white/25 transition" onclick="addSchEntry()">+ เพิ่ม</button>
+          <button class="bg-white/15 border border-white/25 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-white/25 transition" onclick="exportScheduleExcel()">📥 Excel</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex items-center gap-2 bg-white/15 border border-white/25 rounded-lg px-3 py-1.5">
+          <span class="text-white/70 text-sm">ปี-เดือน</span>
+          <input id="schYM" type="text" placeholder="2569-01" value="2569-01" class="bg-transparent text-white text-sm font-semibold outline-none w-20 placeholder-white/40">
+        </div>
+        <div class="flex items-center gap-2 bg-white/15 border border-white/25 rounded-lg px-3 py-1.5">
+          <span class="text-white/70 text-sm">ทีม</span>
+          <select id="schTeam" class="bg-transparent text-white text-sm font-semibold outline-none cursor-pointer">
+            <option value="ทีม 1" class="text-gray-800">ทีม 1</option>
+            <option value="ทีม 2" class="text-gray-800">ทีม 2</option>
+            <option value="ทีม 3" class="text-gray-800">ทีม 3</option>
+            <option value="CVT" class="text-gray-800">CVT</option>
+            <option value="Vascular" class="text-gray-800">Vascular</option>
+            <option value="ERCP" class="text-gray-800">ERCP</option>
+          </select>
+        </div>
+        <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition" onclick="loadSchedule()">โหลด</button>
+      </div>
     </div>
     <div class="card p-4 scroll-x">
       <table class="min-w-full text-sm">
@@ -387,30 +410,45 @@
 
   <!-- MEETINGS -->
   <section data-page="meetings" class="space-y-4 hidden">
-    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div class="font-semibold">📚 คิวประชุมวิชาการ</div>
-      <button class="btn btn-primary" onclick="openMeetingForm()">+ เพิ่มคิว</button>
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">Academic Meetings</div>
+          <div class="text-xl sm:text-2xl font-bold">📚 คิวประชุมวิชาการ</div>
+          <div class="text-white/70 text-sm mt-1">บันทึกคิวนำเสนอและประชุมวิชาการ</div>
+        </div>
+        <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition flex-shrink-0" onclick="openMeetingForm()">+ เพิ่มคิว</button>
+      </div>
     </div>
     <div class="space-y-2" id="meetingList"></div>
   </section>
 
   <!-- ACTIVITIES -->
   <section data-page="activities" class="space-y-4 hidden">
-    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div>
-        <div class="font-semibold">🎯 กิจกรรมหน่วยงาน</div>
-        <div class="text-xs text-slate-500 mt-0.5">เพิ่มรูปและหัวข้อกิจกรรม แสดงในหน้าหลัก</div>
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">Activities</div>
+          <div class="text-xl sm:text-2xl font-bold">🎯 กิจกรรมหน่วยงาน</div>
+          <div class="text-white/70 text-sm mt-1">เพิ่มรูปและหัวข้อกิจกรรม แสดงในหน้าหลัก</div>
+        </div>
+        <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition flex-shrink-0" onclick="openActivityForm()">+ เพิ่มกิจกรรม</button>
       </div>
-      <button class="btn btn-primary" onclick="openActivityForm()">+ เพิ่มกิจกรรม</button>
     </div>
     <div class="grid sm:grid-cols-2 gap-4" id="activityList"></div>
   </section>
 
   <!-- REFERS -->
   <section data-page="refers" class="space-y-4 hidden">
-    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div class="font-semibold">↪ คิว Refer ผู้ป่วย</div>
-      <button class="btn btn-primary" onclick="openReferForm()">+ เพิ่ม Refer</button>
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">Patient Refer</div>
+          <div class="text-xl sm:text-2xl font-bold">↪ คิว Refer ผู้ป่วย</div>
+          <div class="text-white/70 text-sm mt-1">บันทึกการส่งต่อผู้ป่วยระหว่างหน่วยงาน</div>
+        </div>
+        <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition flex-shrink-0" onclick="openReferForm()">+ เพิ่ม Refer</button>
+      </div>
     </div>
     <div class="card p-4 scroll-x">
       <table class="min-w-full text-sm">
@@ -424,11 +462,17 @@
 
   <!-- DOCS -->
   <section data-page="docs" class="space-y-4 hidden">
-    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div class="font-semibold">📄 เอกสารวิชาการ</div>
-      <div class="flex gap-2">
-        <button class="btn btn-ghost" onclick="openDocTypeForm()">+ เพิ่มประเภท</button>
-        <button class="btn btn-primary" onclick="openDocForm()">+ เพิ่มเอกสาร</button>
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">Documents</div>
+          <div class="text-xl sm:text-2xl font-bold">📄 เอกสารวิชาการ</div>
+          <div class="text-white/70 text-sm mt-1">จัดเก็บเอกสาร คู่มือ และสื่อวิชาการ</div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="bg-white/15 border border-white/25 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-white/25 transition" onclick="openDocTypeForm()">+ ประเภท</button>
+          <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition" onclick="openDocForm()">+ เพิ่มเอกสาร</button>
+        </div>
       </div>
     </div>
     <div class="card p-4">
@@ -447,41 +491,53 @@
 
   <!-- ANNOUNCEMENTS -->
   <section data-page="announce" class="space-y-4">
-    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div>
-        <div class="font-semibold">📣 จัดการประกาศ</div>
-        <div class="text-xs text-slate-500 mt-1">ประกาศ "สำคัญ" จะแจ้งเตือนแบบเด่นกับผู้ใช้ทุกคน</div>
+    <!-- Hero banner -->
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg relative overflow-hidden">
+      <div class="absolute right-0 top-0 w-40 h-40 rounded-full opacity-10" style="background:radial-gradient(circle,#fff,transparent);transform:translate(30%,-30%)"></div>
+      <div class="relative flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">Announcements</div>
+          <div class="text-xl sm:text-2xl font-bold">📣 จัดการประกาศ</div>
+          <div class="text-white/70 text-sm mt-1">ประกาศ "สำคัญ" จะแจ้งเตือนแบบเด่นกับผู้ใช้ทุกคน</div>
+        </div>
+        <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition flex-shrink-0" onclick="openAnnouncementForm()">+ เพิ่มประกาศ</button>
       </div>
-      <button class="btn btn-primary" onclick="openAnnouncementForm()">+ เพิ่มประกาศ</button>
-    </div>
-
-    <div class="card p-4">
-      <div class="grid sm:grid-cols-3 gap-3 mb-4">
-        <div class="bg-blue-50 rounded-lg p-3 text-center">
+      <!-- ประเภทประกาศ legend -->
+      <div class="grid grid-cols-3 gap-2 mt-4">
+        <div class="bg-white/10 border border-white/20 rounded-xl p-3 text-center backdrop-blur-sm">
           <div class="text-2xl mb-1">📌</div>
-          <div class="font-semibold text-blue-700">ข้อมูลทั่วไป</div>
-          <div class="text-xs text-slate-500">แสดงปกติในหน้าประกาศ</div>
+          <div class="font-semibold text-white text-sm">ข้อมูลทั่วไป</div>
+          <div class="text-white/60 text-xs mt-0.5">แสดงปกติ</div>
         </div>
-        <div class="bg-amber-50 rounded-lg p-3 text-center">
+        <div class="bg-amber-400/20 border border-amber-300/40 rounded-xl p-3 text-center backdrop-blur-sm">
           <div class="text-2xl mb-1">⚠️</div>
-          <div class="font-semibold text-amber-700">ข้อควรระวัง</div>
-          <div class="text-xs text-slate-500">มี badge สีเหลืองเด่น</div>
+          <div class="font-semibold text-amber-200 text-sm">ข้อควรระวัง</div>
+          <div class="text-white/60 text-xs mt-0.5">มี badge สีเหลืองเด่น</div>
         </div>
-        <div class="bg-rose-50 rounded-lg p-3 text-center">
+        <div class="bg-rose-500/20 border border-rose-400/40 rounded-xl p-3 text-center backdrop-blur-sm">
           <div class="text-2xl mb-1">🚨</div>
-          <div class="font-semibold text-rose-700">สำคัญ / เร่งด่วน</div>
-          <div class="text-xs text-slate-500">แจ้งเตือนเด่นทุกหน้า + browser notification</div>
+          <div class="font-semibold text-rose-200 text-sm">สำคัญ / เร่งด่วน</div>
+          <div class="text-white/60 text-xs mt-0.5">แจ้งเตือนทุกหน้า</div>
         </div>
       </div>
+    </div>
+    <!-- รายการประกาศ -->
+    <div class="card p-4">
       <div class="space-y-2" id="announceList"></div>
     </div>
   </section>
 
   <!-- OPS STATS -->
   <section data-page="ops" class="space-y-4 hidden">
-    <div class="card p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div class="font-semibold">📊 สถิติบริการรายปีงบฯ</div>
-      <button class="btn btn-primary" onclick="openOpsForm()">+ เพิ่ม/แก้ปีงบฯ</button>
+    <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">Statistics</div>
+          <div class="text-xl sm:text-2xl font-bold">📊 สถิติบริการรายปีงบฯ</div>
+          <div class="text-white/70 text-sm mt-1">ข้อมูลสถิติการให้บริการทางวิสัญญี</div>
+        </div>
+        <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition flex-shrink-0" onclick="openOpsForm()">+ เพิ่ม/แก้ปีงบฯ</button>
+      </div>
     </div>
     <div class="card p-4 scroll-x">
       <table class="min-w-full text-sm">
