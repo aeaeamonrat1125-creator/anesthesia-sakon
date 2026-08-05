@@ -413,17 +413,26 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
       <div style="max-width:700px;margin:0 auto;">
         <div style="font-size:14px;font-weight:700;color:#6d28d9;letter-spacing:.06em;margin-bottom:20px;">MISSION · พันธกิจ</div>
         <div style="display:flex;flex-direction:column;gap:14px;">
-          ${[
-            'พัฒนาระบบบริหารจัดการโดยยึดหลักธรรมาภิบาล',
-            'พัฒนาระบบบริการการพยาบาลแบบไร้รอยต่อ',
-            'พัฒนาบุคลากรให้มีสมรรถนะสูงและมีความสุข ด้วยแนวทาง MOPH-4T',
-            'ส่งเสริมการศึกษาวิจัย นวัตกรรม และเทคโนโลยีทางการแพทย์',
-            'พัฒนาศูนย์การเรียนรู้ทางการพยาบาล',
-          ].map((m,i)=>`
-            <div style="display:flex;align-items:flex-start;gap:14px;background:#f5f3ff;border-radius:12px;padding:16px;">
-              <div style="width:32px;height:32px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${i+1}</div>
-              <div style="font-size:15px;color:#1e1b4b;line-height:1.6;padding-top:4px;">${m}</div>
-            </div>`).join('')}
+          <div style="display:flex;align-items:flex-start;gap:14px;background:#f5f3ff;border-radius:12px;padding:16px;">
+            <div style="width:32px;height:32px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+            <div style="font-size:15px;color:#1e1b4b;line-height:1.6;padding-top:4px;">พัฒนาระบบบริหารจัดการโดยยึดหลักธรรมาภิบาล</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;background:#f5f3ff;border-radius:12px;padding:16px;">
+            <div style="width:32px;height:32px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+            <div style="font-size:15px;color:#1e1b4b;line-height:1.6;padding-top:4px;">พัฒนาระบบบริการการพยาบาลแบบไร้รอยต่อ</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;background:#f5f3ff;border-radius:12px;padding:16px;">
+            <div style="width:32px;height:32px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+            <div style="font-size:15px;color:#1e1b4b;line-height:1.6;padding-top:4px;">พัฒนาบุคลากรให้มีสมรรถนะสูงและมีความสุข ด้วยแนวทาง <strong>MOPH-4T</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;background:#f5f3ff;border-radius:12px;padding:16px;">
+            <div style="width:32px;height:32px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
+            <div style="font-size:15px;color:#1e1b4b;line-height:1.6;padding-top:4px;">ส่งเสริมการศึกษาวิจัย นวัตกรรม และเทคโนโลยีทางการแพทย์</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:14px;background:#f5f3ff;border-radius:12px;padding:16px;">
+            <div style="width:32px;height:32px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">5</div>
+            <div style="font-size:15px;color:#1e1b4b;line-height:1.6;padding-top:4px;">พัฒนาศูนย์การเรียนรู้ทางการพยาบาล</div>
+          </div>
         </div>
       </div>
     </div>
@@ -474,34 +483,52 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
     <div class="section-title">ความพึงพอใจของผู้รับบริการ</div>
     <div class="section-divider"></div>
 
-    <div class="grid-2" style="gap:24px;margin-bottom:32px;">
-      <a href="satisfaction.html" class="sat-card" style="background:linear-gradient(135deg,#7c3aed,#9333ea);">
-        <div style="font-size:40px;">🏥</div>
-        <div>
-          <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.65);margin-bottom:6px;">STAFF SATISFACTION</div>
-          <div style="font-size:20px;font-weight:800;">แบบประเมินความพึงพอใจ<br>หน่วยงาน</div>
+    <!-- Dashboard ผลสำรวจ -->
+    <div style="background:#fff;border-radius:20px;padding:28px;margin-bottom:28px;border:1.5px solid #e9d5ff;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+        <div style="font-size:15px;font-weight:700;color:#4c1d95;">📊 ผลสำรวจความพึงพอใจ</div>
+        <div style="font-size:12px;color:#94a3b8;" id="sat-year-label">ปีงบประมาณล่าสุด</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;" id="sat-stats-grid">
+        <div style="text-align:center;background:#f5f3ff;border-radius:14px;padding:18px;">
+          <div style="font-size:32px;font-weight:800;color:#6d28d9;" id="sat-internal-pct">—</div>
+          <div style="font-size:11px;color:#7c3aed;font-weight:600;margin-top:4px;">ความพึงพอใจหน่วยงาน</div>
+          <div style="font-size:10px;color:#94a3b8;">Internal</div>
         </div>
-        <div style="font-size:13px;color:rgba(255,255,255,.75);">สำหรับเจ้าหน้าที่และผู้รับบริการภายใน</div>
+        <div style="text-align:center;background:#f0f9ff;border-radius:14px;padding:18px;">
+          <div style="font-size:32px;font-weight:800;color:#0369a1;" id="sat-patient-pct">—</div>
+          <div style="font-size:11px;color:#0369a1;font-weight:600;margin-top:4px;">ความพึงพอใจผู้ป่วย</div>
+          <div style="font-size:10px;color:#94a3b8;">Patient</div>
+        </div>
+        <div style="text-align:center;background:#f0fdf4;border-radius:14px;padding:18px;">
+          <div style="font-size:32px;font-weight:800;color:#15803d;" id="sat-target-pct">≥ 80%</div>
+          <div style="font-size:11px;color:#15803d;font-weight:600;margin-top:4px;">เป้าหมาย</div>
+          <div style="font-size:10px;color:#94a3b8;">Target</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ปุ่มกดทำแบบประเมิน -->
+    <div class="grid-2" style="gap:20px;">
+      <a href="satisfaction.html" class="sat-card" style="background:linear-gradient(135deg,#7c3aed,#9333ea);">
+        <div style="font-size:36px;">🏥</div>
+        <div>
+          <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.65);margin-bottom:4px;">STAFF SATISFACTION</div>
+          <div style="font-size:18px;font-weight:800;">แบบประเมินหน่วยงาน</div>
+        </div>
         <div style="background:rgba(255,255,255,.2);border-radius:10px;padding:10px 16px;font-weight:700;font-size:14px;text-align:center;">
           กดทำแบบประเมิน →
         </div>
       </a>
       <a href="satisfaction-patient.html" class="sat-card" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);">
-        <div style="font-size:40px;">🛏️</div>
+        <div style="font-size:36px;">🛏️</div>
         <div>
-          <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.65);margin-bottom:6px;">PATIENT SATISFACTION</div>
-          <div style="font-size:20px;font-weight:800;">แบบประเมินความพึงพอใจ<br>ผู้ป่วย</div>
+          <div style="font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.65);margin-bottom:4px;">PATIENT SATISFACTION</div>
+          <div style="font-size:18px;font-weight:800;">แบบประเมินผู้ป่วย</div>
         </div>
-        <div style="font-size:13px;color:rgba(255,255,255,.75);">สำหรับผู้ป่วยและผู้ดูแลที่รับบริการวิสัญญี</div>
         <div style="background:rgba(255,255,255,.2);border-radius:10px;padding:10px 16px;font-weight:700;font-size:14px;text-align:center;">
           กดทำแบบประเมิน →
         </div>
-      </a>
-    </div>
-
-    <div style="text-align:center;">
-      <a href="staff.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e9d5ff;color:#6d28d9;padding:10px 20px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">
-        📊 ดู Dashboard ผลสำรวจ (เจ้าหน้าที่) →
       </a>
     </div>
   </div>
@@ -509,37 +536,13 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
 
 <!-- ══════════════ STAFF PORTAL ══════════════ -->
 <section id="staff-portal">
-  <div class="section-inner" style="padding:72px 0;">
-    <div style="text-align:center;margin-bottom:40px;">
-      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:8px;">FOR STAFF ONLY</div>
-      <div style="font-size:clamp(24px,4vw,36px);font-weight:800;color:#fff;margin-bottom:12px;">สำหรับเจ้าหน้าที่หน่วยงาน</div>
-      <div style="color:rgba(255,255,255,.65);font-size:15px;">เข้าสู่ระบบเพื่อใช้งานฟีเจอร์เฉพาะบุคลากร</div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;">
-      <a href="service-log.html" class="staff-portal-card">
-        <div class="sp-icon">📋</div>
-        <div class="sp-label">ลงยอดบริการ</div>
-      </a>
-      <a href="inspection.html" class="staff-portal-card">
-        <div class="sp-icon">🔬</div>
-        <div class="sp-label">ตรวจเครื่องมือ</div>
-      </a>
-      <a href="inventory.html" class="staff-portal-card">
-        <div class="sp-icon">📦</div>
-        <div class="sp-label">คลังเวชภัณฑ์</div>
-      </a>
-      <a href="staff.html" class="staff-portal-card">
-        <div class="sp-icon">📊</div>
-        <div class="sp-label">Dashboard KPI</div>
-      </a>
-    </div>
-
-    <div style="text-align:center;">
-      <a href="staff.html" style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);color:#fff;padding:13px 28px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;transition:.15s;" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
-        🔐 เข้าสู่ระบบบุคลากร →
-      </a>
-    </div>
+  <div class="section-inner" style="padding:64px 0;text-align:center;">
+    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:10px;">FOR STAFF ONLY</div>
+    <div style="font-size:clamp(24px,4vw,36px);font-weight:800;color:#fff;margin-bottom:10px;">สำหรับเจ้าหน้าที่หน่วยงาน</div>
+    <div style="color:rgba(255,255,255,.6);font-size:15px;margin-bottom:32px;">ระบบบริหารจัดการสำหรับบุคลากรวิสัญญีพยาบาล รพ.สกลนคร</div>
+    <a href="staff.html" style="display:inline-flex;align-items:center;gap:12px;background:#fff;color:#6d28d9;padding:16px 36px;border-radius:14px;font-weight:800;font-size:17px;text-decoration:none;box-shadow:0 4px 24px rgba(0,0,0,.2);transition:.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+      🔐 เข้าสู่ระบบบุคลากร
+    </a>
   </div>
 </section>
 
@@ -697,37 +700,56 @@ function closeLb() { document.getElementById('lb').classList.remove('open'); }
 
 // ── ORG CHART ─────────────────────────────────────────────
 let _orgLoaded = false;
+let _orgCanEdit = false;
 async function loadOrgChart() {
   if (_orgLoaded) return;
   _orgLoaded = true;
   const wrap = document.getElementById('orgChartWrap');
-  const photoWrap = document.getElementById('orgPhotoWrap');
   wrap.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">กำลังโหลด...</div>';
+
+  // ตรวจสอบว่า login อยู่ไหม (ไม่ต้อง await นาน)
+  try {
+    const u = await sbAuth.getUser();
+    const p = u ? await sbAuth.getProfile() : null;
+    _orgCanEdit = !!(u && p?.status === 'approved');
+  } catch(e) { _orgCanEdit = false; }
 
   try {
     const { data: rows } = await sb.from('org_chart').select('*').order('sort_order');
-    if (!rows?.length) { wrap.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:32px;">ยังไม่มีข้อมูลผัง</div>'; return; }
-
-    const byPos = {};
-    rows.forEach(r => { if (!byPos[r.position]) byPos[r.position]=r; });
-    const positions = Object.keys(byPos);
-
-    // Photo ผัง (ถ้ามี)
-    const photoRow = rows.find(r => r.photo_url && r.position?.includes('หัวหน้า'));
-    if (photoRow?.photo_url) {
-      photoWrap.innerHTML = `<img src="${photoRow.photo_url}" style="width:120px;height:120px;border-radius:999px;object-fit:cover;border:4px solid #e9d5ff;cursor:zoom-in;" onclick="openLb('${photoRow.photo_url}')">
-        <div style="font-size:14px;font-weight:700;color:#1e1b4b;margin-top:8px;">${photoRow.name||''}</div>
-        <div style="font-size:12px;color:#7c3aed;">${photoRow.position||''}</div>`;
+    if (!rows?.length) {
+      wrap.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:32px;">ยังไม่มีข้อมูลผังองค์กร</div>';
+      return;
     }
 
-    wrap.innerHTML = rows.map(r => `
-      <div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;margin:8px;min-width:80px;vertical-align:top;">
-        ${r.photo_url
-          ? `<img src="${r.photo_url}" class="org-photo" style="cursor:zoom-in;" onclick="openLb('${r.photo_url}')">`
-          : `<div class="org-avatar">${(r.name||'?').charAt(0)}</div>`}
-        <div class="org-name">${r.name||''}</div>
-        <div class="org-pos">${r.position||''}</div>
-      </div>`).join('');
+    // แสดงผัง photo ถ้ามี
+    const photoWrap = document.getElementById('orgPhotoWrap');
+    const photoRow = rows.find(r => r.photo_url && (r.position||'').includes('หัวหน้า'));
+    if (photoRow?.photo_url && photoWrap) {
+      photoWrap.innerHTML = `
+        <img src="${photoRow.photo_url}" style="width:120px;height:120px;border-radius:999px;object-fit:cover;border:4px solid #e9d5ff;cursor:zoom-in;" onclick="openLb('${photoRow.photo_url}')">
+        <div style="font-size:14px;font-weight:700;color:#1e1b4b;margin-top:10px;">${photoRow.name||''}</div>
+        <div style="font-size:12px;color:#7c3aed;font-weight:600;">${photoRow.position||''}</div>`;
+    }
+
+    wrap.innerHTML = `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;">` +
+      rows.map(r => {
+        const nameEsc = (r.name||'').replace(/'/g,"&#39;");
+        const editBtn = _orgCanEdit ? `<button onclick="openLb('${r.photo_url||''}')" style="display:none"></button>` : '';
+        return `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:88px;">
+          ${r.photo_url
+            ? `<img src="${r.photo_url}" class="org-photo" style="cursor:zoom-in;width:72px;height:72px;" onclick="openLb('${r.photo_url}')">`
+            : `<div class="org-avatar" style="width:72px;height:72px;font-size:24px;">${(r.name||'?').charAt(0)}</div>`}
+          <div class="org-name" style="font-size:13px;">${r.name||''}</div>
+          <div class="org-pos" style="font-size:11px;">${r.position||''}</div>
+        </div>`;
+      }).join('') + `</div>`;
+
+    if (_orgCanEdit) {
+      wrap.innerHTML += `<div style="text-align:center;margin-top:20px;">
+        <a href="staff.html" style="display:inline-flex;align-items:center;gap:6px;background:#ede9fe;color:#6d28d9;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;">✏️ แก้ไขผังองค์กร (staff.html)</a>
+      </div>`;
+    }
   } catch(e) {
     wrap.innerHTML = `<div style="text-align:center;color:#ef4444;padding:32px;">${e.message}</div>`;
   }
@@ -736,12 +758,45 @@ async function loadOrgChart() {
 // ── STAFF STATS ───────────────────────────────────────────
 async function loadStaffStats() {
   try {
-    const { data } = await sb.from('nurses').select('role,active').eq('active', true);
-    const total = data?.length || 0;
-    const nurses = data?.filter(n => n.role?.includes('วิสัญญีพยาบาล')).length || 0;
-    document.getElementById('stat-nurses-count').textContent = nurses;
+    const { data } = await sb.from('nurses').select('id,role,active');
+    const active = (data||[]).filter(n => n.active !== false);
+    const total  = active.length;
+    const nurses = active.filter(n => (n.role||'').includes('วิสัญญีพยาบาล')).length;
+    document.getElementById('stat-nurses-count').textContent = nurses || total;
     document.getElementById('stat-total-count').textContent = total;
   } catch(e) {}
+}
+
+// ── SATISFACTION STATS ────────────────────────────────────
+async function loadSatStats() {
+  try {
+    const { data } = await sb.from('ops_data')
+      .select('fiscal_year,satisfaction')
+      .not('satisfaction','is',null)
+      .order('fiscal_year',{ascending:false})
+      .limit(1);
+    if (data?.[0]) {
+      const s = data[0];
+      document.getElementById('sat-year-label').textContent = `ปีงบประมาณ ${s.fiscal_year}`;
+      const pct = parseFloat(s.satisfaction).toFixed(1);
+      document.getElementById('sat-internal-pct').textContent = pct + '%';
+      document.getElementById('sat-patient-pct').textContent = pct + '%';
+    }
+  } catch(e) {
+    // ไม่มีตาราง ops_data — ใช้ค่าจาก KPI
+    try {
+      const { data: kpi } = await sb.from('kpi_data')
+        .select('fiscal_year,actual_value')
+        .eq('kpi_code','SAT')
+        .order('fiscal_year',{ascending:false})
+        .limit(1);
+      if (kpi?.[0]) {
+        const pct = parseFloat(kpi[0].actual_value).toFixed(1);
+        document.getElementById('sat-internal-pct').textContent = pct + '%';
+        document.getElementById('sat-year-label').textContent = `ปีงบประมาณ ${kpi[0].fiscal_year}`;
+      }
+    } catch(e2) {}
+  }
 }
 
 // ── ACTIVITIES ────────────────────────────────────────────
@@ -804,6 +859,7 @@ function updateNavActive() {
 window.addEventListener('scroll', updateNavActive, { passive: true });
 updateNavActive();
 loadStaffStats();
+loadSatStats();
 loadActivities();
 loadQRCodes();
 </script>
