@@ -210,19 +210,7 @@
       <span class="si-icon">👥</span> บุคลากร
     </a>
 
-    <div class="sidebar-section-label">บันทึกข้อมูล</div>
-    <a href="service-log.html" class="sidebar-item">
-      <span class="si-icon">📋</span> ลงยอดบริการ
-    </a>
-
-    <a href="inspection.html" class="sidebar-item">
-      <span class="si-icon">🔧</span> ตรวจเครื่องมือ
-    </a>
-
     <div class="sidebar-section-label">ข้อมูลหน่วยงาน</div>
-    <button class="tab-btn sidebar-item" data-tab="equipment" onclick="switchTab('equipment')">
-      <span class="si-icon">📦</span> ทะเบียนเครื่องมือ
-    </button>
     <button class="tab-btn sidebar-item" data-tab="activities" onclick="switchTab('activities')">
       <span class="si-icon">🎯</span> กิจกรรม
     </button>
@@ -235,8 +223,8 @@
     <a href="backup.html" class="sidebar-item" id="backupMenuLink" style="display:none">
       <span class="si-icon">💾</span> สำรองข้อมูล
     </a>
-    <a href="service-report.html" class="sidebar-item">
-      <span class="si-icon">📊</span> รายงานยอดบริการ
+    <a href="staff.html" class="sidebar-item">
+      <span class="si-icon">🔐</span> เข้าสู่ระบบเจ้าหน้าที่
     </a>
   </div>
 
@@ -297,26 +285,14 @@
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect y="2" width="16" height="2" rx="1" fill="white"/><rect y="7" width="16" height="2" rx="1" fill="white"/><rect y="12" width="16" height="2" rx="1" fill="white"/></svg>
       </button>
       <div id="idx-dropdown" class="hidden absolute right-0 top-full mt-1 bg-slate-800 rounded-xl shadow-2xl py-2 min-w-[220px] z-50 border border-white/10">
-        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="prepost">📋 Pre/Post op</button>
-        <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="equipment">📦 ทะเบียนเครื่องมือ</button>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="activities">🎯 กิจกรรมหน่วยงาน</button>
         <div class="border-t border-white/10 my-1"></div>
         <button class="tab-btn w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none" data-tab="qrcode">📱 QR Code</button>
-        <div class="border-t border-white/10 my-1"></div>
-        <a href="sheets.html" class="w-full text-left px-4 py-2 text-sm hover:bg-white/10 rounded-none flex items-center gap-2">📊 G-Sheets</a>
       </div>
     </div>
   </div>
 </nav>
 
-<!-- Quick Access (ซ่อนบนมือถือ มี bottom nav แล้ว) -->
-<div class="old-quick-access bg-white border-b shadow-sm hidden md:block">
-  <div class="px-3 py-3 grid grid-cols-3 gap-2">
-    <a href="service-log.html" class="quick-card sk-purple"><span class="qc-icon">📋</span><span class="qc-label">ลงยอดบริการ</span></a>
-    <a href="staff.html"       class="quick-card sk-blue">  <span class="qc-icon">👥</span><span class="qc-label">บุคลากร</span></a>
-    <a href="inspection.html"  class="quick-card sk-green"> <span class="qc-icon">🔧</span><span class="qc-label">ตรวจเครื่อง</span></a>
-  </div>
-</div>
 
 <main class="flex-1 overflow-y-auto px-3 sm:px-5 py-4 sm:py-5 space-y-5">
 
@@ -677,7 +653,6 @@
             <option value="all">ทั้งหมด</option>
           </select>
           <button onclick="exportDailyExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3 py-1.5 rounded-lg">📥 Export</button>
-          <a href="service-log.html" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg">+ ลงยอดใหม่</a>
         </div>
       </div>
       <div class="text-xs text-slate-500 mb-3">รายงานช่วง: <b id="ds-period">วันนี้</b></div>
@@ -951,7 +926,6 @@
     <div class="card p-4">
       <div class="flex items-center justify-between mb-3">
         <div class="font-semibold text-slate-700">🔧 บันทึกการตรวจเครื่องมือล่าสุด (ทุกห้อง)</div>
-        <a href="inspection.html" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg">+ ตรวจเครื่อง</a>
       </div>
       <div id="insList" class="space-y-2"></div>
     </div>
@@ -1158,12 +1132,9 @@
   <button class="tab-btn active" data-tab="about" onclick="switchTab('about')">
     <span class="bn-icon">🏠</span>หลัก
   </button>
-  <a href="service-log.html">
-    <span class="bn-icon">📋</span>ลงยอด
-  </a>
-  <a href="inspection.html">
-    <span class="bn-icon">🔧</span>ตรวจ
-  </a>
+  <button class="tab-btn" data-tab="satisfaction" onclick="switchTab('satisfaction')">
+    <span class="bn-icon">😊</span>ประเมิน
+  </button>
   <a href="staff.html">
     <span class="bn-icon">👥</span>บุคลากร
   </a>
@@ -1183,23 +1154,14 @@
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-blue-50 text-blue-700 text-xs font-semibold" data-tab="satisfaction" onclick="switchTab('satisfaction');toggleMobileMenu()">
         <span class="text-2xl">😊</span>ความพึงพอใจ
       </button>
-      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-amber-50 text-amber-700 text-xs font-semibold" data-tab="equipment" onclick="switchTab('equipment');toggleMobileMenu()">
-        <span class="text-2xl">📦</span>ทะเบียนเครื่อง
-      </button>
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-50 text-slate-700 text-xs font-semibold" data-tab="qrcode" onclick="switchTab('qrcode');toggleMobileMenu()">
         <span class="text-2xl">📱</span>QR Code
-      </button>
-      <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-teal-50 text-teal-700 text-xs font-semibold" data-tab="prepost" onclick="switchTab('prepost');toggleMobileMenu()">
-        <span class="text-2xl">🩺</span>Pre/Post op
       </button>
       <button class="tab-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-pink-50 text-pink-700 text-xs font-semibold" data-tab="activities" onclick="switchTab('activities');toggleMobileMenu()">
         <span class="text-2xl">🎯</span>กิจกรรม
       </button>
-      <a href="service-report.html" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-semibold">
-        <span class="text-2xl">📊</span>ยอดบริการ
-      </a>
-      <a href="sheets.html" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-green-50 text-green-700 text-xs font-semibold">
-        <span class="text-2xl">📊</span>G-Sheets
+      <a href="staff.html" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-violet-50 text-violet-700 text-xs font-semibold">
+        <span class="text-2xl">🔐</span>เจ้าหน้าที่
       </a>
     </div>
   </div>
