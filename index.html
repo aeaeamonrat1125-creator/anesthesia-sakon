@@ -1047,28 +1047,40 @@ async function loadActivities() {
   const wrap = document.getElementById('actSlideshow');
   const empty = document.getElementById('actEmpty');
   try {
-    const { data } = await sb.from('activities').select('*').order('event_date', { ascending: false });
-    if (!data?.length) { wrap.style.display='none'; empty.style.display='block'; return; }
+    const res = await sb.from('activities').select('*').order('event_date', { ascending: false });
+    console.log('[activities] data:', res.data?.length, 'error:', res.error?.message);
+    if (res.error) { console.warn('[activities] Supabase error:', res.error.message); }
+    const data = res.data || [];
+    if (!data.length) { wrap.style.display='none'; empty.style.display='block'; return; }
     _actItems = data;
-    wrap.innerHTML = `
-      ${data.map((a,i) => {
-        const f = _actFmt(a);
-        return `<div class="act-slide${i===0?' active':''}" data-i="${i}">
-          ${f.img
-            ? `<img src="${f.img}" alt="${f.name}" onclick="openLb('${f.img}')" style="cursor:zoom-in;">`
-            : `<div class="act-slide-placeholder">🎯</div>`}
-          <div class="act-slide-caption">
-            <div class="ac-name">${f.name}</div>
-            ${f.meta ? `<div class="ac-meta">${f.meta}</div>` : ''}
-          </div>
-        </div>`;
-      }).join('')}
-      <button class="act-slide-btn prev" onclick="_actGoto(_actIdx-1)">&#8249;</button>
-      <button class="act-slide-btn next" onclick="_actGoto(_actIdx+1)">&#8250;</button>
-      <div class="act-slide-dots">${data.map((_,i)=>`<button class="act-dot${i===0?' active':''}" onclick="_actGoto(${i})"></button>`).join('')}</div>
-      <div class="act-count" id="actCount">1 / ${data.length}</div>`;
-    _actTimer = setInterval(() => _actRender((_actIdx+1) % _actItems.length), 4500);
-  } catch(e) {}
+
+    // build slides
+    const slides = data.map(function(a, i) {
+      const f = _actFmt(a);
+      const imgHtml = f.img
+        ? '<img src="' + f.img + '" alt="" onclick="openLb(\'' + f.img.replace(/'/g,"\\'") + '\')" style="cursor:zoom-in;">'
+        : '<div class="act-slide-placeholder">🎯</div>';
+      const metaHtml = f.meta ? '<div class="ac-meta">' + f.meta + '</div>' : '';
+      return '<div class="act-slide' + (i===0?' active':'') + '" data-i="' + i + '">' +
+        imgHtml +
+        '<div class="act-slide-caption"><div class="ac-name">' + f.name + '</div>' + metaHtml + '</div>' +
+        '</div>';
+    }).join('');
+
+    const dots = data.map(function(_, i) {
+      return '<button class="act-dot' + (i===0?' active':'') + '" onclick="_actGoto(' + i + ')"></button>';
+    }).join('');
+
+    wrap.innerHTML =
+      slides +
+      '<button class="act-slide-btn prev" onclick="_actGoto(_actIdx-1)">&#8249;</button>' +
+      '<button class="act-slide-btn next" onclick="_actGoto(_actIdx+1)">&#8250;</button>' +
+      '<div class="act-slide-dots">' + dots + '</div>' +
+      '<div class="act-count" id="actCount">1 / ' + data.length + '</div>';
+
+    clearInterval(_actTimer);
+    _actTimer = setInterval(function() { _actRender((_actIdx + 1) % _actItems.length); }, 4500);
+  } catch(e) { console.error('[activities] JS error:', e); }
 }
 
 
