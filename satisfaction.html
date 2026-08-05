@@ -266,8 +266,9 @@ function acSelect(val) {
 function acHide() { document.getElementById('acList').style.display = 'none'; }
 
 // ===== CONFIG =====
-// วาง Web App URL ที่นี่หลังจาก Deploy ใน Apps Script
-const WEBAPP_URL = 'YOUR_WEBAPP_URL_HERE';
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzRUXZEm0Fi07JTMePUYG9N8nszZiqSl7nDciQZqblzhoXuzis-5WDqy0MEULo4BX0zPA/exec';
+const SB_URL  = 'https://ldwupcvtthufvksjmcpi.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxkd3VwY3Z0dGh1ZnZrc2ptY3BpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NzMyNTMsImV4cCI6MjA5NTU0OTI1M30.-fCUylreV5vXDhD7DXOAk-RtoknhUmWbzm2EluKOdFM';
 
 const QUESTIONS = [
   '1. เจ้าหน้าที่พูดจาสุภาพ ยิ้มแย้ม แจ่มใส มีความเป็นกันเอง',
@@ -442,17 +443,45 @@ async function submitForm() {
   };
 
   try {
-    if (WEBAPP_URL !== 'YOUR_WEBAPP_URL_HERE') {
-      await fetch(WEBAPP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    }
+    const now = new Date();
+    const m = now.getMonth() + 1;
+    const fy = m >= 10 ? now.getFullYear() + 543 : now.getFullYear() + 542;
+    const avg = answers.scores.reduce((s,v)=>s+v,0) / 10;
+
+    // ── ส่งไป Google Sheets (Apps Script) ────────────────
+    fetch(WEBAPP_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
+
+    // ── บันทึกลง Supabase โดยตรง ─────────────────────────
+    const row = {
+      form_type: 'staff',
+      dept: answers.dept, type: answers.type,
+      gender: answers.gender, age: String(answers.age),
+      s1:answers.scores[0], s2:answers.scores[1], s3:answers.scores[2],
+      s4:answers.scores[3], s5:answers.scores[4], s6:answers.scores[5],
+      s7:answers.scores[6], s8:answers.scores[7], s9:answers.scores[8],
+      s10:answers.scores[9],
+      score_avg: +avg.toFixed(2),
+      sat_pct:   +(avg/5*100).toFixed(1),
+      comment:   answers.comment,
+      fiscal_year: fy
+    };
+    await fetch(`${SB_URL}/rest/v1/sat_responses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${SB_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(row)
+    });
+
     // แสดงผลขอบคุณ
-    const avg = (answers.scores.reduce((s,v)=>s+v,0)/10).toFixed(2);
-    document.getElementById('myScore').textContent = avg;
+    document.getElementById('myScore').textContent = avg.toFixed(2);
     goStep(5);
   } catch(e) {
     btn.disabled = false;
