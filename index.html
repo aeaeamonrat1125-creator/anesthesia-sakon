@@ -207,6 +207,25 @@ body { font-family:'Sarabun',system-ui,sans-serif; margin:0; background:#fff; co
 .act-img { width:100%; height:160px; object-fit:cover; }
 .act-body { padding:14px 16px; }
 
+/* ── ACTIVITY SLIDESHOW ──────────────────────────────────── */
+.act-slideshow { position:relative; border-radius:20px; overflow:hidden; background:#1e1b4b; box-shadow:0 8px 32px rgba(109,40,217,.18); }
+.act-slide { display:none; position:relative; }
+.act-slide.active { display:block; animation:actSlideIn .5s ease; }
+.act-slide img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; max-height:480px; }
+.act-slide-placeholder { width:100%; aspect-ratio:16/9; max-height:480px; background:linear-gradient(135deg,#2d1b69,#4c1d95); display:flex; align-items:center; justify-content:center; font-size:48px; }
+.act-slide-caption { position:absolute; bottom:0; left:0; right:0; padding:40px 24px 20px; background:linear-gradient(0deg,rgba(0,0,0,.75) 0%,transparent 100%); color:#fff; }
+.act-slide-caption .ac-name { font-size:17px; font-weight:700; line-height:1.3; margin-bottom:4px; }
+.act-slide-caption .ac-meta { font-size:12px; color:rgba(255,255,255,.7); }
+.act-slide-btn { position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.2); border:none; color:#fff; font-size:20px; cursor:pointer; transition:.15s; backdrop-filter:blur(6px); z-index:3; display:flex; align-items:center; justify-content:center; }
+.act-slide-btn:hover { background:rgba(255,255,255,.38); }
+.act-slide-btn.prev { left:14px; }
+.act-slide-btn.next { right:14px; }
+.act-slide-dots { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:3; }
+.act-dot { width:8px; height:8px; border-radius:4px; background:rgba(255,255,255,.4); border:none; cursor:pointer; transition:all .25s; padding:0; }
+.act-dot.active { width:24px; background:#fff; }
+.act-count { position:absolute; top:14px; right:16px; background:rgba(0,0,0,.4); color:#fff; font-size:11px; font-weight:600; padding:3px 10px; border-radius:999px; backdrop-filter:blur(4px); z-index:3; }
+@keyframes actSlideIn { from{opacity:0;transform:scale(1.03)} to{opacity:1;transform:scale(1)} }
+
 /* ── CONTACT ─────────────────────────────────────────────── */
 .contact-info { display:flex; flex-direction:column; gap:10px; }
 .contact-row { display:flex; align-items:flex-start; gap:10px; font-size:14px; color:#4c1d95; }
@@ -602,12 +621,12 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
   <div class="section-inner">
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:40px;align-items:start;" class="more-grid">
 
-      <!-- Activities (read-only) -->
+      <!-- Activities (slideshow) -->
       <div>
         <div class="section-label">Activities</div>
         <div style="font-size:22px;font-weight:800;color:#1e1b4b;margin:0 0 8px;">🎯 กิจกรรมหน่วยงาน</div>
         <div class="section-divider" style="margin-bottom:24px;"></div>
-        <div id="actGrid" class="grid-2" style="gap:16px;"></div>
+        <div id="actSlideshow" class="act-slideshow"></div>
         <div id="actEmpty" style="display:none;text-align:center;padding:40px;color:#94a3b8;">ยังไม่มีกิจกรรม</div>
       </div>
 
@@ -1003,22 +1022,52 @@ async function loadSatStats() {
   } catch(e) { console.warn('loadSatStats',e); }
 }
 
-// ── ACTIVITIES ────────────────────────────────────────────
+// ── ACTIVITIES SLIDESHOW ──────────────────────────────────
+let _actIdx = 0, _actTimer = null, _actItems = [];
+
+function _actFmt(a) {
+  const d = a.event_date ? new Date(a.event_date).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}) : '';
+  const loc = a.location ? ' · ' + a.location : '';
+  return { name: a.name||'', meta: d + loc, img: a.image_url||'' };
+}
+function _actRender(idx) {
+  const n = _actItems.length;
+  document.querySelectorAll('.act-slide').forEach((s,i) => s.classList.toggle('active', i===idx));
+  document.querySelectorAll('.act-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
+  const cnt = document.getElementById('actCount');
+  if (cnt) cnt.textContent = `${idx+1} / ${n}`;
+  _actIdx = idx;
+}
+function _actGoto(n) {
+  clearInterval(_actTimer);
+  _actRender((n + _actItems.length) % _actItems.length);
+  _actTimer = setInterval(() => _actRender((_actIdx+1) % _actItems.length), 4500);
+}
 async function loadActivities() {
-  const grid = document.getElementById('actGrid');
+  const wrap = document.getElementById('actSlideshow');
   const empty = document.getElementById('actEmpty');
   try {
-    const { data } = await sb.from('activities').select('*').order('event_date', { ascending: false }).limit(4);
-    if (!data?.length) { grid.style.display='none'; empty.style.display='block'; return; }
-    grid.innerHTML = data.map(a => `
-      <div class="act-card">
-        ${a.image_url ? `<img src="${a.image_url}" class="act-img" onclick="openLb('${a.image_url}')" style="cursor:zoom-in;">` : ''}
-        <div class="act-body">
-          <div style="font-size:14px;font-weight:700;color:#1e1b4b;margin-bottom:4px;">${a.name||''}</div>
-          <div style="font-size:12px;color:#94a3b8;">${a.event_date ? new Date(a.event_date).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}) : ''}</div>
-          ${a.description ? `<div style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.5;">${a.description}</div>` : ''}
-        </div>
-      </div>`).join('');
+    const { data } = await sb.from('activities').select('*').order('event_date', { ascending: false });
+    if (!data?.length) { wrap.style.display='none'; empty.style.display='block'; return; }
+    _actItems = data;
+    wrap.innerHTML = `
+      ${data.map((a,i) => {
+        const f = _actFmt(a);
+        return `<div class="act-slide${i===0?' active':''}" data-i="${i}">
+          ${f.img
+            ? `<img src="${f.img}" alt="${f.name}" onclick="openLb('${f.img}')" style="cursor:zoom-in;">`
+            : `<div class="act-slide-placeholder">🎯</div>`}
+          <div class="act-slide-caption">
+            <div class="ac-name">${f.name}</div>
+            ${f.meta ? `<div class="ac-meta">${f.meta}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+      <button class="act-slide-btn prev" onclick="_actGoto(_actIdx-1)">&#8249;</button>
+      <button class="act-slide-btn next" onclick="_actGoto(_actIdx+1)">&#8250;</button>
+      <div class="act-slide-dots">${data.map((_,i)=>`<button class="act-dot${i===0?' active':''}" onclick="_actGoto(${i})"></button>`).join('')}</div>
+      <div class="act-count" id="actCount">1 / ${data.length}</div>`;
+    _actTimer = setInterval(() => _actRender((_actIdx+1) % _actItems.length), 4500);
   } catch(e) {}
 }
 
