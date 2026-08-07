@@ -289,7 +289,7 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
         </div>
       </div>
       <div class="nav-dropdown">
-        <a href="#about">ข้อมูลงานบริการ ▾</a>
+        <a href="service-info.html">ข้อมูลงานบริการ ▾</a>
         <div class="nav-dropdown-menu">
           <a href="service-info.html#scope">🏥 ขอบเขตความรับผิดชอบ</a>
           <a href="service-info.html#competencies">💪 ภารกิจหลักและศักยภาพ</a>
@@ -1127,8 +1127,10 @@ function updateNavActive() {
     const el = document.getElementById(id);
     if (el && el.offsetTop <= scrollY) current = id;
   });
+  // about เป็น sub-section ของ หน้าแรก → ให้ highlight #home แทน
+  const activeHref = '#' + (current === 'about' ? 'home' : current);
   document.querySelectorAll('.nav-links a').forEach(a => {
-    a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    a.classList.toggle('active', a.getAttribute('href') === activeHref);
   });
 }
 
