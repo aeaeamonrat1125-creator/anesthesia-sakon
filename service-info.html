@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ข้อมูลงานบริการ — วิสัญญีพยาบาล รพ.สกลนคร</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<meta name="theme-color" content="#7c3aed">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',system-ui,sans-serif;background:#f8f5ff;color:#1e1b4b;}
+
+/* NAV */
+#navbar{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(109,40,217,.1);box-shadow:0 1px 16px rgba(109,40,217,.08);}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+.nav-logo img{height:40px;object-fit:contain;}
+.nav-links{display:flex;align-items:center;gap:2px;}
+.nav-links a,.nav-links button{padding:6px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#4c1d95;background:none;border:none;cursor:pointer;text-decoration:none;font-family:'Sarabun',sans-serif;transition:all .12s;white-space:nowrap;}
+.nav-links a:hover,.nav-links button:hover{background:#f5f3ff;color:#7c3aed;}
+.nav-links a.active{background:#ede9fe;color:#6d28d9;font-weight:700;}
+.nav-dropdown{position:relative;}
+.nav-dropdown-menu{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(109,40,217,.15);border:1px solid #ede9fe;min-width:200px;padding:6px;z-index:200;opacity:0;pointer-events:none;transform:translateY(-6px);transition:all .15s;}
+.nav-dropdown:hover .nav-dropdown-menu{opacity:1;pointer-events:auto;transform:translateY(0);}
+.nav-dropdown-menu a{display:block;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;color:#4c1d95;text-decoration:none;white-space:nowrap;transition:.1s;}
+.nav-dropdown-menu a:hover,.nav-dropdown-menu a.active{background:#f5f3ff;color:#7c3aed;}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;}
+.hamburger span{display:block;width:24px;height:2px;background:#6d28d9;border-radius:2px;}
+@media(max-width:900px){.nav-links{display:none;}.hamburger{display:flex;}}
+
+/* DRAWER */
+#drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;}
+#drawer-overlay.open{display:block;}
+#drawer{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#fff;z-index:400;transition:right .25s;box-shadow:-4px 0 24px rgba(0,0,0,.15);overflow-y:auto;}
+#drawer.open{right:0;}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #ede9fe;}
+.drawer-logo img{height:34px;}
+.drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:#7c3aed;}
+.drawer-body{padding:16px;}
+.d-link{display:block;padding:11px 14px;border-radius:10px;color:#4c1d95;text-decoration:none;font-size:15px;font-weight:500;transition:.1s;}
+.d-link:hover,.d-link.active{background:#f5f3ff;color:#7c3aed;}
+.d-group-btn{width:100%;display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-radius:10px;background:none;border:none;cursor:pointer;font-size:15px;font-weight:600;color:#4c1d95;font-family:'Sarabun',sans-serif;}
+.d-group-btn:hover{background:#f5f3ff;}
+.d-sub{display:none;padding-left:14px;}
+.d-sub.open{display:block;}
+
+/* HERO */
+.page-hero{margin-top:64px;background:linear-gradient(135deg,#6d28d9 0%,#9333ea 55%,#c026d3 100%);padding:48px 20px 40px;text-align:center;}
+.page-hero h1{font-size:clamp(26px,4vw,38px);font-weight:800;color:#fff;}
+.page-hero p{font-size:14px;color:rgba(255,255,255,.8);margin-top:8px;}
+
+/* TABS */
+.tabs-wrap{background:#fff;border-bottom:2px solid #ede9fe;position:sticky;top:64px;z-index:50;}
+.tabs-inner{max-width:1100px;margin:0 auto;padding:0 20px;display:flex;gap:4px;overflow-x:auto;}
+.tab-btn{padding:14px 20px;border:none;background:none;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.15s;}
+.tab-btn:hover{color:#7c3aed;}
+.tab-btn.active{color:#6d28d9;border-bottom-color:#6d28d9;}
+
+/* CONTENT */
+.content-section{display:none;max-width:1100px;margin:0 auto;padding:48px 20px 80px;}
+.content-section.active{display:block;}
+.section-badge{display:inline-block;background:#f3e8ff;color:#7c3aed;font-size:12px;font-weight:700;padding:4px 14px;border-radius:999px;margin-bottom:12px;letter-spacing:.04em;}
+.section-title{font-size:clamp(22px,3.5vw,32px);font-weight:800;color:#1e1b4b;margin-bottom:6px;}
+.section-subtitle{font-size:14px;color:#7c3aed;font-weight:600;margin-bottom:32px;}
+
+/* QUOTE BOX */
+.quote-box{background:linear-gradient(135deg,#f5f3ff,#fdf4ff);border-left:5px solid #7c3aed;border-radius:0 14px 14px 0;padding:24px 28px;margin-bottom:36px;font-size:15px;line-height:1.8;color:#2d1b69;}
+
+/* STAGE CARDS (ขอบเขต) */
+.stages-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:12px;}
+.stage-card{background:#fff;border-radius:16px;padding:24px;border:2px solid #e9d5ff;position:relative;box-shadow:0 2px 12px rgba(109,40,217,.08);}
+.stage-card.green{border-color:#6ee7b7;} .stage-card.blue{border-color:#93c5fd;} .stage-card.purple{border-color:#c4b5fd;} .stage-card.orange{border-color:#fed7aa;}
+.stage-num{font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;display:inline-block;margin-bottom:10px;}
+.stage-card.green .stage-num{background:#d1fae5;color:#065f46;}
+.stage-card.blue .stage-num{background:#dbeafe;color:#1e40af;}
+.stage-card.purple .stage-num{background:#ede9fe;color:#5b21b6;}
+.stage-card.orange .stage-num{background:#ffedd5;color:#9a3412;}
+.stage-icon{font-size:32px;margin-bottom:10px;}
+.stage-name{font-size:14px;font-weight:800;color:#1e1b4b;margin-bottom:4px;}
+.stage-en{font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:12px;}
+.stage-list{list-style:none;display:flex;flex-direction:column;gap:6px;}
+.stage-list li{font-size:13px;color:#475569;display:flex;gap:8px;align-items:flex-start;line-height:1.5;}
+.stage-list li::before{content:"✓";color:#7c3aed;font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* COMPETENCY ITEMS */
+.comp-list{display:flex;flex-direction:column;gap:16px;margin-top:8px;}
+.comp-item{background:#fff;border-radius:14px;padding:20px 24px;border:1.5px solid #e9d5ff;display:grid;grid-template-columns:56px 1fr;gap:16px;align-items:flex-start;box-shadow:0 2px 8px rgba(109,40,217,.06);}
+.comp-num{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0;}
+.comp-num.c1{background:linear-gradient(135deg,#6d28d9,#9333ea);}
+.comp-num.c2{background:linear-gradient(135deg,#0369a1,#0ea5e9);}
+.comp-num.c3{background:linear-gradient(135deg,#7c3aed,#c026d3);}
+.comp-num.c4{background:linear-gradient(135deg,#b45309,#f59e0b);}
+.comp-num.c5{background:linear-gradient(135deg,#065f46,#10b981);}
+.comp-text h4{font-size:15px;font-weight:700;color:#1e1b4b;margin-bottom:4px;}
+.comp-text p{font-size:13px;color:#64748b;line-height:1.6;}
+
+/* FOCUS GRID */
+.focus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:8px;}
+.focus-card{background:#fff;border-radius:16px;padding:24px;border:2px solid #e9d5ff;box-shadow:0 2px 12px rgba(109,40,217,.08);}
+.focus-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;margin-bottom:14px;}
+.focus-num.f1{background:linear-gradient(135deg,#0369a1,#0ea5e9);}
+.focus-num.f2{background:linear-gradient(135deg,#7c3aed,#9333ea);}
+.focus-num.f3{background:linear-gradient(135deg,#b45309,#f59e0b);}
+.focus-num.f4{background:linear-gradient(135deg,#065f46,#10b981);}
+.focus-card h4{font-size:15px;font-weight:800;color:#1e1b4b;margin-bottom:6px;}
+.focus-card .en{font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:10px;}
+.focus-card p{font-size:13px;color:#64748b;line-height:1.6;}
+
+/* GOALS */
+.goals-intro{text-align:center;background:linear-gradient(135deg,#f5f3ff,#fdf4ff);border-radius:16px;padding:24px;margin-bottom:32px;font-size:15px;color:#4c1d95;font-weight:500;line-height:1.7;}
+.goals-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;}
+.goal-card{background:#fff;border-radius:20px;padding:28px;border:2px solid #e9d5ff;box-shadow:0 4px 20px rgba(109,40,217,.1);text-align:center;}
+.goal-icon{font-size:48px;margin-bottom:16px;}
+.goal-num{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;margin:0 auto 12px;}
+.goal-num.g1{background:linear-gradient(135deg,#0369a1,#0ea5e9);}
+.goal-num.g2{background:linear-gradient(135deg,#7c3aed,#9333ea);}
+.goal-num.g3{background:linear-gradient(135deg,#065f46,#10b981);}
+.goal-card h4{font-size:16px;font-weight:800;color:#1e1b4b;margin-bottom:4px;}
+.goal-card .en{font-size:12px;color:#7c3aed;font-weight:600;margin-bottom:12px;}
+.goal-card p{font-size:13px;color:#64748b;line-height:1.7;}
+.goal-tag{display:inline-block;margin-top:14px;font-size:12px;font-weight:700;padding:4px 14px;border-radius:999px;}
+.goal-tag.t1{background:#dbeafe;color:#1e40af;}
+.goal-tag.t2{background:#ede9fe;color:#5b21b6;}
+.goal-tag.t3{background:#d1fae5;color:#065f46;}
+
+/* STAT BAR */
+.stat-bar{background:linear-gradient(135deg,#6d28d9,#9333ea,#c026d3);border-radius:16px;padding:24px 32px;margin-top:40px;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;}
+.stat-item{text-align:center;color:#fff;}
+.stat-item .icon{font-size:24px;margin-bottom:4px;}
+.stat-item .label{font-size:12px;opacity:.85;font-weight:500;}
+
+footer{background:linear-gradient(135deg,#4c1d95,#6d28d9);color:#fff;padding:32px 20px;text-align:center;margin-top:0;}
+footer p{font-size:13px;color:rgba(255,255,255,.7);}
+
+@media(max-width:640px){
+  .stages-grid,.focus-grid,.goals-grid{grid-template-columns:1fr;}
+  .comp-item{grid-template-columns:1fr;gap:10px;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="logo-new.png" alt="AN sakon"></a>
+    <div class="nav-links">
+      <div class="nav-dropdown">
+        <a href="index.html">หน้าแรก ▾</a>
+        <div class="nav-dropdown-menu">
+          <a href="index.html#about" onclick="void(0)">👁️ วิสัยทัศน์ พันธกิจ</a>
+          <a href="index.html#about">👥 บุคลากร หน่วยงาน</a>
+          <a href="index.html#satisfaction">📊 ตัวชี้วัด</a>
+        </div>
+      </div>
+      <div class="nav-dropdown">
+        <a href="service-info.html" class="active">ข้อมูลงานบริการ ▾</a>
+        <div class="nav-dropdown-menu">
+          <a href="#scope" class="active">🏥 ขอบเขตความรับผิดชอบ</a>
+          <a href="#competencies">💪 ภารกิจหลักและศักยภาพ</a>
+          <a href="#focus">🎯 จุดเน้นการพัฒนา</a>
+          <a href="#goals">🏆 เป้าหมายหน่วยงาน</a>
+        </div>
+      </div>
+      <a href="index.html#research">วิจัยและผลงานวิชาการ</a>
+      <a href="index.html#documents">เอกสาร</a>
+      <a href="index.html#satisfaction">ความพึงพอใจ</a>
+      <a href="staff.html">สำหรับเจ้าหน้าที่</a>
+      <a href="index.html#activities">ภาพกิจกรรม</a>
+      <div class="nav-dropdown">
+        <a href="#">อื่นๆ ▾</a>
+        <div class="nav-dropdown-menu">
+          <a href="signup.html">✨ สมัครสมาชิก</a>
+          <a href="admin-contact.html">🛡️ ผู้ดูแลระบบ</a>
+        </div>
+      </div>
+    </div>
+    <button class="hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- DRAWER -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-logo"><img src="logo-new.png" alt="AN sakon"></div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <a href="index.html" class="d-link">🏠 หน้าแรก</a>
+    <button class="d-group-btn" onclick="toggleDGroup(this)"><span>📁 ข้อมูลงานบริการ</span><span>▾</span></button>
+    <div class="d-sub open">
+      <a href="#scope" class="d-link active" onclick="closeDrawer();showTab('scope')">🏥 ขอบเขตความรับผิดชอบ</a>
+      <a href="#competencies" class="d-link" onclick="closeDrawer();showTab('competencies')">💪 ภารกิจหลักและศักยภาพ</a>
+      <a href="#focus" class="d-link" onclick="closeDrawer();showTab('focus')">🎯 จุดเน้นการพัฒนา</a>
+      <a href="#goals" class="d-link" onclick="closeDrawer();showTab('goals')">🏆 เป้าหมายหน่วยงาน</a>
+    </div>
+    <a href="index.html#research" class="d-link">🔬 วิจัยและผลงานวิชาการ</a>
+    <a href="index.html#satisfaction" class="d-link">😊 ความพึงพอใจ</a>
+    <a href="staff.html" class="d-link">👩‍⚕️ สำหรับเจ้าหน้าที่</a>
+    <a href="signup.html" class="d-link">✨ สมัครสมาชิก</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="page-hero">
+  <h1>📋 ข้อมูลงานบริการ</h1>
+  <p>หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</p>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="showTab('scope')">🏥 ขอบเขตความรับผิดชอบ</button>
+    <button class="tab-btn" onclick="showTab('competencies')">💪 ภารกิจหลักและศักยภาพ</button>
+    <button class="tab-btn" onclick="showTab('focus')">🎯 จุดเน้นการพัฒนา</button>
+    <button class="tab-btn" onclick="showTab('goals')">🏆 เป้าหมายหน่วยงาน</button>
+  </div>
+</div>
+
+<!-- ══ 1. ขอบเขต ══ -->
+<div id="scope" class="content-section active">
+  <span class="section-badge">SCOPE OF RESPONSIBILITY</span>
+  <div class="section-title">ขอบเขตความรับผิดชอบของหน่วยงาน</div>
+  <div class="section-subtitle">ลักษณะพื้นฐานของหน่วยงาน</div>
+
+  <div class="quote-box">
+    งานวิสัญญีพยาบาลเป็นหน่วยงานเฉพาะทางที่ปฏิบัติงานร่วมกับสหสาขาวิชาชีพ <strong>(Interprofessional Team)</strong><br>
+    ครอบคลุมการดูแลผู้ป่วยต่อเนื่องตั้งแต่ <strong>ระยะก่อนระงับความรู้สึก (Pre-anesthesia)</strong> ระยะระงับความรู้สึก <strong>(Intra-anesthesia)</strong> จนถึงระยะหลังระงับความรู้สึก <strong>(Post-anesthesia)</strong><br>
+    ทั้งในอาคารผ่าตัดและหน่วยบริการนอกห้องผ่าตัด <strong>(NORA)</strong> โดยบุคลากรพยาบาลวิชาชีพทุกคน เป็นผู้เชี่ยวชาญที่ผ่านการฝึกอบรมหลักสูตรวิสัญญีพยาบาลตามมาตรฐานราชวิทยาลัยวิสัญญีแพทย์แห่งประเทศไทย
+  </div>
+
+  <div style="text-align:center;font-size:14px;font-weight:700;color:#6d28d9;margin-bottom:20px;letter-spacing:.04em;">
+    การดูแลผู้ป่วยแบบต่อเนื่อง ครอบคลุมผู้ป่วยทุกระยะการระงับความรู้สึก
+  </div>
+
+  <div class="stages-grid">
+    <div class="stage-card green">
+      <div class="stage-num">ระยะที่ 1</div>
+      <div class="stage-icon">📋</div>
+      <div class="stage-name">ระยะก่อนระงับความรู้สึก</div>
+      <div class="stage-en">Pre-anesthesia</div>
+      <ul class="stage-list">
+        <li>ประเมินสภาพร่างกายและจิตใจของผู้ป่วย</li>
+        <li>ให้ข้อมูลและเตรียมความพร้อม</li>
+        <li>วางแผนการระงับความรู้สึก</li>
+        <li>ตรวจสอบความปลอดภัยก่อนผ่าตัด</li>
+      </ul>
+    </div>
+    <div class="stage-card blue">
+      <div class="stage-num">ระยะที่ 2</div>
+      <div class="stage-icon">🫀</div>
+      <div class="stage-name">ระยะระงับความรู้สึก</div>
+      <div class="stage-en">Intra-anesthesia</div>
+      <ul class="stage-list">
+        <li>ให้การระงับความรู้สึกอย่างปลอดภัย</li>
+        <li>เฝ้าระวังและติดตามสัญญาณชีพอย่างต่อเนื่อง</li>
+        <li>ดูแลระบบหายใจ การไหลเวียนโลหิต</li>
+        <li>ควบคุมความปวดและป้องกันภาวะแทรกซ้อน</li>
+      </ul>
+    </div>
+    <div class="stage-card purple">
+      <div class="stage-num">ระยะที่ 3</div>
+      <div class="stage-icon">🛏️</div>
+      <div class="stage-name">ระยะหลังระงับความรู้สึก</div>
+      <div class="stage-en">Post-anesthesia</div>
+      <ul class="stage-list">
+        <li>ประเมินการฟื้นตัวและสัญญาณชีพ</li>
+        <li>ควบคุมความปวดและให้ยาอย่างเหมาะสม</li>
+        <li>เฝ้าระวังและจัดการภาวะแทรกซ้อน</li>
+        <li>ให้คำแนะนำก่อนจำหน่ายจากห้องพักฟื้น</li>
+      </ul>
+    </div>
+    <div class="stage-card orange">
+      <div class="stage-num">หน่วยพิเศษ</div>
+      <div class="stage-icon">🏥</div>
+      <div class="stage-name">หน่วยบริการนอกห้องผ่าตัด</div>
+      <div class="stage-en">NORA</div>
+      <ul class="stage-list">
+        <li>ให้การระงับความรู้สึกและดูแลผู้ป่วยในการทำหัตถการนอกห้องผ่าตัด</li>
+        <li>เช่น ERCP, CAG, MRI, Endoscopy</li>
+        <li>ด้วยมาตรฐานความปลอดภัยเดียวกัน</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="stat-bar" style="margin-top:40px;">
+    <div class="stat-item"><div class="icon">🛡️</div><div class="label">มาตรฐานความปลอดภัย<br>ใส่ใจทุกขั้นตอน</div></div>
+    <div class="stat-item"><div class="icon">👥</div><div class="label">ทำงานร่วมกับสหสาขาวิชาชีพ<br>เพื่อการดูแลที่ดีที่สุด</div></div>
+    <div class="stat-item"><div class="icon">🎯</div><div class="label">มุ่งสู่การดูแลที่มีคุณภาพ<br>ผู้ป่วยปลอดภัย ประทับใจ</div></div>
+  </div>
+</div>
+
+<!-- ══ 2. ภารกิจหลัก ══ -->
+<div id="competencies" class="content-section">
+  <span class="section-badge">CORE COMPETENCIES</span>
+  <div class="section-title">ภารกิจหลักและศักยภาพในการดูแล</div>
+  <div class="section-subtitle">Core Competencies — สมรรถนะหลักของหน่วยงาน</div>
+
+  <div class="comp-list">
+    <div class="comp-item">
+      <div class="comp-num c1">1</div>
+      <div class="comp-text">
+        <h4>ให้บริการระงับความรู้สึกทุกประเภท (GA, RA, MAC)</h4>
+        <p>สำหรับการผ่าตัดและหัตถการในทุกกลุ่มวัย ทั้งผู้ป่วยใน (IPD) และผู้ป่วยนอก (OPD/ODS) ตลอด 24 ชั่วโมง</p>
+      </div>
+    </div>
+    <div class="comp-item">
+      <div class="comp-num c2">2</div>
+      <div class="comp-text">
+        <h4>เยี่ยมประเมินและเตรียมความพร้อมผู้ป่วยล่วงหน้า (Elective case)</h4>
+        <p>และติดตามเฝ้าระวังภาวะแทรกซ้อนหลังได้รับบริการวิสัญญี ภายใน 24–48 ชั่วโมง</p>
+      </div>
+    </div>
+    <div class="comp-item">
+      <div class="comp-num c3">3</div>
+      <div class="comp-text">
+        <h4>ให้บริการระงับปวดหลังผ่าตัดเฉียบพลัน (Acute Post-operative Pain Service)</h4>
+        <p>เพื่อคุณภาพชีวิตที่ดีของผู้ป่วย ลดความเจ็บปวดและภาวะแทรกซ้อนที่เกิดจากความปวด</p>
+      </div>
+    </div>
+    <div class="comp-item">
+      <div class="comp-num c4">4</div>
+      <div class="comp-text">
+        <h4>ให้บริการเปิดหลอดเลือดดำส่วนกลาง (Central Line)</h4>
+        <p>และสนับสนุนการใส่ท่อช่วยหายใจในกรณีใส่ยาก (Difficult Airway Management) ทั่วทั้งโรงพยาบาล</p>
+      </div>
+    </div>
+    <div class="comp-item">
+      <div class="comp-num c5">5</div>
+      <div class="comp-text">
+        <h4>เป็นแหล่งฝึกอบรมและศึกษาดูงานด้านวิสัญญีวิทยา</h4>
+        <p>สำหรับนักศึกษาพยาบาลและบุคลากรสาธารณสุข เพื่อพัฒนาศักยภาพวิชาชีพอย่างต่อเนื่อง</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-bar" style="margin-top:40px;">
+    <div class="stat-item"><div class="icon">⏰</div><div class="label">บริการตลอด<br>24 ชั่วโมง</div></div>
+    <div class="stat-item"><div class="icon">👥</div><div class="label">ทีมสหสาขาวิชาชีพ<br>ร่วมดูแล</div></div>
+    <div class="stat-item"><div class="icon">🛡️</div><div class="label">มาตรฐานความปลอดภัย<br>ระดับสากล</div></div>
+    <div class="stat-item"><div class="icon">📈</div><div class="label">พัฒนาอย่างต่อเนื่อง<br>เพื่อคุณภาพที่ดียิ่งขึ้น</div></div>
+    <div class="stat-item"><div class="icon">🏅</div><div class="label">บุคลากรผู้เชี่ยวชาญ<br>ได้รับการรับรอง</div></div>
+  </div>
+</div>
+
+<!-- ══ 3. จุดเน้นการพัฒนา ══ -->
+<div id="focus" class="content-section">
+  <span class="section-badge">FOCUS AREAS 2568–2569</span>
+  <div class="section-title">จุดเน้นการพัฒนา</div>
+  <div class="section-subtitle">มุ่งสู่การพัฒนาบริการวิสัญญีที่มีคุณภาพ ปลอดภัย ทันสมัย และยั่งยืน</div>
+
+  <div class="focus-grid">
+    <div class="focus-card">
+      <div class="focus-num f1">1</div>
+      <h4>พัฒนาระบบบริการวิสัญญี</h4>
+      <div class="en">Service Development</div>
+      <p>เพื่อรองรับแผนพัฒนาระบบบริการสุขภาพ (Service Plan) สาขาต่างๆ ของโรงพยาบาลและเขตสุขภาพ ครอบคลุมทุกสาขา อย่างไร้รอยต่อ</p>
+    </div>
+    <div class="focus-card">
+      <div class="focus-num f2">2</div>
+      <h4>พัฒนาสมรรถนะวิสัญญีพยาบาล</h4>
+      <div class="en">Competency Development</div>
+      <p>สู่การเป็นผู้เชี่ยวชาญเฉพาะทาง (APN/Specialist) ด้วยองค์ความรู้และทักษะขั้นสูง การปฏิบัติอย่างเชี่ยวชาญ ภาวะผู้นำ นวัตกรรม และพัฒนาตลอดชีวิต</p>
+    </div>
+    <div class="focus-card">
+      <div class="focus-num f3">3</div>
+      <h4>พัฒนาและใช้แนวปฏิบัติการพยาบาล</h4>
+      <div class="en">CNPG &amp; SNCP</div>
+      <p>พัฒนาและใช้แนวปฏิบัติการพยาบาล (CNPG) และแผนการพยาบาลมาตรฐาน (SNCP) ในกลุ่มโรคสำคัญ เพื่อมาตรฐานเดียวกัน ดูแลได้อย่างมั่นใจ</p>
+    </div>
+    <div class="focus-card">
+      <div class="focus-num f4">4</div>
+      <h4>ขับเคลื่อนองค์กรสู่ Smart NSO</h4>
+      <div class="en">Smart Organization</div>
+      <p>โดยใช้โครงสร้างข้อมูลมาตรฐาน (NCP Data Set) และเตรียมความพร้อมสู่ระบบบันทึกทางการพยาบาลอิเล็กทรอนิกส์ (ENR) เพื่อข้อมูลที่ถูกต้อง ครบถ้วน</p>
+    </div>
+  </div>
+
+  <div class="stat-bar" style="margin-top:40px;">
+    <div class="stat-item"><div class="icon">🛡️</div><div class="label">ผู้ป่วยปลอดภัย<br>คุณภาพดี</div></div>
+    <div class="stat-item"><div class="icon">👥</div><div class="label">บุคลากรมีสมรรถนะ<br>และความสุข</div></div>
+    <div class="stat-item"><div class="icon">⚙️</div><div class="label">ระบบบริการทันสมัย<br>มีประสิทธิภาพ</div></div>
+    <div class="stat-item"><div class="icon">📈</div><div class="label">องค์กรเติบโต<br>อย่างยั่งยืน</div></div>
+  </div>
+</div>
+
+<!-- ══ 4. เป้าหมาย ══ -->
+<div id="goals" class="content-section">
+  <span class="section-badge">GOALS</span>
+  <div class="section-title">เป้าหมายหน่วยงาน</div>
+  <div class="section-subtitle">Goals — มุ่งสู่ความเป็นเลิศในการดูแลผู้ป่วย</div>
+
+  <div class="goals-intro">
+    มุ่งสู่การให้บริการวิสัญญีที่มีคุณภาพ ปลอดภัย ทันสมัย อย่างยั่งยืน<br>
+    <strong>เพื่อผู้ป่วยและองค์กรอย่างมีประสิทธิภาพ</strong>
+  </div>
+
+  <div class="goals-grid">
+    <div class="goal-card">
+      <div class="goal-num g1">1</div>
+      <div class="goal-icon">🛡️⭐</div>
+      <h4>Patient Safety &amp; Satisfaction</h4>
+      <div class="en">ความปลอดภัยและความพึงพอใจ</div>
+      <p>ผู้ป่วยปลอดภัยจากภาวะแทรกซ้อนที่ป้องกันได้ และมีความพึงพอใจในบริการระดับเลิศ</p>
+      <div class="goal-tag t1">ปลอดภัย · ใส่ใจ · มาตรฐานสูง</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-num g2">2</div>
+      <div class="goal-icon">👩‍⚕️🏅</div>
+      <h4>Professional Standards</h4>
+      <div class="en">มาตรฐานวิชาชีพ</div>
+      <p>บุคลากรมีสมรรถนะสูงตามมาตรฐานวิชาชีพ มีจริยธรรม และมีความสุขในองค์กร (Happy Workplace)</p>
+      <div class="goal-tag t2">พัฒนาไม่หยุด · สู่องค์กรแห่งอนาคต</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-num g3">3</div>
+      <div class="goal-icon">💻📊</div>
+      <h4>Smart Organization</h4>
+      <div class="en">องค์กรอัจฉริยะ</div>
+      <p>เป็นองค์กรแห่งการเรียนรู้ที่ใช้เทคโนโลยีดิจิทัลและสารสนเทศทางการพยาบาล (Nursing Informatics) มาเพิ่มประสิทธิภาพการดูแลผู้ป่วยและการจัดการข้อมูลอย่างเป็นระบบ</p>
+      <div class="goal-tag t3">เพื่อผู้ป่วย · ทุกคน · ทุกเวลา</div>
+    </div>
+  </div>
+
+  <div class="stat-bar" style="margin-top:40px;">
+    <div class="stat-item"><div class="icon">🛡️</div><div class="label">ปลอดภัย ใส่ใจ<br>มาตรฐานสูง</div></div>
+    <div class="stat-item"><div class="icon">📈</div><div class="label">พัฒนาไม่หยุด<br>สู่องค์กรแห่งอนาคต</div></div>
+    <div class="stat-item"><div class="icon">❤️</div><div class="label">เพื่อผู้ป่วย<br>ทุกคน ทุกเวลา</div></div>
+  </div>
+</div>
+
+<footer><p>© 2569 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</p></footer>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx = ['scope','competencies','focus','goals'].indexOf(id);
+  document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
+  document.getElementById(id).scrollIntoView({behavior:'smooth', block:'start'});
+}
+// ถ้ามี hash ใน URL ให้เปิด tab นั้น
+const hash = location.hash.replace('#','');
+if (['scope','competencies','focus','goals'].includes(hash)) showTab(hash);
+
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');document.body.style.overflow='';}
+function toggleDGroup(btn){btn.nextElementSibling.classList.toggle('open');}
+</script>
+</body>
+</html>

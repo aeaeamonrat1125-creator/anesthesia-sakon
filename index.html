@@ -44,7 +44,7 @@ body { font-family:'Sarabun',system-ui,sans-serif; margin:0; background:#fff; co
 .nav-signup:hover { opacity:.9 !important; box-shadow:0 4px 16px rgba(124,58,237,.4) !important; }
 .nav-dropdown { position:relative; }
 .nav-dropdown-menu {
-  position:absolute; top:calc(100% + 6px); right:0; background:#fff;
+  position:absolute; top:calc(100% + 6px); left:0; background:#fff;
   border-radius:12px; box-shadow:0 8px 24px rgba(109,40,217,.15);
   border:1px solid #ede9fe; min-width:160px; padding:6px; z-index:200;
   opacity:0; pointer-events:none; transform:translateY(-6px); transition:all .15s;
@@ -291,10 +291,10 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
       <div class="nav-dropdown">
         <a href="#about">ข้อมูลงานบริการ ▾</a>
         <div class="nav-dropdown-menu">
-          <a href="#">📊 รายการ 1</a>
-          <a href="#">📋 รายการ 2</a>
-          <a href="#">🎯 รายการ 3</a>
-          <a href="#">🏁 รายการ 4</a>
+          <a href="service-info.html#scope">🏥 ขอบเขตความรับผิดชอบ</a>
+          <a href="service-info.html#competencies">💪 ภารกิจหลักและศักยภาพ</a>
+          <a href="service-info.html#focus">🎯 จุดเน้นการพัฒนา</a>
+          <a href="service-info.html#goals">🏆 เป้าหมายหน่วยงาน</a>
         </div>
       </div>
       <a href="#research">วิจัยและผลงานวิชาการ</a>
@@ -339,10 +339,10 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
       <span class="arrow">▾</span>
     </button>
     <div class="d-sub">
-      <a href="#" class="d-link" onclick="closeDrawer()">📊 รายการ 1</a>
-      <a href="#" class="d-link" onclick="closeDrawer()">📋 รายการ 2</a>
-      <a href="#" class="d-link" onclick="closeDrawer()">🎯 รายการ 3</a>
-      <a href="#" class="d-link" onclick="closeDrawer()">🏁 รายการ 4</a>
+      <a href="service-info.html#scope" class="d-link" onclick="closeDrawer()">🏥 ขอบเขตความรับผิดชอบ</a>
+      <a href="service-info.html#competencies" class="d-link" onclick="closeDrawer()">💪 ภารกิจหลักและศักยภาพ</a>
+      <a href="service-info.html#focus" class="d-link" onclick="closeDrawer()">🎯 จุดเน้นการพัฒนา</a>
+      <a href="service-info.html#goals" class="d-link" onclick="closeDrawer()">🏆 เป้าหมายหน่วยงาน</a>
     </div>
 
     <button class="d-group-btn" onclick="toggleDGroup(this)">
