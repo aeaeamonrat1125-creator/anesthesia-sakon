@@ -713,33 +713,43 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
     <div class="section-title">วิจัยและผลงานวิชาการ</div>
     <div class="section-divider"></div>
 
-    <div class="grid-2">
-      <div class="research-card">
-        <div class="research-card-header">
-          <div style="font-size:32px;margin-bottom:10px;">📚</div>
-          <div style="font-size:18px;font-weight:800;margin-bottom:6px;">Journal Club</div>
-          <div style="font-size:13px;color:rgba(255,255,255,.75);">นำเสนอและอภิปรายงานวิจัยทางการพยาบาลวิสัญญี</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
+      <!-- KM -->
+      <a href="research-km.html" style="text-decoration:none;background:#fff;border-radius:20px;border:1.5px solid #e9d5ff;overflow:hidden;box-shadow:0 2px 12px rgba(109,40,217,.08);transition:.15s;display:flex;flex-direction:column;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(109,40,217,.15)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(109,40,217,.08)'">
+        <div style="background:linear-gradient(135deg,#7c3aed,#9333ea);padding:24px;color:#fff;">
+          <div style="font-size:36px;margin-bottom:10px;">📚</div>
+          <div style="font-size:18px;font-weight:800;margin-bottom:4px;">KM</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.75);">Knowledge Management</div>
         </div>
-        <div class="research-card-body">
-          <p style="font-size:14px;color:#64748b;line-height:1.7;margin:0 0 16px;">
-            กิจกรรม Journal Club เพื่อพัฒนาองค์ความรู้ แลกเปลี่ยนเรียนรู้งานวิจัยใหม่ๆ และพัฒนาแนวปฏิบัติทางคลินิก
-          </p>
-          <a href="staff.html" style="display:inline-flex;align-items:center;gap:6px;color:#7c3aed;font-weight:700;font-size:14px;text-decoration:none;">ดูรายการ Journal Club →</a>
+        <div style="padding:20px;flex:1;">
+          <p style="font-size:14px;color:#64748b;line-height:1.7;margin:0 0 16px;">การจัดการความรู้และถอดบทเรียนนวัตกรรมในหน่วยงานวิสัญญีพยาบาล</p>
+          <span style="color:#7c3aed;font-weight:700;font-size:14px;">ดูรายการ KM →</span>
         </div>
-      </div>
-      <div class="research-card">
-        <div class="research-card-header" style="background:linear-gradient(135deg,#0f766e,#0d9488);">
-          <div style="font-size:32px;margin-bottom:10px;">🗂️</div>
-          <div style="font-size:18px;font-weight:800;margin-bottom:6px;">ผลงานวิชาการ & งานวิจัย</div>
-          <div style="font-size:13px;color:rgba(255,255,255,.75);">ผลงาน CQI, R2R, นวัตกรรม และงานวิจัย</div>
+      </a>
+      <!-- Journal Club -->
+      <a href="research-journal.html" style="text-decoration:none;background:#fff;border-radius:20px;border:1.5px solid #bfdbfe;overflow:hidden;box-shadow:0 2px 12px rgba(3,105,161,.08);transition:.15s;display:flex;flex-direction:column;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(3,105,161,.15)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(3,105,161,.08)'">
+        <div style="background:linear-gradient(135deg,#0369a1,#0ea5e9);padding:24px;color:#fff;">
+          <div style="font-size:36px;margin-bottom:10px;">🔬</div>
+          <div style="font-size:18px;font-weight:800;margin-bottom:4px;">Journal Club</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.75);">กิจกรรมวิชาการรายเดือน</div>
         </div>
-        <div class="research-card-body">
-          <p style="font-size:14px;color:#64748b;line-height:1.7;margin:0 0 16px;">
-            รวมผลงานวิชาการ การพัฒนาคุณภาพ (CQI) งานวิจัย (R2R) และนวัตกรรมทางการพยาบาลวิสัญญี
-          </p>
-          <a href="staff.html" style="display:inline-flex;align-items:center;gap:6px;color:#0f766e;font-weight:700;font-size:14px;text-decoration:none;">ดูผลงานทั้งหมด →</a>
+        <div style="padding:20px;flex:1;">
+          <p style="font-size:14px;color:#64748b;line-height:1.7;margin:0 0 16px;">แลกเปลี่ยนองค์ความรู้งานวิจัยใหม่ๆ และพัฒนาแนวปฏิบัติทางคลินิก</p>
+          <span style="color:#0369a1;font-weight:700;font-size:14px;">ดูรายการ Journal Club →</span>
         </div>
-      </div>
+      </a>
+      <!-- ผลงานวิชาการ -->
+      <a href="research-works.html" style="text-decoration:none;background:#fff;border-radius:20px;border:1.5px solid #a7f3d0;overflow:hidden;box-shadow:0 2px 12px rgba(5,150,105,.08);transition:.15s;display:flex;flex-direction:column;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(5,150,105,.15)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(5,150,105,.08)'">
+        <div style="background:linear-gradient(135deg,#059669,#10b981);padding:24px;color:#fff;">
+          <div style="font-size:36px;margin-bottom:10px;">🏅</div>
+          <div style="font-size:18px;font-weight:800;margin-bottom:4px;">ผลงานวิชาการ</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.75);">CQI · R2R · นวัตกรรม · งานวิจัย</div>
+        </div>
+        <div style="padding:20px;flex:1;">
+          <p style="font-size:14px;color:#64748b;line-height:1.7;margin:0 0 16px;">รวมผลงานการพัฒนาคุณภาพ งานวิจัย และนวัตกรรมทางการพยาบาลวิสัญญี</p>
+          <span style="color:#059669;font-weight:700;font-size:14px;">ดูผลงานทั้งหมด →</span>
+        </div>
+      </a>
     </div>
   </div>
 </section>
