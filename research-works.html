@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KM - Knowledge Management — วิสัญญีพยาบาล รพ.สกลนคร</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',system-ui,sans-serif;background:#f8f5ff;color:#1e1b4b;}
+#navbar{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(109,40,217,.1);box-shadow:0 1px 16px rgba(109,40,217,.08);}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+.nav-logo img{height:40px;object-fit:contain;}
+.nav-links{display:flex;align-items:center;gap:2px;}
+.nav-links a,.nav-links button{padding:6px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#4c1d95;background:none;border:none;cursor:pointer;text-decoration:none;font-family:'Sarabun',sans-serif;transition:all .12s;white-space:nowrap;}
+.nav-links a:hover{background:#f5f3ff;color:#7c3aed;}
+.nav-links a.active{background:#ede9fe;color:#6d28d9;font-weight:700;}
+.nav-dropdown{position:relative;isolation:isolate;}
+.nav-dropdown-menu{position:absolute;top:100%;left:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(109,40,217,.15);border:1px solid #ede9fe;min-width:200px;padding:6px;z-index:200;visibility:hidden;opacity:0;transform:translateY(-6px);transition:opacity .15s,transform .15s,visibility 0s .15s;}
+.nav-dropdown:hover .nav-dropdown-menu{visibility:visible;opacity:1;transform:translateY(0);transition:opacity .15s,transform .15s,visibility 0s 0s;}
+.nav-dropdown-menu a{display:block;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;color:#4c1d95;text-decoration:none;white-space:nowrap;transition:.1s;}
+.nav-dropdown-menu a:hover,.nav-dropdown-menu a.active{background:#f5f3ff;color:#7c3aed;}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;}
+.hamburger span{display:block;width:24px;height:2px;background:#6d28d9;border-radius:2px;}
+@media(max-width:900px){.nav-links{display:none;}.hamburger{display:flex;}}
+#drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;}
+#drawer-overlay.open{display:block;}
+#drawer{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#fff;z-index:400;transition:right .25s;box-shadow:-4px 0 24px rgba(0,0,0,.15);overflow-y:auto;}
+#drawer.open{right:0;}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #ede9fe;}
+.drawer-logo img{height:34px;}
+.drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:#7c3aed;}
+.drawer-body{padding:16px;}
+.d-link{display:block;padding:11px 14px;border-radius:10px;color:#4c1d95;text-decoration:none;font-size:15px;font-weight:500;transition:.1s;}
+.d-link:hover,.d-link.active{background:#f5f3ff;color:#7c3aed;}
+.d-group-btn{width:100%;display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-radius:10px;background:none;border:none;cursor:pointer;font-size:15px;font-weight:600;color:#4c1d95;font-family:'Sarabun',sans-serif;}
+.d-group-btn:hover{background:#f5f3ff;}
+.d-sub{display:none;padding-left:14px;}
+.d-sub.open{display:block;}
+.page-hero{margin-top:64px;background:linear-gradient(135deg,#6d28d9 0%,#9333ea 55%,#c026d3 100%);padding:48px 20px 40px;text-align:center;}
+.page-hero .badge{display:inline-block;background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:700;padding:4px 16px;border-radius:999px;margin-bottom:14px;letter-spacing:.06em;}
+.page-hero h1{font-size:clamp(26px,4vw,38px);font-weight:800;color:#fff;}
+.page-hero p{font-size:14px;color:rgba(255,255,255,.8);margin-top:8px;}
+.content-wrap{max-width:1000px;margin:0 auto;padding:48px 20px 80px;}
+.empty-state{text-align:center;padding:80px 20px;background:#fff;border-radius:20px;border:2px dashed #e9d5ff;}
+.empty-state .icon{font-size:64px;margin-bottom:16px;}
+.empty-state h3{font-size:20px;font-weight:700;color:#4c1d95;margin-bottom:8px;}
+.empty-state p{font-size:14px;color:#94a3b8;}
+.sub-tabs{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;}
+.sub-tab{padding:10px 20px;border-radius:12px;background:#fff;border:2px solid #e9d5ff;font-size:14px;font-weight:600;color:#7c3aed;cursor:pointer;text-decoration:none;transition:.12s;}
+.sub-tab:hover,.sub-tab.active{background:#7c3aed;color:#fff;border-color:#7c3aed;}
+footer{background:linear-gradient(135deg,#4c1d95,#6d28d9);color:#fff;padding:32px 20px;text-align:center;}
+footer p{font-size:13px;color:rgba(255,255,255,.7);}
+</style>
+</head>
+<body>
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="logo-new.png" alt="AN sakon"></a>
+    <div class="nav-links">
+      <div class="nav-dropdown"><a href="index.html">หน้าแรก ▾</a><div class="nav-dropdown-menu"><a href="index.html#about">👁️ วิสัยทัศน์ พันธกิจ</a><a href="index.html#about">👥 บุคลากร หน่วยงาน</a><a href="index.html#satisfaction">📊 ตัวชี้วัด</a></div></div>
+      <div class="nav-dropdown"><a href="service-info.html">ข้อมูลงานบริการ ▾</a><div class="nav-dropdown-menu"><a href="service-info.html#scope">🏥 ขอบเขตความรับผิดชอบ</a><a href="service-info.html#competencies">💪 ภารกิจหลักและศักยภาพ</a><a href="service-info.html#focus">🎯 จุดเน้นการพัฒนา</a><a href="service-info.html#goals">🏆 เป้าหมายหน่วยงาน</a></div></div>
+      <div class="nav-dropdown"><a href="research-works.html" class="active">วิจัยและผลงานวิชาการ ▾</a><div class="nav-dropdown-menu"><a href="research-works.html" class="active">📚 ผลงาน</a><a href="research-journal.html">🔬 Journal Club</a><a href="research-works.html">🏅 ผลงาน</a></div></div>
+      <a href="index.html#documents">เอกสาร</a>
+      <a href="index.html#satisfaction">ความพึงพอใจ</a>
+      <a href="index.html#activities">ภาพกิจกรรม</a>
+      <a href="staff.html">สำหรับเจ้าหน้าที่</a>
+      <div class="nav-dropdown"><a href="#">อื่นๆ ▾</a><div class="nav-dropdown-menu"><a href="signup.html">✨ สมัครสมาชิก</a><a href="admin-contact.html">🛡️ ผู้ดูแลระบบ</a></div></div>
+    </div>
+    <button class="hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-header"><div class="drawer-logo"><img src="logo-new.png" alt="AN sakon"></div><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
+  <div class="drawer-body">
+    <a href="index.html" class="d-link">🏠 หน้าแรก</a>
+    <button class="d-group-btn" onclick="this.nextElementSibling.classList.toggle('open')"><span>🔬 วิจัยและผลงานวิชาการ</span><span>▾</span></button>
+    <div class="d-sub open">
+      <a href="research-works.html" class="d-link active">🏅 ผลงาน</a>
+      <a href="research-journal.html" class="d-link">🔬 Journal Club</a>
+      <a href="research-works.html" class="d-link active">🏅 ผลงาน</a>
+    </div>
+    <a href="staff.html" class="d-link">👩‍⚕️ สำหรับเจ้าหน้าที่</a>
+  </div>
+</div>
+<div class="page-hero">
+  <div class="badge">ACADEMIC · วิจัยและผลงานวิชาการ</div>
+  <h1>📚 ผลงาน</h1>
+  <p>การจัดการความรู้ หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</p>
+</div>
+<div class="content-wrap">
+  <div class="sub-tabs">
+    <a href="research-works.html" class="sub-tab active">🏅 ผลงาน</a>
+    <a href="research-journal.html" class="sub-tab">🔬 Journal Club</a>
+    <a href="research-works.html" class="sub-tab active">🏅 ผลงาน</a>
+  </div>
+  <div class="empty-state">
+    <div class="icon">📚</div>
+    <h3>Knowledge Management</h3>
+    <p>กำลังรวบรวมข้อมูล<br>เร็วๆ นี้จะมีเนื้อหาเพิ่มเติม</p>
+  </div>
+</div>
+<footer><p>© 2569 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</p></footer>
+<script>
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');document.body.style.overflow='';}
+</script>
+</body>
+</html>
