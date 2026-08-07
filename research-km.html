@@ -152,8 +152,9 @@ function renderFiles(data) {
             ${item.description ? `<div class="file-desc">${item.description}</div>` : ''}
             <div class="file-tags">${(item.tags||[]).map(t=>`<span class="file-tag">${t}</span>`).join('')}</div>
             <div class="file-btns">
+              ${item.detailUrl ? `<a href="${item.detailUrl}" class="btn-download" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">📖 ดูรายละเอียด</a>` : ''}
               ${item.files.map((f,i) => `
-                <a href="${fileUrl(f.folder, f.name)}" download class="btn-download ${i>0?'btn-download-outline':''}">
+                <a href="${fileUrl(f.folder, f.name)}" download class="btn-download btn-download-outline">
                   ⬇️ ${f.label} <span style="opacity:.7;font-weight:400;">(${f.size})</span>
                 </a>
               `).join('')}

@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Journal Club — ป้องกัน PPH หลังผ่าตัดคลอด | วิสัญญีพยาบาล รพ.สกลนคร</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',system-ui,sans-serif;background:#f0f9ff;color:#0c2340;}
+
+/* ── NAV ── */
+#navbar{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(109,40,217,.1);box-shadow:0 1px 16px rgba(109,40,217,.08);}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+.nav-logo img{height:40px;object-fit:contain;}
+.nav-links{display:flex;align-items:center;gap:2px;}
+.nav-links a,.nav-links button{padding:6px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#4c1d95;background:none;border:none;cursor:pointer;text-decoration:none;font-family:'Sarabun',sans-serif;transition:all .12s;white-space:nowrap;}
+.nav-links a:hover{background:#f5f3ff;color:#7c3aed;}
+.nav-links a.active{background:#ede9fe;color:#6d28d9;font-weight:700;}
+.nav-dropdown{position:relative;isolation:isolate;}
+.nav-dropdown-menu{position:absolute;top:100%;left:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(109,40,217,.15);border:1px solid #ede9fe;min-width:200px;padding:6px;z-index:200;visibility:hidden;opacity:0;transform:translateY(-6px);transition:opacity .15s,transform .15s,visibility 0s .15s;}
+.nav-dropdown:hover .nav-dropdown-menu{visibility:visible;opacity:1;transform:translateY(0);transition:opacity .15s,transform .15s,visibility 0s 0s;}
+.nav-dropdown-menu a{display:block;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;color:#4c1d95;text-decoration:none;white-space:nowrap;transition:.1s;}
+.nav-dropdown-menu a:hover,.nav-dropdown-menu a.active{background:#f5f3ff;color:#7c3aed;}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;}
+.hamburger span{display:block;width:24px;height:2px;background:#6d28d9;border-radius:2px;}
+@media(max-width:900px){.nav-links{display:none;}.hamburger{display:flex;}}
+#drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;}
+#drawer-overlay.open{display:block;}
+#drawer{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#fff;z-index:400;transition:right .25s;box-shadow:-4px 0 24px rgba(0,0,0,.15);overflow-y:auto;}
+#drawer.open{right:0;}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #ede9fe;}
+.drawer-logo img{height:34px;}
+.drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:#7c3aed;}
+.drawer-body{padding:16px;}
+.d-link{display:block;padding:11px 14px;border-radius:10px;color:#4c1d95;text-decoration:none;font-size:15px;font-weight:500;transition:.1s;}
+.d-link:hover,.d-link.active{background:#f5f3ff;color:#7c3aed;}
+.d-group-btn{width:100%;display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-radius:10px;background:none;border:none;cursor:pointer;font-size:15px;font-weight:600;color:#4c1d95;font-family:'Sarabun',sans-serif;}
+.d-group-btn:hover{background:#f5f3ff;}
+.d-sub{display:none;padding-left:14px;}
+.d-sub.open{display:block;}
+
+/* ── HERO ── */
+.page-hero{margin-top:64px;background:linear-gradient(135deg,#0369a1 0%,#0284c7 50%,#0ea5e9 100%);padding:52px 20px 44px;text-align:center;position:relative;overflow:hidden;}
+.page-hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;}
+.page-hero .back-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:6px 18px;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:20px;transition:.15s;position:relative;z-index:1;}
+.page-hero .back-btn:hover{background:rgba(255,255,255,.28);}
+.page-hero .badge{display:inline-block;background:rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:999px;margin-bottom:14px;letter-spacing:.08em;position:relative;z-index:1;}
+.page-hero h1{font-size:clamp(20px,3.5vw,32px);font-weight:800;color:#fff;line-height:1.35;position:relative;z-index:1;}
+.page-hero .sub{font-size:14px;color:rgba(255,255,255,.82);margin-top:10px;position:relative;z-index:1;}
+.hero-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:22px;position:relative;z-index:1;}
+.hero-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:13px;font-weight:500;padding:7px 16px;border-radius:999px;}
+
+/* ── CONTENT WRAP ── */
+.content-wrap{max-width:860px;margin:0 auto;padding:44px 20px 80px;}
+
+/* ── ARTICLE INFO CARD ── */
+.article-card{background:#fff;border-radius:20px;border:1.5px solid #bae6fd;box-shadow:0 4px 24px rgba(3,105,161,.10);padding:28px 28px 24px;margin-bottom:36px;position:relative;overflow:hidden;}
+.article-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0369a1,#0ea5e9);}
+.article-card-label{font-size:11px;font-weight:700;color:#0369a1;letter-spacing:.08em;margin-bottom:8px;text-transform:uppercase;}
+.article-title-th{font-size:17px;font-weight:700;color:#0c2340;line-height:1.55;margin-bottom:6px;}
+.article-title-en{font-size:13px;font-weight:400;color:#64748b;font-style:italic;line-height:1.6;margin-bottom:18px;}
+.article-metas{display:flex;flex-direction:column;gap:8px;}
+.article-meta-row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:#334155;}
+.article-meta-row .label{font-weight:700;color:#0369a1;min-width:70px;flex-shrink:0;}
+.design-badge{display:inline-block;background:#dbeafe;color:#1e40af;font-size:12px;font-weight:700;padding:3px 12px;border-radius:999px;}
+
+/* ── SECTION CARDS ── */
+.section-card{background:#fff;border-radius:18px;border:1.5px solid #e0f2fe;box-shadow:0 2px 14px rgba(3,105,161,.07);margin-bottom:20px;overflow:hidden;}
+.section-header{display:flex;align-items:center;gap:14px;padding:20px 24px;cursor:pointer;user-select:none;transition:background .12s;}
+.section-header:hover{background:#f0f9ff;}
+.section-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.section-title{font-size:16px;font-weight:700;color:#0c2340;flex:1;}
+.section-toggle{font-size:18px;color:#0369a1;transition:transform .2s;line-height:1;}
+.section-card.open .section-toggle{transform:rotate(180deg);}
+.section-body{display:none;padding:0 24px 22px 82px;font-size:14.5px;color:#334155;line-height:1.8;}
+.section-card.open .section-body{display:block;}
+@media(max-width:600px){.section-body{padding:0 18px 18px 18px;}}
+
+/* colour variants */
+.icon-red{background:linear-gradient(135deg,#fef2f2,#fee2e2);color:#dc2626;}
+.icon-blue{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1d4ed8;}
+.icon-violet{background:linear-gradient(135deg,#f5f3ff,#ede9fe);color:#6d28d9;}
+.icon-green{background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#16a34a;}
+.icon-amber{background:linear-gradient(135deg,#fffbeb,#fef3c7);color:#d97706;}
+.icon-cyan{background:linear-gradient(135deg,#ecfeff,#cffafe);color:#0891b2;}
+.icon-emerald{background:linear-gradient(135deg,#ecfdf5,#d1fae5);color:#059669;}
+.icon-purple{background:linear-gradient(135deg,#fdf4ff,#fae8ff);color:#9333ea;}
+
+/* border-left accent per section */
+.s1 .section-header{border-left:4px solid #ef4444;}
+.s2 .section-header{border-left:4px solid #3b82f6;}
+.s3 .section-header{border-left:4px solid #8b5cf6;}
+.s4 .section-header{border-left:4px solid #10b981;}
+.s5 .section-header{border-left:4px solid #f59e0b;}
+.s6 .section-header{border-left:4px solid #06b6d4;}
+.s7 .section-header{border-left:4px solid #22c55e;}
+.s8 .section-header{border-left:4px solid #a855f7;}
+
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin:18px 0;}
+.stat-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #bfdbfe;border-radius:14px;padding:16px 14px;text-align:center;}
+.stat-num{font-size:26px;font-weight:800;color:#0369a1;line-height:1;}
+.stat-label{font-size:12px;color:#334155;margin-top:6px;font-weight:500;line-height:1.4;}
+
+/* ── LIST STYLES ── */
+.content-list{margin:12px 0 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:8px;}
+.content-list li{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;font-size:14px;}
+.content-list li::before{content:'▸';color:#0369a1;flex-shrink:0;font-weight:700;margin-top:1px;}
+.highlight-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;border-radius:14px;padding:16px 18px;margin:14px 0;font-size:14.5px;font-weight:600;color:#1e40af;line-height:1.7;}
+.protocol-step{display:flex;gap:12px;padding:10px 14px;border-radius:10px;margin-bottom:8px;align-items:flex-start;}
+.protocol-step .step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0369a1,#0ea5e9);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.protocol-step .step-text{font-size:14px;color:#0c2340;line-height:1.7;}
+.protocol-step.alert-step{background:#fff7ed;border:1px solid #fed7aa;}
+.protocol-step.alert-step .step-num{background:linear-gradient(135deg,#ea580c,#fb923c);}
+.strength-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}
+@media(max-width:500px){.strength-grid{grid-template-columns:1fr;}}
+.strength-box{border-radius:12px;padding:14px 16px;}
+.strength-box h4{font-size:13px;font-weight:700;margin-bottom:8px;}
+.strength-box ul{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.strength-box ul li{font-size:13px;line-height:1.6;display:flex;gap:6px;}
+.strength-box ul li::before{content:'✓';font-weight:700;flex-shrink:0;}
+.strength-box.pos{background:#f0fdf4;border:1.5px solid #86efac;}
+.strength-box.pos h4{color:#15803d;}
+.strength-box.pos ul li::before{color:#16a34a;}
+.strength-box.neg{background:#fff7ed;border:1.5px solid #fdba74;}
+.strength-box.neg h4{color:#c2410c;}
+.strength-box.neg ul li::before{color:#ea580c;content:'!';}
+
+/* ── TAKE-HOME ── */
+.takehome-box{background:linear-gradient(135deg,#0369a1,#0ea5e9);border-radius:16px;padding:24px 24px;color:#fff;margin-top:12px;position:relative;overflow:hidden;}
+.takehome-box::before{content:'💡';position:absolute;right:16px;top:16px;font-size:48px;opacity:.2;}
+.takehome-box .th-label{font-size:11px;font-weight:700;letter-spacing:.1em;opacity:.8;margin-bottom:10px;text-transform:uppercase;}
+.takehome-box p{font-size:15px;font-weight:600;line-height:1.8;}
+
+/* ── PILL BADGES ── */
+.pill-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:500;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;line-height:1;}
+.pill:hover{background:#bae6fd;cursor:default;}
+.pill-presenter{background:linear-gradient(135deg,#0369a1,#0ea5e9);color:#fff;border-color:transparent;font-weight:700;}
+
+/* ── DIVIDER ── */
+.section-divider{margin:28px 0;border:none;border-top:1.5px dashed #bae6fd;}
+
+footer{background:linear-gradient(135deg,#4c1d95,#6d28d9);color:#fff;padding:32px 20px;text-align:center;}
+footer p{font-size:13px;color:rgba(255,255,255,.7);}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><img src="logo-new.png" alt="AN sakon"></a>
+    <div class="nav-links">
+      <div class="nav-dropdown"><a href="index.html">หน้าแรก ▾</a><div class="nav-dropdown-menu"><a href="index.html#about">👁️ วิสัยทัศน์ พันธกิจ</a><a href="index.html#about">👥 บุคลากร หน่วยงาน</a><a href="index.html#satisfaction">📊 ตัวชี้วัด</a></div></div>
+      <div class="nav-dropdown"><a href="service-info.html">ข้อมูลงานบริการ ▾</a><div class="nav-dropdown-menu"><a href="service-info.html#scope">🏥 ขอบเขตความรับผิดชอบ</a><a href="service-info.html#competencies">💪 ภารกิจหลักและศักยภาพ</a><a href="service-info.html#focus">🎯 จุดเน้นการพัฒนา</a><a href="service-info.html#goals">🏆 เป้าหมายหน่วยงาน</a></div></div>
+      <div class="nav-dropdown"><a href="research-journal.html" class="active">วิจัยและผลงานวิชาการ ▾</a><div class="nav-dropdown-menu"><a href="research-km.html">📚 KM (Knowledge Management)</a><a href="research-journal.html" class="active">🔬 Journal Club</a><a href="research-works.html">🏅 ผลงาน</a></div></div>
+      <a href="index.html#documents">เอกสาร</a>
+      <a href="index.html#satisfaction">ความพึงพอใจ</a>
+      <a href="index.html#activities">ภาพกิจกรรม</a>
+      <a href="staff.html">สำหรับเจ้าหน้าที่</a>
+      <div class="nav-dropdown"><a href="#">อื่นๆ ▾</a><div class="nav-dropdown-menu"><a href="signup.html">✨ สมัครสมาชิก</a><a href="admin-contact.html">🛡️ ผู้ดูแลระบบ</a></div></div>
+    </div>
+    <button class="hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- ── DRAWER ── -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-header"><div class="drawer-logo"><img src="logo-new.png" alt="AN sakon"></div><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
+  <div class="drawer-body">
+    <a href="index.html" class="d-link">🏠 หน้าแรก</a>
+    <button class="d-group-btn" onclick="this.nextElementSibling.classList.toggle('open')"><span>🔬 วิจัยและผลงานวิชาการ</span><span>▾</span></button>
+    <div class="d-sub open">
+      <a href="research-km.html" class="d-link">📚 KM</a>
+      <a href="research-journal.html" class="d-link active">🔬 Journal Club</a>
+      <a href="research-works.html" class="d-link">🏅 ผลงาน</a>
+    </div>
+    <a href="staff.html" class="d-link">👩‍⚕️ สำหรับเจ้าหน้าที่</a>
+  </div>
+</div>
+
+<!-- ── HERO ── -->
+<div class="page-hero">
+  <a href="research-journal.html" class="back-btn">← กลับ</a>
+  <div class="badge">JOURNAL CLUB · กิจกรรมวิชาการ</div>
+  <h1>🔬 การป้องกันภาวะตกเลือดหลังผ่าตัดคลอด<br>ทางหน้าท้องในห้องพักฟื้น</h1>
+  <div class="sub">Journal Club — 29 ธันวาคม 2568 เวลา 08.30–09.30 น.</div>
+  <div class="hero-meta">
+    <span class="hero-chip">📖 Action Research</span>
+    <span class="hero-chip">🏥 รพ.พยัคฆภูมิพิสัย</span>
+    <span class="hero-chip">📅 ปีงบประมาณ 2569</span>
+  </div>
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="content-wrap">
+
+  <!-- Presenter bar -->
+  <div style="background:#fff;border-radius:16px;border:1.5px solid #bae6fd;padding:18px 22px;margin-bottom:28px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+    <span style="font-size:13px;font-weight:700;color:#0369a1;flex-shrink:0;">👤 ผู้นำเสนอ:</span>
+    <span class="pill pill-presenter">นายอริยฉัฎร กาฬหว้า</span>
+    <span class="pill pill-presenter">น.ส.อมรรัตน์ นาทองไชย</span>
+    <span class="pill pill-presenter">น.ส.พิชญ์สินี นันทะรัตน์</span>
+  </div>
+
+  <!-- Article Info Card -->
+  <div class="article-card">
+    <div class="article-card-label">📄 ข้อมูลบทความ</div>
+    <div class="article-title-th">การพัฒนาแนวปฏิบัติการพยาบาลสำหรับวิสัญญีพยาบาลเพื่อป้องกันภาวะตกเลือดหลังผ่าตัดคลอดทางหน้าท้องในห้องพักฟื้น โรงพยาบาลพยัคฆภูมิพิสัย</div>
+    <div class="article-title-en">Development of Nursing Practice Guideline for Nurse Anesthetists to Prevent Postpartum Hemorrhage after Cesarean Section in the Post-anesthesia Care Unit at Phayakkhaphumphisai Hospital</div>
+    <div class="article-metas">
+      <div class="article-meta-row"><span class="label">ผู้นิพนธ์</span><span>นิติยา หวังสันติวงศา และคณะ &nbsp;|&nbsp; โรงพยาบาลพยัคฆภูมิพิสัย</span></div>
+      <div class="article-meta-row"><span class="label">วารสาร</span><span>วารสารอนามัยสิ่งแวดล้อมและสุขภาพชุมชน &nbsp;ปีที่ 9 ฉบับที่ 6 พฤศจิกายน–ธันวาคม 2567 &nbsp;หน้า 208–217</span></div>
+      <div class="article-meta-row"><span class="label">รูปแบบ</span><span><span class="design-badge">การวิจัยเชิงปฏิบัติการ (Action Research)</span></span></div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: ความเป็นมา ── -->
+  <div class="section-card s1 open" id="sec1">
+    <div class="section-header" onclick="toggleSection('sec1')">
+      <div class="section-icon icon-red">🔴</div>
+      <div class="section-title">ความเป็นมาและปัญหา</div>
+      <div class="section-toggle">⌄</div>
+    </div>
+    <div class="section-body">
+      <ul class="content-list">
+        <li>ภาวะตกเลือดหลังคลอด (PPH) เป็นสาเหตุการเสียชีวิตของมารดาใน <strong>5 อันดับแรก</strong> ทั้งในระดับโลกและในประเทศไทย</li>
+        <li>อัตราการผ่าตัดคลอดของ รพ.พยัคฆภูมิพิสัย เพิ่มขึ้นอย่างมีนัยสำคัญ จาก <strong>23.65%</strong> (ปี 2561) → <strong>57.55%</strong> (ปี 2565)</li>
+        <li>พบอุบัติการณ์ตกเลือดรุนแรงหลังผ่าตัดคลอดในห้องพักฟื้น <strong>2 ราย</strong> ภายในปีงบประมาณ 2565</li>
+        <li>ไม่มีแนวปฏิบัติที่ชัดเจนสำหรับวิสัญญีพยาบาลในการเฝ้าระวังและป้องกัน PPH ในห้องพักฟื้น</li>
+      </ul>
+      <div class="stat-grid" style="margin-top:18px;">
+        <div class="stat-box"><div class="stat-num">5</div><div class="stat-label">อันดับสาเหตุการตายมารดา</div></div>
+        <div class="stat-box"><div class="stat-num">23.65%</div><div class="stat-label">อัตราผ่าคลอด ปี 2561</div></div>
+        <div class="stat-box"><div class="stat-num">57.55%</div><div class="stat-label">อัตราผ่าคลอด ปี 2565</div></div>
+        <div class="stat-box"><div class="stat-num">2</div><div class="stat-label">อุบัติการณ์ PPH รุนแรงปี 2565</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 2: วัตถุประสงค์ ── -->
+  <div class="section-card s2" id="sec2">
+    <div class="section-header" onclick="toggleSection('sec2')">
+      <div class="section-icon icon-blue">🎯</div>
+      <div class="section-title">วัตถุประสงค์การวิจัย</div>
+      <div class="section-toggle">⌄</div>
+    </div>
+    <div class="section-body">
+      <p style="margin-bottom:14px;font-size:14px;color:#475569;">การวิจัยนี้มีวัตถุประสงค์ 3 ข้อ ได้แก่</p>
+      <div class="protocol-step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>พัฒนาแนวปฏิบัติการพยาบาล</strong>สำหรับวิสัญญีพยาบาลในการป้องกัน PPH หลังผ่าตัดคลอดทางหน้าท้องในห้องพักฟื้น</div>
+      </div>
+      <div class="protocol-step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>ศึกษาผลลัพธ์</strong>ของการใช้แนวปฏิบัติ ทั้งในด้านการหดรัดตัวของมดลูกและการป้องกันภาวะแทรกซ้อน</div>
+      </div>
+      <div class="protocol-step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>ศึกษาความพึงพอใจ</strong>ของวิสัญญีพยาบาลต่อแนวปฏิบัติที่พัฒนาขึ้น</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 3: ระเบียบวิธีวิจัย ── -->
+  <div class="section-card s3" id="sec3">
+    <div class="section-header" onclick="toggleSection('sec3')">
+      <div class="section-icon icon-violet">🔬</div>
+      <div class="section-title">ระเบียบวิธีวิจัย</div>
+      <div class="section-toggle">⌄</div>
+    </div>
+    <div class="section-body">
+      <div class="highlight-box">รูปแบบ: การวิจัยเชิงปฏิบัติการ (Action Research) &nbsp;|&nbsp; สิงหาคม 2565 – กันยายน 2566</div>
+      <p style="font-weight:700;color:#4c1d95;margin:14px 0 8px;font-size:14px;">กลุ่มพัฒนาแนวปฏิบัติ (10 คน)</p>
+      <ul class="content-list">
+        <li>สูตินรีแพทย์ &nbsp;+&nbsp; วิสัญญีแพทย์</li>
+        <li>วิสัญญีพยาบาล &nbsp;+&nbsp; พยาบาลห้องผ่าตัด</li>
+      </ul>
+      <p style="font-weight:700;color:#4c1d95;margin:14px 0 8px;font-size:14px;">กลุ่มตัวอย่าง</p>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num">6</div><div class="stat-label">วิสัญญีพยาบาล<br>(ผู้ปฏิบัติตามแนวปฏิบัติ)</div></div>
+        <div class="stat-box"><div class="stat-num">62</div><div class="stat-label">มารดาหลังผ่าตัดคลอด<br>(กลุ่มที่ได้รับการดูแล)</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 4: แนวปฏิบัติ ── -->
+  <div class="section-card s4" id="sec4">
+    <div class="section-header" onclick="toggleSection('sec4')">
+      <div class="section-icon icon-green">📋</div>
+      <div class="section-title">แนวปฏิบัติที่พัฒนาขึ้น</div>
+      <div class="section-toggle">⌄</div>
+    </div>
+    <div class="section-body">
+      <p style="font-weight:700;color:#059669;margin-bottom:12px;font-size:14px;">การประเมินและเฝ้าระวังในห้องพักฟื้น</p>
+      <div class="protocol-step">
+        <div class="step-num">1</div>
+        <div class="step-text">ประเมิน <strong>Vital Signs, EKG, PARS</strong> และ <strong>Pain / Sedation / Nausea-Vomiting Score</strong> ทุกรายเมื่อรับเข้าห้องพักฟื้น</div>
+      </div>
+      <div class="protocol-step">
+        <div class="step-num">2</div>
+        <div class="step-text">ประเมินการหดรัดตัวของมดลูก <strong>ทุก 5–15 นาที</strong> ตามช่วงเวลาที่กำหนด</div>
+      </div>
+      <p style="font-weight:700;color:#dc2626;margin:16px 0 10px;font-size:14px;">กรณีมดลูกหดตัวไม่ดี</p>
+      <div class="protocol-step alert-step">
+        <div class="step-num">A</div>
+        <div class="step-text"><strong>คลึงมดลูก</strong> (Uterine massage) ทันที</div>
+      </div>
+      <div class="protocol-step alert-step">
+        <div class="step-num">B</div>
+        <div class="step-text">เพิ่มอัตราหยด <strong>Oxytocin drip เป็น 60 หยด/นาที</strong></div>
+      </div>
+      <div class="protocol-step alert-step">
+        <div class="step-num">C</div>
+        <div class="step-text"><strong>รายงานแพทย์</strong> เพื่อพิจารณาการรักษาเพิ่มเติม</div>
+      </div>
+      <div class="highlight-box" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border-color:#fdba74;color:#c2410c;margin-top:14px;">
+        ⚠️ หากมีเลือดออก <strong>≥ 100 ml</strong> → รายงานแพทย์ทันที
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 5: ผลการศึกษา ── -->
+  <div class="section-card s5" id="sec5">
+    <div class="section-header" onclick="toggleSection('sec5')">
+      <div class="section-icon icon-amber">📊</div>
+      <div class="section-title">ผลการศึกษา</div>
+      <div class="section-toggle">⌄</div>
+    </div>
+    <div class="section-body">
+      <p style="font-weight:700;color:#d97706;margin-bottom:12px;font-size:14px;">ผลลัพธ์ทางคลินิก — มารดา 62 ราย</p>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num">95.16%</div><div class="stat-label">มดลูกหดรัดตัวดี (59/62 ราย)</div></div>
+        <div class="stat-box"><div class="stat-num">3</div><div class="stat-label">ราย มดลูกหดตัวไม่ดี แต่ไม่เกิดภาวะแทรกซ้อน</div></div>
+      </div>
+      <p style="font-weight:700;color:#d97706;margin:18px 0 12px;font-size:14px;">การปฏิบัติตามแนวปฏิบัติของวิสัญญีพยาบาล</p>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num">100%</div><div class="stat-label">ประเมินผู้ป่วยเมื่อรับเข้า PACU</div></div>
+        <div class="stat-box"><div class="stat-num">91.7%</div><div class="stat-label">ประเมินการหดรัดตัวมดลูก</div></div>
+        <div class="stat-box"><div class="stat-num">95%</div><div class="stat-label">รายงานแพทย์เมื่อมดลูกหดตัวไม่ดี</div></div>
+        <div class="stat-box"><div class="stat-num">100%</div><div class="stat-label">ส่งต่อผู้ป่วยตามแนวปฏิบัติ</div></div>
+      </div>
+      <p style="font-weight:700;color:#d97706;margin:18px 0 12px;font-size:14px;">ความพึงพอใจของวิสัญญีพยาบาลต่อแนวปฏิบัติ</p>
+      <div class="stat-grid">
+        <div class="stat-box" style="background:linear-gradient(135deg,#fefce8,#fef9c3);border-color:#fde68a;">
+          <div class="stat-num" style="color:#b45309;">4.67</div>
+          <div class="stat-label">คะแนนต่ำสุด (จาก 5)</div>
+        </div>
+        <div class="stat-box" style="background:linear-gradient(135deg,#fefce8,#fef9c3);border-color:#fde68a;">
+          <div class="stat-num" style="color:#b45309;">4.83</div>
+          <div class="stat-label">คะแนนสูงสุด (จาก 5)</div>
+        </div>
+        <div class="stat-box" style="background:linear-gradient(135deg,#fefce8,#fef9c3);border-color:#fde68a;">
+          <div class="stat-num" style="color:#b45309;">มากที่สุด</div>
+          <div class="stat-label">ระดับความพึงพอใจโดยรวม</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 6: จุดแข็ง/ข้อจำกัด ── -->
+  <div class="section-card s6" id="sec6">
+    <div class="section-header" onclick="toggleSection('sec6')">
+      <div class="section-icon icon-cyan">💪</div>
+      <div class="section-title">จุดแข็งและข้อจำกัดของการวิจัย</div>
+      <div class="section-toggle">⌄</div>
+    </div>
+    <div class="section-body">
+      <div class="strength-grid">
+        <div class="strength-box pos">
+          <h4>จุดแข็ง</h4>
+          <ul>
+            <li>พัฒนาบนฐาน Evidence-Based Practice</li>
+            <li>ทีมสหสาขาวิชาชีพมีส่วนร่วมในการพัฒนา</li>
+            <li>ตรวจสอบคุณภาพเครื่องมืออย่างเป็นระบบ</li>
+          </ul>
+        </div>
+        <div class="strength-box neg">
+          <h4>ข้อจำกัด</h4>
+          <ul>
+            <li>มีวิสัญญีพยาบาลประจำห้องพักฟื้นเพียง 1 คน</li>
+            <li>ไม่มีกลุ่มควบคุม (No control group)</li>
+            <li>ระยะติดตามสั้น (6 เดือน)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 7: บทสรุป ── -->
+  <div class="section-card s7" id="sec7">
+    <div class="section-header" onclick="toggleSection('sec7')">
+      <div class="section-icon icon-emerald">💡</div>
+      <div class="section-title">บทสรุป — Take-home Message</div>
+      <div class="section-toggle">⌄</div>
+    </div>
+    <div class="section-body">
+      <div class="takehome-box">
+        <div class="th-label">Take-home Message</div>
+        <p>การพัฒนาแนวปฏิบัติโดยใช้หลักฐานเชิงประจักษ์ (Evidence-Based Practice) และการมีส่วนร่วมของทีมสหสาขาวิชาชีพ เป็น<strong>กุญแจสำคัญ</strong>ในการป้องกันภาวะตกเลือดหลังผ่าตัดคลอด (PPH) ในห้องพักฟื้น และสามารถนำไปประยุกต์ใช้ในบริบทของวิสัญญีพยาบาลได้จริง</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 8: ผู้เข้าร่วม ── -->
+  <div class="section-card s8" id="sec8">
+    <div class="section-header" onclick="toggleSection('sec8')">
+      <div class="section-icon icon-purple">👥</div>
+      <div class="section-title">รายชื่อผู้เข้าร่วมกิจกรรม</div>
+      <div class="section-toggle">⌄</div>
+    </div>
+    <div class="section-body">
+      <p style="font-size:13px;color:#64748b;margin-bottom:4px;">รวมผู้เข้าร่วมกิจกรรม Journal Club วันที่ 29 ธันวาคม 2568</p>
+      <div class="pill-grid">
+        <span class="pill">1. นายอริยฉัฎร กาฬหว้า</span>
+        <span class="pill">2. น.ส.อมรรัตน์ นาทองไชย</span>
+        <span class="pill">3. น.ส.พิชญ์สินี นันทะรัตน์</span>
+        <span class="pill">4. น.ส.สุดารัตน์ จันทะคาม</span>
+        <span class="pill">5. น.ส.นิตยา บุตรดีวงศ์</span>
+        <span class="pill">6. น.ส.ศิริวรรณ ลาวัลย์</span>
+        <span class="pill">7. นายสมชาย พรมมา</span>
+        <span class="pill">8. น.ส.วิภาวดี ศรีสุวรรณ</span>
+        <span class="pill">9. น.ส.กาญจนา เพ็งจันทร์</span>
+        <span class="pill">10. น.ส.มณีรัตน์ วงษ์สุวรรณ</span>
+        <span class="pill">11. น.ส.ชลธิชา บุญเรือง</span>
+        <span class="pill">12. น.ส.ปิยะนุช แสงจันทร์</span>
+        <span class="pill">13. น.ส.รัตนา สีหาบุตร</span>
+        <span class="pill">14. น.ส.ดวงฤดี ทองดี</span>
+        <span class="pill">15. นายวีระ คำมุงคุล</span>
+        <span class="pill">16. น.ส.เพ็ญพร อุตมา</span>
+        <span class="pill">17. น.ส.จิราพร นามบุตร</span>
+        <span class="pill">18. น.ส.สาวิตรี พลเยี่ยม</span>
+        <span class="pill">19. น.ส.ภัทราภรณ์ โคตรชมภู</span>
+        <span class="pill">20. น.ส.วราภรณ์ สีดา</span>
+        <span class="pill">21. น.ส.อรพรรณ เมืองฮาม</span>
+        <span class="pill">22. น.ส.ทิพวรรณ ชมภูพื้น</span>
+        <span class="pill">23. น.ส.ลัดดาวัลย์ จิตรชื่น</span>
+        <span class="pill">24. น.ส.พัชรินทร์ ศิริวงษา</span>
+        <span class="pill">25. นายณัฐวุฒิ ไชยสุระ</span>
+        <span class="pill">26. น.ส.ขวัญฤทัย นาโควงศ์</span>
+        <span class="pill">27. น.ส.สุภาวดี จิตต์โสภา</span>
+        <span class="pill">28. น.ส.ปาณิสรา พลศักดิ์</span>
+        <span class="pill">29. น.ส.ณัฐธิดา เชื้อสาวถี</span>
+        <span class="pill">30. น.ส.วิลาวัลย์ บรรเทา</span>
+        <span class="pill">31. น.ส.กัลยา ธิบูรณ์บุญ</span>
+        <span class="pill">32. น.ส.เยาวภา เถาวัลย์</span>
+        <span class="pill">33. นายเอกชัย หล้าสีดา</span>
+        <span class="pill">34. น.ส.ชุติมา ลาดบาศรี</span>
+        <span class="pill">35. น.ส.มัสยา ฤทธิ์มนตรี</span>
+        <span class="pill">36. น.ส.สิริพร แสงชมภู</span>
+        <span class="pill">37. น.ส.อัญชลี บุญสุข</span>
+        <span class="pill">38. น.ส.ศุภลักษณ์ สุวรรณรัตน์</span>
+        <span class="pill">39. น.ส.ณัฐพร ทองคำ</span>
+        <span class="pill">40. น.ส.ธิดารัตน์ นาแถมพลอย</span>
+        <span class="pill">41. น.ส.กาญจน์วริน ภูมิศรีแก้ว</span>
+        <span class="pill">42. น.ส.อุมาพร พรหมพิมพ์</span>
+        <span class="pill">43. น.ส.สุมาลี จันทร์แดง</span>
+        <span class="pill">44. น.ส.ปัณฑิตา เขียวขำ</span>
+        <span class="pill">45. น.ส.เบญจมาศ สุวรรณะ</span>
+        <span class="pill">46. น.ส.ชนิดา รัตน์มณี</span>
+        <span class="pill">47. น.ส.วรรณา ภิบาลวงษ์</span>
+        <span class="pill">48. น.ส.อาภาพร ศรีวัง</span>
+        <span class="pill">49. น.ส.จุฑามาศ บัวทอง</span>
+        <span class="pill">50. น.ส.ประภาพร วงศ์ษา</span>
+      </div>
+      <p style="margin-top:14px;font-size:12px;color:#94a3b8;">* รายชื่อเรียงตามลำดับการลงทะเบียน</p>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <div style="text-align:center;">
+    <a href="research-journal.html" style="display:inline-flex;align-items:center;gap:8px;padding:11px 26px;border-radius:12px;background:linear-gradient(135deg,#0369a1,#0ea5e9);color:#fff;font-size:14px;font-weight:700;text-decoration:none;transition:.15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      ← กลับสู่หน้า Journal Club
+    </a>
+  </div>
+</div>
+
+<footer><p>© 2569 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</p></footer>
+
+<script>
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');document.body.style.overflow='';}
+
+function toggleSection(id){
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+}
+
+// Open first section by default on load (already open via class), open all on first view
+document.addEventListener('DOMContentLoaded', () => {
+  // sec1 is open by default in markup; others closed — user can expand
+});
+</script>
+</body>
+</html>
