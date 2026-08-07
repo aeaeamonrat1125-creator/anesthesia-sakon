@@ -288,7 +288,15 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
           <a href="#satisfaction">📊 ตัวชี้วัด</a>
         </div>
       </div>
-      <a href="#about">ข้อมูลหน่วยงาน</a>
+      <div class="nav-dropdown">
+        <button onclick="this.closest('.nav-dropdown').classList.toggle('open')">ข้อมูลงานบริการ ▾</button>
+        <div class="nav-dropdown-menu">
+          <a href="#">📊 รายการ 1</a>
+          <a href="#">📋 รายการ 2</a>
+          <a href="#">🎯 รายการ 3</a>
+          <a href="#">🏁 รายการ 4</a>
+        </div>
+      </div>
       <a href="#research">วิจัยและผลงานวิชาการ</a>
       <a href="#documents">เอกสาร</a>
       <a href="#satisfaction">ความพึงพอใจ</a>
@@ -327,13 +335,14 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
     </div>
 
     <button class="d-group-btn" onclick="toggleDGroup(this)">
-      <span>ℹ️ ข้อมูลหน่วยงาน</span>
+      <span>📁 ข้อมูลงานบริการ</span>
       <span class="arrow">▾</span>
     </button>
     <div class="d-sub">
-      <a href="#about" class="d-link" onclick="closeDrawer();showAboutTab('about-vision')">👁️ วิสัยทัศน์</a>
-      <a href="#about" class="d-link" onclick="closeDrawer();showAboutTab('about-mission')">🧭 พันธกิจ</a>
-      <a href="#about" class="d-link" onclick="closeDrawer();showAboutTab('about-org')">🗂 ผังองค์กร</a>
+      <a href="#" class="d-link" onclick="closeDrawer()">📊 รายการ 1</a>
+      <a href="#" class="d-link" onclick="closeDrawer()">📋 รายการ 2</a>
+      <a href="#" class="d-link" onclick="closeDrawer()">🎯 รายการ 3</a>
+      <a href="#" class="d-link" onclick="closeDrawer()">🏁 รายการ 4</a>
     </div>
 
     <button class="d-group-btn" onclick="toggleDGroup(this)">
@@ -421,7 +430,6 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
       <button class="about-tab active" onclick="showAboutTab('about-intro')">🏥 เกี่ยวกับ</button>
       <button class="about-tab" onclick="showAboutTab('about-vision')">👁️ วิสัยทัศน์</button>
       <button class="about-tab" onclick="showAboutTab('about-mission')">🧭 พันธกิจ</button>
-      <button class="about-tab" onclick="showAboutTab('about-roles')">📋 บทบาทหน้าที่</button>
       <button class="about-tab" onclick="showAboutTab('about-org')">🗂 ผังองค์กร</button>
     </div>
 
@@ -773,7 +781,7 @@ function showAboutTab(id) {
   document.querySelectorAll('.about-tab').forEach(t => t.classList.remove('active'));
   const panel = document.getElementById(id);
   if (panel) panel.classList.add('active');
-  const tabs = { 'about-intro':0, 'about-vision':1, 'about-mission':2, 'about-roles':3, 'about-org':4 };
+  const tabs = { 'about-intro':0, 'about-vision':1, 'about-mission':2, 'about-org':3 };
   const idx = tabs[id] ?? 0;
   const tabBtns = document.querySelectorAll('.about-tab');
   if (tabBtns[idx]) tabBtns[idx].classList.add('active');
