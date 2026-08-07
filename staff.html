@@ -540,7 +540,7 @@
     <div class="card p-4 scroll-x">
       <table class="min-w-full text-sm">
         <thead class="text-slate-500 border-b text-left">
-          <tr><th class="py-2">หัวเรื่อง</th><th>ประเภท</th><th>วันที่</th><th>ลิงก์</th><th></th></tr>
+          <tr><th class="py-2">หัวเรื่อง</th><th>ประเภท</th><th>วันที่</th><th>ลิงก์</th><th>สถานะ</th><th></th></tr>
         </thead>
         <tbody id="docsBody"></tbody>
       </table>
@@ -1529,9 +1529,13 @@ function renderDocs() {
       <td><span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${d.type||'-'}</span></td>
       <td class="text-xs">${sbUtils.fmtDate(d.date)}</td>
       <td>${d.link ? `<a href="${d.link}" target="_blank" class="text-blue-600 text-xs">🔗 เปิด</a>` : '-'}</td>
+      <td>${d.is_public
+        ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">🌐 เผยแพร่</span>'
+        : '<span class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full whitespace-nowrap">🔒 ภายใน</span>'
+      }</td>
       <td><button class="text-blue-600 text-sm" onclick="openDocForm('${d.id}')">แก้</button></td>
     </tr>
-  `).join('') || '<tr><td colspan="5" class="text-center text-slate-500 py-4">ยังไม่มีเอกสาร</td></tr>';
+  `).join('') || '<tr><td colspan="6" class="text-center text-slate-500 py-4">ยังไม่มีเอกสาร</td></tr>';
 }
 function openDocTypeForm() {
   if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
@@ -1553,12 +1557,23 @@ function openDocForm(id) {
       <input id="f-date" type="date" class="input" value="${d.date||''}">
       <input id="f-link" class="input" placeholder="ลิงก์ Google Drive/OneDrive/..." value="${d.link||''}">
       <input id="f-cat" class="input" placeholder="หมวด (ถ้ามี)" value="${d.category||''}">
+      <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none mt-1"
+        style="background:${d.is_public?'#f0fdf4':'#f8fafc'};border-color:${d.is_public?'#86efac':'#e2e8f0'};"
+        id="f-public-label">
+        <input type="checkbox" id="f-public" class="w-4 h-4 accent-green-600" ${d.is_public?'checked':''}
+          onchange="const l=document.getElementById('f-public-label');l.style.background=this.checked?'#f0fdf4':'#f8fafc';l.style.borderColor=this.checked?'#86efac':'#e2e8f0';">
+        <div>
+          <div class="text-sm font-semibold" style="color:#166534;">🌐 เผยแพร่ในหน้าหลัก</div>
+          <div class="text-xs text-slate-500">บุคคลทั่วไปสามารถเห็นและดาวน์โหลดได้จากหน้าหลัก</div>
+        </div>
+      </label>
     </div>
     ${id ? `<button class="text-rose-500 text-xs mt-3" onclick="delDoc('${id}')">🗑 ลบ</button>` : ''}
   `;
   document.getElementById('modalSaveBtn').onclick = async () => {
     const row = { title: val('f-title'), type: val('f-type'), date: val('f-date')||null,
-      link: val('f-link'), category: val('f-cat'), owner_id: currentUser?.id };
+      link: val('f-link'), category: val('f-cat'), owner_id: currentUser?.id,
+      is_public: document.getElementById('f-public')?.checked || false };
     if (id) await sbDB.update('documents', id, row); else await sbDB.insert('documents', row);
     closeModal(); loadAll();
   };
