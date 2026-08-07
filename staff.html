@@ -128,7 +128,7 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <!-- ===== SIDEBAR ===== -->
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" style="display:none">
   <a href="index.html" class="sidebar-logo">
     <img src="logo-new.png" alt="AN sakon">
     <div class="sidebar-brand">
@@ -931,10 +931,12 @@ async function ensureAuth() {
         if (adminSection) { adminSection.classList.remove('hidden'); adminSection.style.display='contents'; }
       }
       document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('sidebar').style.display = '';
       return true;
     }
   } catch(e) { console.warn(e); }
   document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('sidebar').style.display = 'none';
   return false;
 }
 async function signIn() {
