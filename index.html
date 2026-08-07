@@ -28,9 +28,9 @@ body { font-family:'Sarabun',system-ui,sans-serif; margin:0; background:#fff; co
 .nav-inner { max-width:1200px; margin:0 auto; padding:0 20px; height:64px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
 .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; flex-shrink:0; }
 .nav-logo img { height:40px; object-fit:contain; }
-.nav-links { display:flex; align-items:center; gap:4px; }
+.nav-links { display:flex; align-items:center; gap:2px; }
 .nav-links a, .nav-links button {
-  padding:7px 14px; border-radius:8px; font-size:14px; font-weight:500;
+  padding:6px 10px; border-radius:8px; font-size:13px; font-weight:500;
   color:#4c1d95; background:none; border:none; cursor:pointer; text-decoration:none;
   font-family:'Sarabun',sans-serif; transition:all .12s; white-space:nowrap;
 }
@@ -271,10 +271,12 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
     <div class="nav-links">
       <a href="#home">หน้าแรก</a>
       <a href="#about">ข้อมูลหน่วยงาน</a>
+      <a href="#research">วิจัยและผลงาน</a>
+      <a href="#documents">เอกสาร</a>
       <a href="#satisfaction">ความพึงพอใจ</a>
       <a href="staff.html">สำหรับเจ้าหน้าที่</a>
-      <a href="#research">วิจัยและผลงาน</a>
-      <a href="#more">อื่นๆ</a>
+      <a href="#activities">ภาพกิจกรรม</a>
+      <a href="admin.html">ผู้ดูแลระบบ</a>
       <a href="signup.html" class="nav-signup">+ สมัครสมาชิก</a>
     </div>
     <button class="hamburger" onclick="openDrawer()" aria-label="เมนู">
@@ -303,11 +305,8 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
       <a href="#about" class="d-link" onclick="closeDrawer();showAboutTab('about-org')">🗂 ผังองค์กร</a>
     </div>
 
-    <a href="#satisfaction" class="d-link" onclick="closeDrawer()">😊 ความพึงพอใจ</a>
-    <a href="staff.html" class="d-link">👩‍⚕️ สำหรับเจ้าหน้าที่</a>
-
     <button class="d-group-btn" onclick="toggleDGroup(this)">
-      <span>🔬 วิจัยและผลงาน</span>
+      <span>🔬 วิจัยและผลงานวิชาการ</span>
       <span class="arrow">▾</span>
     </button>
     <div class="d-sub">
@@ -315,15 +314,11 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
       <a href="#research" class="d-link" onclick="closeDrawer()">📄 ผลงานวิชาการ</a>
     </div>
 
-    <button class="d-group-btn" onclick="toggleDGroup(this)">
-      <span>☰ อื่นๆ</span>
-      <span class="arrow">▾</span>
-    </button>
-    <div class="d-sub">
-      <a href="#more" class="d-link" onclick="closeDrawer()">🎯 กิจกรรม</a>
-      <a href="#more" class="d-link" onclick="closeDrawer()">📱 QR Code</a>
-      <a href="#contact" class="d-link" onclick="closeDrawer()">📍 ติดต่อหน่วยงาน</a>
-    </div>
+    <a href="#documents" class="d-link" onclick="closeDrawer()">📥 เอกสาร</a>
+    <a href="#satisfaction" class="d-link" onclick="closeDrawer()">😊 ความพึงพอใจ</a>
+    <a href="staff.html" class="d-link">👩‍⚕️ สำหรับเจ้าหน้าที่</a>
+    <a href="#activities" class="d-link" onclick="closeDrawer()">🖼️ ภาพกิจกรรม</a>
+    <a href="admin.html" class="d-link">🛡️ ผู้ดูแลระบบ</a>
 
     <a href="signup.html" class="d-link d-signup">✨ สมัครสมาชิก</a>
   </div>
@@ -621,6 +616,7 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
 <section id="more" class="section-alt" style="padding:0;">
 
   <!-- Slideshow เต็มหน้าจอ -->
+  <div id="activities"></div>
   <div id="actSlideshow" class="act-slideshow" style="border-radius:0;"></div>
   <div id="actEmpty" style="display:none;text-align:center;padding:80px 40px;color:#94a3b8;font-size:15px;">ยังไม่มีกิจกรรม</div>
 
@@ -656,7 +652,7 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
         </div>
 
         <!-- เอกสาร Download -->
-        <div style="background:#fff;border-radius:16px;padding:20px;border:1.5px solid #e9d5ff;">
+        <div id="documents" style="background:#fff;border-radius:16px;padding:20px;border:1.5px solid #e9d5ff;">
           <div style="font-size:16px;font-weight:700;color:#1e1b4b;margin-bottom:8px;">📥 เอกสาร Download</div>
           <div style="font-size:13px;color:#94a3b8;text-align:center;padding:24px 0;">เร็วๆ นี้</div>
         </div>
