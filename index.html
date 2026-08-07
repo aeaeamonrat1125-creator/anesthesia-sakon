@@ -42,6 +42,17 @@ body { font-family:'Sarabun',system-ui,sans-serif; margin:0; background:#fff; co
   box-shadow:0 2px 10px rgba(124,58,237,.3);
 }
 .nav-signup:hover { opacity:.9 !important; box-shadow:0 4px 16px rgba(124,58,237,.4) !important; }
+.nav-dropdown { position:relative; }
+.nav-dropdown-menu {
+  position:absolute; top:calc(100% + 6px); right:0; background:#fff;
+  border-radius:12px; box-shadow:0 8px 24px rgba(109,40,217,.15);
+  border:1px solid #ede9fe; min-width:160px; padding:6px; z-index:200;
+  opacity:0; pointer-events:none; transform:translateY(-6px); transition:all .15s;
+}
+.nav-dropdown:hover .nav-dropdown-menu,
+.nav-dropdown.open .nav-dropdown-menu { opacity:1; pointer-events:auto; transform:translateY(0); }
+.nav-dropdown-menu a { display:block; padding:8px 14px; border-radius:8px; font-size:13px; font-weight:500; color:#4c1d95; text-decoration:none; white-space:nowrap; transition:.1s; }
+.nav-dropdown-menu a:hover { background:#f5f3ff; color:#7c3aed; }
 .hamburger { display:none; flex-direction:column; gap:5px; background:none; border:none; cursor:pointer; padding:6px; }
 .hamburger span { display:block; width:24px; height:2px; background:#6d28d9; border-radius:2px; transition:.2s; }
 
@@ -271,13 +282,18 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
     <div class="nav-links">
       <a href="#home">หน้าแรก</a>
       <a href="#about">ข้อมูลหน่วยงาน</a>
-      <a href="#research">วิจัยและผลงาน</a>
+      <a href="#research">วิจัยและผลงานวิชาการ</a>
       <a href="#documents">เอกสาร</a>
       <a href="#satisfaction">ความพึงพอใจ</a>
       <a href="staff.html">สำหรับเจ้าหน้าที่</a>
       <a href="#activities">ภาพกิจกรรม</a>
-      <a href="admin.html">ผู้ดูแลระบบ</a>
-      <a href="signup.html" class="nav-signup">+ สมัครสมาชิก</a>
+      <div class="nav-dropdown">
+        <button onclick="this.closest('.nav-dropdown').classList.toggle('open')">อื่นๆ ▾</button>
+        <div class="nav-dropdown-menu">
+          <a href="signup.html">✨ สมัครสมาชิก</a>
+          <a href="admin.html">🛡️ ผู้ดูแลระบบ</a>
+        </div>
+      </div>
     </div>
     <button class="hamburger" onclick="openDrawer()" aria-label="เมนู">
       <span></span><span></span><span></span>
@@ -318,9 +334,15 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
     <a href="#satisfaction" class="d-link" onclick="closeDrawer()">😊 ความพึงพอใจ</a>
     <a href="staff.html" class="d-link">👩‍⚕️ สำหรับเจ้าหน้าที่</a>
     <a href="#activities" class="d-link" onclick="closeDrawer()">🖼️ ภาพกิจกรรม</a>
-    <a href="admin.html" class="d-link">🛡️ ผู้ดูแลระบบ</a>
 
-    <a href="signup.html" class="d-link d-signup">✨ สมัครสมาชิก</a>
+    <button class="d-group-btn" onclick="toggleDGroup(this)">
+      <span>☰ อื่นๆ</span>
+      <span class="arrow">▾</span>
+    </button>
+    <div class="d-sub">
+      <a href="signup.html" class="d-link">✨ สมัครสมาชิก</a>
+      <a href="admin.html" class="d-link">🛡️ ผู้ดูแลระบบ</a>
+    </div>
   </div>
 </div>
 
@@ -720,6 +742,11 @@ function toggleDGroup(btn) {
   const sub = btn.nextElementSibling;
   sub.classList.toggle('open');
 }
+document.addEventListener('click', e => {
+  if (!e.target.closest('.nav-dropdown')) {
+    document.querySelectorAll('.nav-dropdown.open').forEach(d => d.classList.remove('open'));
+  }
+});
 
 // ── ABOUT TABS ────────────────────────────────────────────
 function showAboutTab(id) {
