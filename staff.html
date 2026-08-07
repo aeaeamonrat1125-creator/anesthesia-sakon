@@ -1037,12 +1037,12 @@ function renderOrgChart() {
         return `
         ${i > 0 ? '<div class="w-0.5 h-6 bg-slate-300"></div>' : ''}
         <div class="flex flex-col items-center">
-          <div class="relative mb-1.5 group/photo ${canEdit ? 'cursor-pointer' : ''}" ${canEdit ? `onclick="triggerOrgPhoto('${p.id}')"` : ''}>
+          <div class="relative mb-1.5 group/photo ${canEdit ? 'cursor-pointer' : ''}">
             ${photo
-              ? `<img src="${photo}" class="w-14 h-14 rounded-full object-cover shadow cursor-zoom-in" style="border:3px solid ${p.border}" onclick="event.stopPropagation();openLightbox('${photo}','${name.replace(/'/g,"&#39;")}')">`
+              ? `<img src="${photo}" class="w-14 h-14 rounded-full object-cover shadow cursor-zoom-in" style="border:3px solid ${p.border}" onclick="openLightbox('${photo}','${name.replace(/'/g,"&#39;")}')">`
               : `<div class="w-14 h-14 rounded-full bg-${p.color}-100 flex items-center justify-center text-${p.color}-600 font-bold text-xs shadow" style="border:3px solid ${p.border}">${p.initials}</div>`
             }
-            ${canEdit ? `<div class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 group-hover/photo:opacity-100 transition-opacity pointer-events-none">📷</div>` : ''}
+            ${canEdit ? `<div class="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 text-white text-base opacity-0 pointer-events-none group-hover/photo:opacity-100 group-hover/photo:pointer-events-auto transition-opacity cursor-pointer" onclick="triggerOrgPhoto('${p.id}')">📷</div>` : ''}
           </div>
           <div class="relative group/label ${p.bg} text-white rounded-lg px-4 py-1.5 text-center shadow text-xs min-w-[200px] ${canEdit ? 'cursor-pointer' : ''}"
             ${canEdit ? `onclick="openOrgEdit('${p.id}','${name.replace(/'/g,"\\'")}','${pos.replace(/'/g,"\\'")}','${p.bg}')"` : ''}>
