@@ -248,7 +248,7 @@ select.input { cursor:pointer; }
         </div>
         <div>
           <label class="lbl">ผู้รับของ</label>
-          <input id="r-receiver" type="text" class="input" placeholder="ชื่อผู้รับ">
+          <input id="r-receiver" type="text" class="input" placeholder="ชื่อผู้รับ" list="nurse-names-list" autocomplete="off">
         </div>
         <div>
           <label class="lbl">ตำแหน่งจัดเก็บ</label>
@@ -334,11 +334,11 @@ select.input { cursor:pointer; }
         </div>
         <div>
           <label class="lbl">ผู้เบิก</label>
-          <input id="t-requester" type="text" class="input" placeholder="ชื่อผู้เบิก">
+          <input id="t-requester" type="text" class="input" placeholder="ชื่อผู้เบิก" list="nurse-names-list" autocomplete="off">
         </div>
         <div>
           <label class="lbl">ผู้จ่าย</label>
-          <input id="t-issuer" type="text" class="input" placeholder="ชื่อผู้จ่าย">
+          <input id="t-issuer" type="text" class="input" placeholder="ชื่อผู้จ่าย" list="nurse-names-list" autocomplete="off">
         </div>
         <div class="sm:col-span-2">
           <label class="lbl">หมายเหตุ</label>
@@ -434,6 +434,13 @@ select.input { cursor:pointer; }
       </div>
     </div>
   </div>
+
+  <!-- Nurse Names Datalist -->
+  <datalist id="nurse-names-list">
+    <option value="กรรณิกา">
+    <option value="ฝนทิพย์">
+    <option value="ปัทมา">
+  </datalist>
 
   <!-- Edit Record Modal -->
   <div id="editModal" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
@@ -1066,7 +1073,7 @@ function editReceipt(id) {
     <div><label class="lbl">วันหมดอายุ</label>
       <input id="em-expiry" type="date" class="input" value="${r.expiry_date||''}"></div>
     <div><label class="lbl">ผู้รับ</label>
-      <input id="em-by" class="input" value="${r.received_by||''}"></div>
+      <input id="em-by" class="input" list="nurse-names-list" autocomplete="off" value="${r.received_by||''}"></div>
     <div><label class="lbl">หมายเหตุ</label>
       <input id="em-notes" class="input" value="${(r.notes||'').replace(/"/g,'&quot;')}"></div>
   `;
@@ -1110,7 +1117,7 @@ function editTransfer(id) {
     <div><label class="lbl">คลังย่อย</label>
       <input id="em-wh" class="input" value="${r.sub_warehouse_name||''}"></div>
     <div><label class="lbl">ผู้เบิก</label>
-      <input id="em-by" class="input" value="${r.requested_by||''}"></div>
+      <input id="em-by" class="input" list="nurse-names-list" autocomplete="off" value="${r.requested_by||''}"></div>
     <div><label class="lbl">หมายเหตุ</label>
       <input id="em-notes" class="input" value="${(r.notes||'').replace(/"/g,'&quot;')}"></div>
   `;
@@ -1833,6 +1840,19 @@ async function init() {
   try {
     subWarehouses = await sbDB.list('sub_warehouses', { order:'sort_order' });
     populateWarehouseSelect();
+  } catch(e) {}
+
+  try {
+    const nurses = await sbDB.list('nurses', { select:'name', order:'sort_order', asc:true });
+    const dl = document.getElementById('nurse-names-list');
+    const existing = new Set([...dl.options].map(o => o.value));
+    nurses.forEach(n => {
+      if (n.name && !existing.has(n.name)) {
+        const opt = document.createElement('option');
+        opt.value = n.name;
+        dl.appendChild(opt);
+      }
+    });
   } catch(e) {}
 
   await Promise.all([loadReceiptHistory(), loadTransferHistory(), loadAlerts()]);
