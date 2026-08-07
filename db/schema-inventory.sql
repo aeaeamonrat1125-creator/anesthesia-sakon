@@ -99,11 +99,13 @@ CREATE POLICY "sw_delete" ON sub_warehouses FOR DELETE USING (auth.uid() IS NOT 
 -- supply_receipts
 CREATE POLICY "sr_select" ON supply_receipts FOR SELECT USING (true);
 CREATE POLICY "sr_insert" ON supply_receipts FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "sr_update" ON supply_receipts FOR UPDATE USING (auth.uid() IS NOT NULL);
 CREATE POLICY "sr_delete" ON supply_receipts FOR DELETE USING (auth.uid() IS NOT NULL);
 
 -- supply_transfers
 CREATE POLICY "st_select" ON supply_transfers FOR SELECT USING (true);
 CREATE POLICY "st_insert" ON supply_transfers FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "st_update" ON supply_transfers FOR UPDATE USING (auth.uid() IS NOT NULL);
 CREATE POLICY "st_delete" ON supply_transfers FOR DELETE USING (auth.uid() IS NOT NULL);
 
 -- ============================================================
