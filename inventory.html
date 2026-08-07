@@ -1072,7 +1072,7 @@ function editReceipt(id) {
   `;
   document.getElementById('editModalSave').onclick = async () => {
     try {
-      await sbDB.update('supply_receipts', id, {
+      const { error } = await sb.from('supply_receipts').update({
         receipt_date:     document.getElementById('em-date').value,
         item_name:        document.getElementById('em-name').value,
         quantity_ordered: parseInt(document.getElementById('em-ordered').value)||null,
@@ -1082,7 +1082,8 @@ function editReceipt(id) {
         expiry_date:      document.getElementById('em-expiry').value||null,
         received_by:      document.getElementById('em-by').value||null,
         notes:            document.getElementById('em-notes').value||null,
-      });
+      }).eq('id', id);
+      if (error) throw error;
       toast('บันทึกแล้ว', 'success'); closeEditModal(); loadReceiptHistory();
     } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
   };
@@ -1115,7 +1116,7 @@ function editTransfer(id) {
   `;
   document.getElementById('editModalSave').onclick = async () => {
     try {
-      await sbDB.update('supply_transfers', id, {
+      const { error } = await sb.from('supply_transfers').update({
         transfer_date:      document.getElementById('em-date').value,
         item_name:          document.getElementById('em-name').value,
         quantity:           parseInt(document.getElementById('em-qty').value),
@@ -1124,7 +1125,8 @@ function editTransfer(id) {
         sub_warehouse_name: document.getElementById('em-wh').value||null,
         requested_by:       document.getElementById('em-by').value||null,
         notes:              document.getElementById('em-notes').value||null,
-      });
+      }).eq('id', id);
+      if (error) throw error;
       toast('บันทึกแล้ว', 'success'); closeEditModal(); loadTransferHistory();
     } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
   };
