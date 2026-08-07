@@ -868,7 +868,7 @@ async function loadOrgChart() {
   try {
     const [{ data: orgRows }, { data: nurses }] = await Promise.all([
       sb.from('org_chart').select('*'),
-      sb.from('nurses').select('id,name,nickname,photo_url,role').eq('active', true)
+      sb.from('nurses').select('id,name,nickname,photo_url,role,sort_order').eq('active', true).order('sort_order', { ascending: true })
     ]);
 
     // ── ผังองค์กร: อ่านจาก org_chart table (single source of truth เหมือน staff.html) ──
