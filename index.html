@@ -280,7 +280,15 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
       <img src="logo-new.png" alt="AN sakon">
     </a>
     <div class="nav-links">
-      <a href="#home">หน้าแรก</a>
+      <div class="nav-dropdown">
+        <button onclick="this.closest('.nav-dropdown').classList.toggle('open')">หน้าแรก ▾</button>
+        <div class="nav-dropdown-menu">
+          <a href="#about" onclick="showAboutTab('about-vision')">👁️ วิสัยทัศน์ พันธกิจ</a>
+          <a href="#about" onclick="showAboutTab('about-org')">👥 บุคลากร หน่วยงาน</a>
+          <a href="#satisfaction">📊 ตัวชี้วัด</a>
+          <a href="#about" onclick="showAboutTab('about-org')">🗂️ ผังองค์กร</a>
+        </div>
+      </div>
       <a href="#about">ข้อมูลหน่วยงาน</a>
       <a href="#research">วิจัยและผลงานวิชาการ</a>
       <a href="#documents">เอกสาร</a>
@@ -309,7 +317,16 @@ footer { background:#1e1b4b; color:rgba(255,255,255,.7); padding:40px 24px 32px;
     <button class="drawer-close" onclick="closeDrawer()">✕</button>
   </div>
   <div class="drawer-body">
-    <a href="#home" class="d-link" onclick="closeDrawer()">🏠 หน้าแรก</a>
+    <button class="d-group-btn" onclick="toggleDGroup(this)">
+      <span>🏠 หน้าแรก</span>
+      <span class="arrow">▾</span>
+    </button>
+    <div class="d-sub">
+      <a href="#about" class="d-link" onclick="closeDrawer();showAboutTab('about-vision')">👁️ วิสัยทัศน์ พันธกิจ</a>
+      <a href="#about" class="d-link" onclick="closeDrawer();showAboutTab('about-org')">👥 บุคลากร หน่วยงาน</a>
+      <a href="#satisfaction" class="d-link" onclick="closeDrawer()">📊 ตัวชี้วัด</a>
+      <a href="#about" class="d-link" onclick="closeDrawer();showAboutTab('about-org')">🗂️ ผังองค์กร</a>
+    </div>
 
     <button class="d-group-btn" onclick="toggleDGroup(this)">
       <span>ℹ️ ข้อมูลหน่วยงาน</span>
