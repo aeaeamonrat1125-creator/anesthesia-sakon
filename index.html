@@ -853,8 +853,8 @@ function filterPublicNurses(role) {
 const PUB_ORG = [
   { id:'director',    initials:'นพ.', border:'#3b82f6', bg:'#3b82f6', name:'นายแพทย์สมศักดิ์ ประภาณวัตร',  pos:'ผู้อำนวยการโรงพยาบาลสกลนคร' },
   { id:'nursing_head',initials:'พย.', border:'#a855f7', bg:'#9333ea', name:'นางโพลิน นัดสันเทียะ',           pos:'หัวหน้ากลุ่มการพยาบาล' },
-  { id:'anes_head',   initials:'พย.', border:'#ec4899', bg:'#ec4899', name:'พัชริดา',                         pos:'หัวหน้ากลุ่มงานการพยาบาลวิสัญญี' },
-  { id:'anes_sup',    initials:'พย.', border:'#f43f5e', bg:'#f43f5e', name:'ละมัยศิลป์',                      pos:'หัวหน้างานวิสัญญีพยาบาล' },
+  { id:'anes_head',   initials:'พย.', border:'#ec4899', bg:'#ec4899', name:'โชติมา',                          pos:'หัวหน้ากลุ่มงานการพยาบาลวิสัญญี' },
+  { id:'anes_sup',    initials:'พย.', border:'#f43f5e', bg:'#f43f5e', name:'นางพัชริดา นพศรี',               pos:'หัวหน้างานวิสัญญีพยาบาล' },
 ];
 
 // ── ORG CHART + NURSES LIST (read-only) ──────────────────
@@ -871,19 +871,9 @@ async function loadOrgChart() {
       sb.from('nurses').select('id,name,nickname,photo_url,role').eq('active', true)
     ]);
 
-    // ── ผังองค์กร (vertical tree) ─────────────────────────
+    // ── ผังองค์กร: อ่านจาก org_chart table (single source of truth เหมือน staff.html) ──
     const dbMap = {};
     (orgRows||[]).forEach(r => { dbMap[r.id] = r; });
-
-    // ดึงรูป+ชื่อจาก nurses table สำหรับ 2 ตำแหน่งในหน่วยงาน
-    const findNurse = (kw) => (nurses||[]).find(n =>
-      (n.name||'').includes(kw) || (n.nickname||'').includes(kw));
-    const anesHead = findNurse('พัชริดา');
-    const anesSup  = findNurse('ละมัยศิลป์');
-    if (anesHead) dbMap['anes_head'] = { ...dbMap['anes_head'], name: anesHead.name,
-      photo_url: anesHead.photo_url || dbMap['anes_head']?.photo_url };
-    if (anesSup)  dbMap['anes_sup']  = { ...dbMap['anes_sup'],  name: anesSup.name,
-      photo_url: anesSup.photo_url  || dbMap['anes_sup']?.photo_url };
 
     document.getElementById('orgPhotoWrap').innerHTML = '';
     wrap.innerHTML = `
