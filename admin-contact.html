@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ผู้ดูแลระบบ — วิสัญญีพยาบาล รพ.สกลนคร</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<meta name="theme-color" content="#7c3aed">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',system-ui,sans-serif;background:#f5f3ff;min-height:100vh;color:#1e1b4b;}
+
+/* ── NAV ── */
+#navbar{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(109,40,217,.1);box-shadow:0 1px 16px rgba(109,40,217,.08);}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+.nav-logo img{height:40px;object-fit:contain;}
+.nav-links{display:flex;align-items:center;gap:2px;}
+.nav-links a,.nav-links button{padding:6px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#4c1d95;background:none;border:none;cursor:pointer;text-decoration:none;font-family:'Sarabun',sans-serif;transition:all .12s;white-space:nowrap;}
+.nav-links a:hover,.nav-links button:hover{background:#f5f3ff;color:#7c3aed;}
+.nav-links a.active{background:#ede9fe;color:#6d28d9;font-weight:700;}
+.nav-dropdown{position:relative;}
+.nav-dropdown-menu{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(109,40,217,.15);border:1px solid #ede9fe;min-width:160px;padding:6px;z-index:200;opacity:0;pointer-events:none;transform:translateY(-6px);transition:all .15s;}
+.nav-dropdown:hover .nav-dropdown-menu,.nav-dropdown.open .nav-dropdown-menu{opacity:1;pointer-events:auto;transform:translateY(0);}
+.nav-dropdown-menu a{display:block;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;color:#4c1d95;text-decoration:none;white-space:nowrap;transition:.1s;}
+.nav-dropdown-menu a:hover{background:#f5f3ff;color:#7c3aed;}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;}
+.hamburger span{display:block;width:24px;height:2px;background:#6d28d9;border-radius:2px;}
+@media(max-width:900px){.nav-links{display:none;}.hamburger{display:flex;}}
+
+/* ── DRAWER ── */
+#drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;}
+#drawer-overlay.open{display:block;}
+#drawer{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#fff;z-index:400;transition:right .25s;box-shadow:-4px 0 24px rgba(0,0,0,.15);overflow-y:auto;}
+#drawer.open{right:0;}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #ede9fe;}
+.drawer-logo img{height:34px;}
+.drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:#7c3aed;}
+.drawer-body{padding:16px;}
+.d-link{display:block;padding:11px 14px;border-radius:10px;color:#4c1d95;text-decoration:none;font-size:15px;font-weight:500;transition:.1s;}
+.d-link:hover,.d-link.active{background:#f5f3ff;color:#7c3aed;}
+.d-group-btn{width:100%;display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-radius:10px;background:none;border:none;cursor:pointer;font-size:15px;font-weight:600;color:#4c1d95;font-family:'Sarabun',sans-serif;}
+.d-group-btn:hover{background:#f5f3ff;}
+.d-sub{display:none;padding-left:14px;}
+.d-sub.open{display:block;}
+
+/* ── HERO ── */
+.page-hero{margin-top:64px;background:linear-gradient(135deg,#6d28d9 0%,#9333ea 55%,#c026d3 100%);padding:48px 20px 40px;text-align:center;}
+.page-hero h1{font-size:clamp(28px,5vw,42px);font-weight:800;color:#fff;letter-spacing:.02em;}
+.page-hero p{font-size:15px;color:rgba(255,255,255,.8);margin-top:8px;}
+
+/* ── CARDS ── */
+.cards-wrap{max-width:900px;margin:48px auto;padding:0 20px;display:flex;flex-direction:column;gap:28px;}
+.admin-card{background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(109,40,217,.1);border:1.5px solid #ede9fe;overflow:hidden;display:grid;grid-template-columns:1fr 240px;min-height:220px;}
+.admin-info{padding:32px 36px;display:flex;flex-direction:column;gap:10px;justify-content:center;}
+.admin-name{font-size:18px;font-weight:700;color:#1e1b4b;min-height:28px;}
+.admin-role{font-size:14px;font-weight:600;color:#7c3aed;min-height:22px;}
+.admin-detail{font-size:14px;color:#475569;display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.admin-detail span{display:flex;align-items:center;gap:8px;min-height:22px;}
+.admin-detail label{font-weight:600;color:#4c1d95;min-width:72px;flex-shrink:0;}
+.admin-photo{background:#f5f3ff;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #ede9fe;}
+.admin-photo img{width:100%;height:100%;object-fit:cover;}
+.admin-photo .photo-placeholder{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#c026d3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;}
+.admin-update{font-size:12px;color:#94a3b8;margin-top:6px;}
+
+@media(max-width:640px){
+  .admin-card{grid-template-columns:1fr;grid-template-rows:auto 200px;}
+  .admin-photo{border-left:none;border-top:1.5px solid #ede9fe;min-height:180px;}
+  .admin-info{padding:24px 20px;}
+}
+
+/* ── FOOTER ── */
+footer{background:linear-gradient(135deg,#4c1d95,#6d28d9);color:#fff;padding:32px 20px;text-align:center;margin-top:60px;}
+footer p{font-size:13px;color:rgba(255,255,255,.7);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="logo-new.png" alt="AN sakon">
+    </a>
+    <div class="nav-links">
+      <a href="index.html">หน้าแรก</a>
+      <a href="index.html#about">ข้อมูลหน่วยงาน</a>
+      <a href="index.html#research">วิจัยและผลงานวิชาการ</a>
+      <a href="index.html#documents">เอกสาร</a>
+      <a href="index.html#satisfaction">ความพึงพอใจ</a>
+      <a href="staff.html">สำหรับเจ้าหน้าที่</a>
+      <a href="index.html#activities">ภาพกิจกรรม</a>
+      <div class="nav-dropdown">
+        <button onclick="this.closest('.nav-dropdown').classList.toggle('open')">อื่นๆ ▾</button>
+        <div class="nav-dropdown-menu">
+          <a href="signup.html">✨ สมัครสมาชิก</a>
+          <a href="admin-contact.html" class="active">🛡️ ผู้ดูแลระบบ</a>
+        </div>
+      </div>
+    </div>
+    <button class="hamburger" onclick="openDrawer()" aria-label="เมนู">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- DRAWER -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-logo"><img src="logo-new.png" alt="AN sakon"></div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <a href="index.html" class="d-link">🏠 หน้าแรก</a>
+    <a href="index.html#about" class="d-link">ℹ️ ข้อมูลหน่วยงาน</a>
+    <a href="index.html#research" class="d-link">🔬 วิจัยและผลงานวิชาการ</a>
+    <a href="index.html#documents" class="d-link">📥 เอกสาร</a>
+    <a href="index.html#satisfaction" class="d-link">😊 ความพึงพอใจ</a>
+    <a href="staff.html" class="d-link">👩‍⚕️ สำหรับเจ้าหน้าที่</a>
+    <a href="index.html#activities" class="d-link">🖼️ ภาพกิจกรรม</a>
+    <button class="d-group-btn" onclick="toggleDGroup(this)">
+      <span>☰ อื่นๆ</span><span class="arrow">▾</span>
+    </button>
+    <div class="d-sub open">
+      <a href="signup.html" class="d-link">✨ สมัครสมาชิก</a>
+      <a href="admin-contact.html" class="d-link active">🛡️ ผู้ดูแลระบบ</a>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="page-hero">
+  <h1>🛡️ ผู้ดูแลระบบ</h1>
+  <p>ทีมผู้ดูแลและพัฒนาระบบ หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</p>
+</div>
+
+<!-- CARDS -->
+<div class="cards-wrap">
+
+  <!-- Card 1 -->
+  <div class="admin-card">
+    <div class="admin-info">
+      <div class="admin-name"></div>
+      <div class="admin-role"></div>
+      <div class="admin-detail">
+        <span><label>Email :</label> <span></span></span>
+        <span><label>Line id :</label> <span></span></span>
+        <span><label>Phone :</label> <span></span></span>
+      </div>
+      <div class="admin-update"></div>
+    </div>
+    <div class="admin-photo">
+      <div class="photo-placeholder">👤</div>
+    </div>
+  </div>
+
+  <!-- Card 2 -->
+  <div class="admin-card">
+    <div class="admin-info">
+      <div class="admin-name"></div>
+      <div class="admin-role"></div>
+      <div class="admin-detail">
+        <span><label>Email :</label> <span></span></span>
+        <span><label>Line id :</label> <span></span></span>
+        <span><label>Phone :</label> <span></span></span>
+      </div>
+      <div class="admin-update"></div>
+    </div>
+    <div class="admin-photo">
+      <div class="photo-placeholder">👤</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2569 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</p>
+</footer>
+
+<script>
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');document.body.style.overflow='';}
+function toggleDGroup(btn){btn.classList.toggle('expanded');btn.nextElementSibling.classList.toggle('open');}
+document.addEventListener('click',e=>{if(!e.target.closest('.nav-dropdown'))document.querySelectorAll('.nav-dropdown.open').forEach(d=>d.classList.remove('open'));});
+</script>
+</body>
+</html>
