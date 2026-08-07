@@ -268,7 +268,10 @@ select.input { cursor:pointer; }
     <div class="card p-4">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div class="section-h">ประวัติรับเข้า</div>
-        <input type="date" id="r-hist-date" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="loadReceiptHistory()">
+        <div class="flex items-center gap-2">
+          <input type="date" id="r-hist-date" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="loadReceiptHistory();updateDateLabel('r-hist-date','r-hist-label')">
+          <span id="r-hist-label" class="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-1 rounded-lg whitespace-nowrap"></span>
+        </div>
       </div>
       <div class="scroll-x">
         <table class="tbl">
@@ -354,7 +357,10 @@ select.input { cursor:pointer; }
     <div class="card p-4">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div class="section-h">ประวัติเบิกออก</div>
-        <input type="date" id="t-hist-date" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="loadTransferHistory()">
+        <div class="flex items-center gap-2">
+          <input type="date" id="t-hist-date" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="loadTransferHistory();updateDateLabel('t-hist-date','t-hist-label')">
+          <span id="t-hist-label" class="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-1 rounded-lg whitespace-nowrap"></span>
+        </div>
       </div>
       <div class="scroll-x">
         <table class="tbl">
@@ -1043,6 +1049,13 @@ async function deleteRow(table, id, reload) {
   catch(e) { toast('ลบไม่สำเร็จ', 'error'); }
 }
 
+function updateDateLabel(inputId, labelId) {
+  const v = document.getElementById(inputId)?.value;
+  const el = document.getElementById(labelId);
+  if (!el) return;
+  el.textContent = v ? fmtDate(v) + ' (ค.ศ.)' : '';
+}
+
 const _editRowCache = {};
 
 function closeEditModal() {
@@ -1355,9 +1368,9 @@ function populateWarehouseSelect() {
 function fmtDate(d) {
   if (!d) return '—';
   try {
-    const dt = new Date(d+'T00:00:00');
-    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    return `${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+    return new Intl.DateTimeFormat('th-TH-u-ca-gregory', {
+      day: 'numeric', month: 'short', year: 'numeric'
+    }).format(new Date(d + 'T00:00:00'));
   } catch { return d; }
 }
 function expiryBadge(dateStr) {
@@ -1834,6 +1847,8 @@ async function init() {
   document.getElementById('t-date').value      = TODAY;
   document.getElementById('r-hist-date').value = TODAY;
   document.getElementById('t-hist-date').value = TODAY;
+  updateDateLabel('r-hist-date', 'r-hist-label');
+  updateDateLabel('t-hist-date', 't-hist-label');
 
   await initAuth();
 
