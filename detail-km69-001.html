@@ -205,6 +205,25 @@ footer p{font-size:13px;color:rgba(255,255,255,.7);}
     </div>
   </div>
 
+  <!-- Infographic -->
+  <div class="section-card" style="padding:24px;">
+    <h2><span class="h2-icon">🖼️</span> อินโฟกราฟิกสรุปโครงการ</h2>
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px;">ภาพรวมกระบวนการจัดการความรู้ 7 ขั้นตอน และผลลัพธ์ที่ได้รับ</p>
+    <div style="border-radius:14px;overflow:hidden;border:1.5px solid #e9d5ff;cursor:zoom-in;" onclick="openKmLb(this.querySelector('img').src)">
+      <img src="km69-001-infographic.png" alt="อินโฟกราฟิกเสริมเกราะความปลอดภัยสู่การใช้ยาอย่างมีคุณภาพ"
+        style="width:100%;display:block;transition:transform .3s;" onmouseover="this.style.transform='scale(1.01)'" onmouseout="this.style.transform='scale(1)'">
+    </div>
+    <div style="text-align:center;margin-top:10px;">
+      <span style="font-size:11px;color:#9333ea;">📌 แตะที่ภาพเพื่อดูขนาดเต็ม</span>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="km-lb" onclick="closeKmLb()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:999;cursor:zoom-out;display:none;align-items:center;justify-content:center;padding:16px;">
+    <img id="km-lb-img" src="" style="max-width:100%;max-height:92vh;border-radius:12px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.5);">
+    <button onclick="closeKmLb()" style="position:fixed;top:16px;right:20px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;">✕</button>
+  </div>
+
   <!-- ความเป็นมา -->
   <div class="section-card">
     <h2><span class="h2-icon">📌</span> ความเป็นมาและความสำคัญ</h2>
@@ -415,6 +434,8 @@ footer p{font-size:13px;color:rgba(255,255,255,.7);}
 <script>
 function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');document.body.style.overflow='hidden';}
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');document.body.style.overflow='';}
+function openKmLb(src){const lb=document.getElementById('km-lb');document.getElementById('km-lb-img').src=src;lb.style.display='flex';document.body.style.overflow='hidden';}
+function closeKmLb(){const lb=document.getElementById('km-lb');lb.style.display='none';document.body.style.overflow='';}
 </script>
 </body>
 </html>
