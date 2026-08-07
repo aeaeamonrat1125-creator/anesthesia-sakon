@@ -435,6 +435,21 @@ select.input { cursor:pointer; }
     </div>
   </div>
 
+  <!-- Edit Record Modal -->
+  <div id="editModal" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+      <div class="flex items-center justify-between p-5 border-b">
+        <h3 id="editModalTitle" class="font-bold text-lg text-slate-800">แก้ไขรายการ</h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+      </div>
+      <div id="editModalBody" class="p-5 space-y-3 overflow-y-auto max-h-[60vh]"></div>
+      <div class="flex justify-end gap-3 p-5 border-t">
+        <button onclick="closeEditModal()" class="btn btn-ghost">ยกเลิก</button>
+        <button id="editModalSave" class="btn btn-primary">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Snapshot Modal -->
   <div id="snapshotModal" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
     <div class="card w-full max-w-2xl p-5 max-h-screen overflow-y-auto">
@@ -967,7 +982,8 @@ async function loadReceiptHistory() {
   body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-4">กำลังโหลด...</td></tr>';
   try {
     const rows = await sbDB.list('supply_receipts', { eq:{ receipt_date:date }, order:'created_at', asc:false });
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">ไม่มีรายการ</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-6">ไม่มีรายการ</td></tr>'; return; }
+    rows.forEach(r => { _editRowCache[r.id] = r; });
     body.innerHTML = rows.map(r => {
       const diff = r.quantity_ordered ? r.quantity - r.quantity_ordered : null;
       const diffBadge = diff === null ? '—'
@@ -982,7 +998,10 @@ async function loadReceiptHistory() {
         <td>${r.lot?`<span class="badge badge-purple">${r.lot}</span>`:'—'}</td>
         <td>${r.expiry_date ? expiryBadge(r.expiry_date) : '—'}</td>
         <td class="text-xs">${r.received_by||'—'}</td>
-        <td><button onclick="deleteRow('supply_receipts','${r.id}',loadReceiptHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button></td>
+        <td class="whitespace-nowrap">
+          <button onclick="editReceipt('${r.id}')" class="text-xs text-violet-500 hover:text-violet-700 px-2 py-1">✏️</button>
+          <button onclick="deleteRow('supply_receipts','${r.id}',loadReceiptHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button>
+        </td>
       </tr>`;}).join('');
   } catch(e) { body.innerHTML = '<tr><td colspan="7" class="text-center text-rose-400 py-4">โหลดไม่ได้</td></tr>'; }
 }
@@ -994,6 +1013,7 @@ async function loadTransferHistory() {
   try {
     const rows = await sbDB.list('supply_transfers', { eq:{ transfer_date:date }, order:'created_at', asc:false });
     if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">ไม่มีรายการ</td></tr>'; return; }
+    rows.forEach(r => { _editRowCache[r.id] = r; });
     body.innerHTML = rows.map(r => `
       <tr>
         <td class="text-slate-500 text-xs">${fmtDate(r.transfer_date)}</td>
@@ -1002,7 +1022,10 @@ async function loadTransferHistory() {
         <td>${r.lot?`<span class="badge badge-purple">${r.lot}</span>`:'—'}</td>
         <td><span class="wh-chip">🏷️ ${r.sub_warehouse_name||'—'}</span></td>
         <td class="text-xs">${r.requested_by||'—'}</td>
-        <td><button onclick="deleteRow('supply_transfers','${r.id}',loadTransferHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button></td>
+        <td class="whitespace-nowrap">
+          <button onclick="editTransfer('${r.id}')" class="text-xs text-violet-500 hover:text-violet-700 px-2 py-1">✏️</button>
+          <button onclick="deleteRow('supply_transfers','${r.id}',loadTransferHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button>
+        </td>
       </tr>`).join('');
   } catch(e) { body.innerHTML = '<tr><td colspan="7" class="text-center text-rose-400 py-4">โหลดไม่ได้</td></tr>'; }
 }
@@ -1011,6 +1034,101 @@ async function deleteRow(table, id, reload) {
   if (!confirm('ลบรายการนี้?')) return;
   try { await sbDB.remove(table, id); toast('ลบแล้ว', 'success'); reload(); }
   catch(e) { toast('ลบไม่สำเร็จ', 'error'); }
+}
+
+const _editRowCache = {};
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+function editReceipt(id) {
+  const r = _editRowCache[id];
+  if (!r) return;
+  document.getElementById('editModalTitle').textContent = '✏️ แก้ไขรายการรับเข้า';
+  document.getElementById('editModalBody').innerHTML = `
+    <div><label class="lbl">วันที่รับเข้า</label>
+      <input id="em-date" type="date" class="input" value="${r.receipt_date||''}"></div>
+    <div><label class="lbl">ชื่อเวชภัณฑ์</label>
+      <input id="em-name" class="input" value="${(r.item_name||'').replace(/"/g,'&quot;')}"></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="lbl">จำนวนสั่ง</label>
+        <input id="em-ordered" type="number" class="input" value="${r.quantity_ordered||''}"></div>
+      <div><label class="lbl">ได้รับจริง</label>
+        <input id="em-qty" type="number" class="input" value="${r.quantity||''}"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="lbl">หน่วย</label>
+        <input id="em-unit" class="input" value="${r.unit||''}"></div>
+      <div><label class="lbl">Lot</label>
+        <input id="em-lot" class="input" value="${r.lot||''}"></div>
+    </div>
+    <div><label class="lbl">วันหมดอายุ</label>
+      <input id="em-expiry" type="date" class="input" value="${r.expiry_date||''}"></div>
+    <div><label class="lbl">ผู้รับ</label>
+      <input id="em-by" class="input" value="${r.received_by||''}"></div>
+    <div><label class="lbl">หมายเหตุ</label>
+      <input id="em-notes" class="input" value="${(r.notes||'').replace(/"/g,'&quot;')}"></div>
+  `;
+  document.getElementById('editModalSave').onclick = async () => {
+    try {
+      await sbDB.update('supply_receipts', id, {
+        receipt_date:     document.getElementById('em-date').value,
+        item_name:        document.getElementById('em-name').value,
+        quantity_ordered: parseInt(document.getElementById('em-ordered').value)||null,
+        quantity:         parseInt(document.getElementById('em-qty').value),
+        unit:             document.getElementById('em-unit').value||null,
+        lot:              document.getElementById('em-lot').value||null,
+        expiry_date:      document.getElementById('em-expiry').value||null,
+        received_by:      document.getElementById('em-by').value||null,
+        notes:            document.getElementById('em-notes').value||null,
+      });
+      toast('บันทึกแล้ว', 'success'); closeEditModal(); loadReceiptHistory();
+    } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
+  };
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function editTransfer(id) {
+  const r = _editRowCache[id];
+  if (!r) return;
+  document.getElementById('editModalTitle').textContent = '✏️ แก้ไขรายการเบิกออก';
+  document.getElementById('editModalBody').innerHTML = `
+    <div><label class="lbl">วันที่เบิก</label>
+      <input id="em-date" type="date" class="input" value="${r.transfer_date||''}"></div>
+    <div><label class="lbl">ชื่อเวชภัณฑ์</label>
+      <input id="em-name" class="input" value="${(r.item_name||'').replace(/"/g,'&quot;')}"></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="lbl">จำนวน</label>
+        <input id="em-qty" type="number" class="input" value="${r.quantity||''}"></div>
+      <div><label class="lbl">หน่วย</label>
+        <input id="em-unit" class="input" value="${r.unit||''}"></div>
+    </div>
+    <div><label class="lbl">Lot</label>
+      <input id="em-lot" class="input" value="${r.lot||''}"></div>
+    <div><label class="lbl">คลังย่อย</label>
+      <input id="em-wh" class="input" value="${r.sub_warehouse_name||''}"></div>
+    <div><label class="lbl">ผู้เบิก</label>
+      <input id="em-by" class="input" value="${r.requested_by||''}"></div>
+    <div><label class="lbl">หมายเหตุ</label>
+      <input id="em-notes" class="input" value="${(r.notes||'').replace(/"/g,'&quot;')}"></div>
+  `;
+  document.getElementById('editModalSave').onclick = async () => {
+    try {
+      await sbDB.update('supply_transfers', id, {
+        transfer_date:      document.getElementById('em-date').value,
+        item_name:          document.getElementById('em-name').value,
+        quantity:           parseInt(document.getElementById('em-qty').value),
+        unit:               document.getElementById('em-unit').value||null,
+        lot:                document.getElementById('em-lot').value||null,
+        sub_warehouse_name: document.getElementById('em-wh').value||null,
+        requested_by:       document.getElementById('em-by').value||null,
+        notes:              document.getElementById('em-notes').value||null,
+      });
+      toast('บันทึกแล้ว', 'success'); closeEditModal(); loadTransferHistory();
+    } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
+  };
+  document.getElementById('editModal').style.display = 'flex';
 }
 
 // ── Stock ─────────────────────────────────────────────────────
@@ -1227,8 +1345,11 @@ function populateWarehouseSelect() {
 // ── Utilities ─────────────────────────────────────────────────
 function fmtDate(d) {
   if (!d) return '—';
-  try { return new Date(d+'T00:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}); }
-  catch { return d; }
+  try {
+    const dt = new Date(d+'T00:00:00');
+    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return `${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+  } catch { return d; }
 }
 function expiryBadge(dateStr) {
   const diff = Math.floor((new Date(dateStr+'T00:00:00') - new Date()) / 86400000);
