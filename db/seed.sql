@@ -18,7 +18,7 @@ insert into public.kpis (code, name, description, target, unit, direction, sort_
   ('KPI-11', 'อัตราการเกิด Peripheral neurologic deficit', 'Peripheral neurologic deficit', 0, 'ครั้ง', 'lower', 11),
   ('KPI-12', 'อัตราผู้ป่วยเสียชีวิตใน 48 ชั่วโมง', '48-hr mortality', 0, '%', 'lower', 12),
   ('KPI-13', 'อัตราผู้ป่วยย้ายเข้า ICU โดยไม่ได้วางแผน', 'Unplanned ICU admission', 0, '%', 'lower', 13),
-  ('KPI-14', 'อัตราความครบถ้วนเวชระเบียน', 'Medical record completeness', 100, '%', 'higher', 14),
+  ('KPI-14', 'อัตราความครบถ้วนเวชระเบียน', 'Medical record completeness', 90, '%', 'higher', 14),
   ('KPI-15', 'ร้อยละความพึงพอใจของผู้รับบริการ', 'Patient satisfaction (เน้นพิเศษ)', 90, '%', 'higher', 15)
 on conflict (code) do update set
   name = excluded.name,
