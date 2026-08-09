@@ -2301,7 +2301,9 @@ function openKpiDetailModal(kid) {
   if (!k) return;
   _kdmCurrentKid = kid;
 
-  const h = cache.kpiHistory.filter(x => x.kpi_id === kid).sort((a,b) => a.fiscal_year - b.fiscal_year);
+  const h = cache.kpiHistory
+    .filter(x => x.kpi_id === kid && Object.keys(x.month_data || {}).length > 0)
+    .sort((a,b) => a.fiscal_year - b.fiscal_year);
   const isLow = k.direction === 'lower';
 
   document.getElementById('kdm-code').textContent = k.code + ' · ' + (isLow ? 'น้อยกว่า = ดี ⬇️' : 'มากกว่า = ดี ⬆️');
