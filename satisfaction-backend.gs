@@ -18,7 +18,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 function getFiscalYear(date) {
   const m = date.getMonth() + 1;
   const y = date.getFullYear();
-  return m >= 10 ? y + 543 : y + 542;
+  return m >= 10 ? y + 544 : y + 543;
 }
 
 function saveToSupabase(record) {

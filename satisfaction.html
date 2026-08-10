@@ -445,7 +445,7 @@ async function submitForm() {
   try {
     const now = new Date();
     const m = now.getMonth() + 1;
-    const fy = m >= 10 ? now.getFullYear() + 543 : now.getFullYear() + 542;
+    const fy = m >= 10 ? now.getFullYear() + 544 : now.getFullYear() + 543;
     const avg = answers.scores.reduce((s,v)=>s+v,0) / 10;
 
     // ── ส่งไป Google Sheets (Apps Script) ────────────────
