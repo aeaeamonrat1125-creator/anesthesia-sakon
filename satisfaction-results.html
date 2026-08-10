@@ -80,8 +80,12 @@
       </div>
       <div class="kpi-grid" id="kpiGrid"></div>
 
-      <!-- Tab switch: หน่วยงาน / ผู้ป่วย -->
+      <!-- Tab ปีงบ -->
       <div class="tab-row" id="typeTabs"></div>
+      <!-- Tab แบบประเมิน ระดับ 1 -->
+      <div class="tab-row" id="formTypeTabs"></div>
+      <!-- Tab ตำแหน่งย่อย ระดับ 2 -->
+      <div class="tab-row" id="subTypeTabs" style="display:none;"></div>
     </div>
 
     <!-- กราฟคะแนนรายข้อ -->
@@ -124,8 +128,18 @@ const Q_LABELS = [
 const DIST_LABELS = ['ควรปรับปรุง','พอใช้','ปานกลาง','ดี','ดีเยี่ยม'];
 const DIST_COLORS = ['#ef4444','#f97316','#f59e0b','#3b82f6','#10b981'];
 
-let _allData = [], _type = 'all', _fy = 'all';
+let _allData = [], _fy = 'all', _formType = 'all', _subType = 'all';
 let barChartInst, pieChartInst;
+
+function getFormType(r) {
+  if (r.form_type) return r.form_type;
+  const t = r.type||'';
+  return (t.includes('ผู้ป่วย')||t.includes('ญาติ')) ? 'patient' : 'staff';
+}
+function getSubType(r) {
+  if (getFormType(r) === 'patient') return r.eval || r.type || '';
+  return r.type || '';
+}
 
 function calcStats(rows) {
   if (!rows.length) return null;
@@ -239,7 +253,8 @@ function updateYearBadge() {
 function renderAll() {
   let rows = _allData;
   if (_fy !== 'all') rows = rows.filter(r => r.fiscal_year === _fy);
-  if (_type !== 'all') rows = rows.filter(r => (r.type||'').includes(_type));
+  if (_formType !== 'all') rows = rows.filter(r => getFormType(r) === _formType);
+  if (_subType !== 'all') rows = rows.filter(r => getSubType(r) === _subType);
   const s = calcStats(rows);
   if (!s) return;
   updateYearBadge();
@@ -271,20 +286,24 @@ async function loadData() {
     // ปีงบประมาณที่มีข้อมูล
     const fyList = [...new Set(data.map(r=>r.fiscal_year).filter(Boolean))].sort((a,b)=>b-a);
 
-    // year tabs + type tabs
+    // year tabs
     const tabsEl = document.getElementById('typeTabs');
-    const types = [...new Set(data.map(r => r.type||'').filter(Boolean))];
     tabsEl.innerHTML =
       `<span style="font-size:11px;color:#94a3b8;font-weight:600;align-self:center;">ปีงบ:</span>` +
       `<button class="tab-btn active" onclick="switchFY('all',this)">ทั้งหมด</button>` +
       fyList.map(fy => {
         const lbl = fyLabel(fy);
         return `<button class="tab-btn" onclick="switchFY(${fy},this)">${lbl.short}<span class="fy-range">${lbl.range}</span></button>`;
-      }).join('') +
-      `<span style="width:1px;background:#e9d5ff;height:20px;display:inline-block;margin:0 4px;"></span>` +
-      `<span style="font-size:11px;color:#94a3b8;font-weight:600;align-self:center;">ประเภท:</span>` +
-      `<button class="tab-btn active" data-group="type" onclick="switchType('all',this)">ทั้งหมด</button>` +
-      types.map(t=>`<button class="tab-btn" data-group="type" onclick="switchType('${t}',this)">${t}</button>`).join('');
+      }).join('');
+
+    // form-type tabs (ระดับ 1)
+    document.getElementById('formTypeTabs').innerHTML =
+      `<span style="font-size:11px;color:#94a3b8;font-weight:600;align-self:center;">แบบประเมิน:</span>` +
+      `<button class="tab-btn active" onclick="switchFormType('all',this)">ทั้งหมด</button>` +
+      `<button class="tab-btn" onclick="switchFormType('staff',this)">🏥 หน่วยงาน</button>` +
+      `<button class="tab-btn" onclick="switchFormType('patient',this)">🧑‍⚕️ ผู้ป่วย</button>`;
+
+    buildSubTypeTabs();
 
     renderAll();
   } catch(e) {
@@ -331,15 +350,39 @@ async function loadFallbackStats() {
 
 function switchFY(fy, btn) {
   _fy = fy;
-  document.querySelectorAll('.tab-btn:not([data-group="type"])').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#typeTabs .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderAll();
 }
-function switchType(type, btn) {
-  _type = type;
-  document.querySelectorAll('.tab-btn[data-group="type"]').forEach(b => b.classList.remove('active'));
+
+function switchFormType(ft, btn) {
+  _formType = ft;
+  _subType = 'all';
+  document.querySelectorAll('#formTypeTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildSubTypeTabs();
+  renderAll();
+}
+
+function switchSubType(st, btn) {
+  _subType = st;
+  document.querySelectorAll('#subTypeTabs .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderAll();
+}
+
+function buildSubTypeTabs() {
+  const el = document.getElementById('subTypeTabs');
+  if (_formType === 'all') { el.style.display = 'none'; return; }
+  const filtered = _allData.filter(r => getFormType(r) === _formType);
+  const subs = [...new Set(filtered.map(r => getSubType(r)).filter(Boolean))].sort();
+  if (!subs.length) { el.style.display = 'none'; return; }
+  const label = _formType === 'staff' ? 'ตำแหน่ง:' : 'ผู้ตอบ:';
+  el.innerHTML =
+    `<span style="font-size:11px;color:#94a3b8;font-weight:600;align-self:center;">${label}</span>` +
+    `<button class="tab-btn active" onclick="switchSubType('all',this)">ทั้งหมด</button>` +
+    subs.map(s => `<button class="tab-btn" onclick="switchSubType('${s.replace(/'/g,"\\'")}',this)">${s}</button>`).join('');
+  el.style.display = 'flex';
 }
 
 loadData();
