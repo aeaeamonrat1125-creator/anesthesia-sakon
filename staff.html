@@ -41,7 +41,12 @@
   .sidebar-logo {
     display:flex; align-items:center; gap:10px; text-decoration:none;
     padding:16px; border-bottom:1px solid #f3e8ff; flex-shrink:0;
+    transition:background .15s; border-radius:0;
   }
+  .sidebar-logo:hover { background:#faf5ff; }
+  .sidebar-logo:hover .sidebar-brand-title { color:#7c3aed; }
+  .sidebar-logo::after { content:'← หน้าหลัก'; font-size:9px; color:#c4b5fd; margin-left:auto; white-space:nowrap; opacity:0; transition:opacity .15s; }
+  .sidebar-logo:hover::after { opacity:1; }
   .sidebar-logo img { height:34px; width:auto; }
   .sidebar-brand { line-height:1.2; }
   .sidebar-brand-title { font-size:13px; font-weight:800; color:#4c1d95; }
