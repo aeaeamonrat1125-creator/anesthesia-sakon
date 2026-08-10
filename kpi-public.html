@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ตัวชี้วัด KPI — วิสัญญีพยาบาล รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<style>
+  body { font-family:'Sarabun',sans-serif; background:#f8f5ff; color:#1e1b4b; }
+  .grad-purple { background: linear-gradient(135deg,#6d28d9 0%,#9333ea 60%,#c026d3 100%); }
+  .card { background:#fff; border-radius:16px; border:1.5px solid #e9d5ff; box-shadow:0 2px 12px rgba(109,40,217,.07); }
+  .kpi-card { transition:all .15s; cursor:pointer; }
+  .kpi-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(109,40,217,.15); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-purple-100 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+    <a href="index.html" class="flex items-center gap-2 text-purple-800 font-bold text-base no-underline">
+      <img src="logo-new.png" alt="AN sakon" class="h-8 object-contain">
+    </a>
+    <div class="font-bold text-purple-700 text-sm sm:text-base">📊 ตัวชี้วัด KPI หน่วยงานวิสัญญีพยาบาล</div>
+    <a href="index.html" class="text-xs text-purple-600 font-semibold bg-purple-50 px-3 py-1.5 rounded-lg no-underline hover:bg-purple-100 transition">← หน้าหลัก</a>
+  </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+  <!-- HERO -->
+  <div class="grad-purple rounded-2xl text-white p-5 sm:p-6 shadow-lg relative overflow-hidden mb-6">
+    <div class="absolute right-0 top-0 w-48 h-48 rounded-full opacity-10" style="background:radial-gradient(circle,#fff,transparent);transform:translate(30%,-30%)"></div>
+    <div class="relative">
+      <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
+        <div>
+          <div class="text-xs font-semibold text-white/60 tracking-widest uppercase mb-1">KPI Dashboard</div>
+          <div class="text-xl sm:text-2xl font-bold">📊 KPI 15 ตัว หน่วยงาน</div>
+          <div class="text-white/70 text-sm mt-1">คลิกการ์ด KPI เพื่อดูกราฟแนวโน้มรายปีและรายเดือน</div>
+        </div>
+        <div class="flex items-center gap-2 bg-white/15 border border-white/25 rounded-lg px-3 py-1.5">
+          <span class="text-white/70 text-sm">ปีงบฯ</span>
+          <select id="kd-year" class="bg-transparent text-white text-sm font-semibold outline-none cursor-pointer" onchange="renderDash()"></select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white/15 rounded-xl p-3 text-center backdrop-blur-sm">
+          <div class="text-2xl font-bold" id="kd-total">—</div>
+          <div class="text-xs text-white/70 mt-0.5">KPI ทั้งหมด</div>
+        </div>
+        <div class="bg-emerald-500/25 rounded-xl p-3 text-center backdrop-blur-sm border border-emerald-400/40">
+          <div class="text-2xl font-bold text-emerald-200" id="kd-pass">—</div>
+          <div class="text-xs text-white/70 mt-0.5">✓ บรรลุเป้า</div>
+        </div>
+        <div class="bg-rose-500/25 rounded-xl p-3 text-center backdrop-blur-sm border border-rose-400/40">
+          <div class="text-2xl font-bold text-rose-200" id="kd-fail">—</div>
+          <div class="text-xs text-white/70 mt-0.5">✗ ไม่บรรลุ</div>
+        </div>
+        <div class="bg-white/15 rounded-xl p-3 text-center backdrop-blur-sm">
+          <div class="text-2xl font-bold" id="kd-avg">—</div>
+          <div class="text-xs text-white/70 mt-0.5">% บรรลุเฉลี่ย</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div id="kpiCards" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+    <div class="col-span-full text-center py-14 text-slate-400">
+      <div class="text-4xl mb-3">📊</div><div>กำลังโหลด...</div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- KPI DETAIL MODAL -->
+<div id="kpiModal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-3">
+  <div class="card max-w-2xl w-full max-h-[94vh] overflow-y-auto p-5">
+    <div class="flex items-start justify-between gap-3 mb-1">
+      <div class="flex-1 min-w-0">
+        <div class="text-xs font-mono text-slate-400" id="kdm-code"></div>
+        <div class="font-bold text-lg leading-snug text-slate-800" id="kdm-name"></div>
+        <div class="text-xs text-slate-500 mt-0.5" id="kdm-desc"></div>
+      </div>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none flex-shrink-0 mt-1">×</button>
+    </div>
+    <div class="grid grid-cols-3 gap-3 my-4">
+      <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-200">
+        <div class="text-xs text-slate-500 mb-1">🎯 เป้าหมาย</div>
+        <div class="text-xl font-bold text-slate-700" id="kdm-target">—</div>
+      </div>
+      <div class="bg-emerald-50 rounded-xl p-3 text-center border border-emerald-200">
+        <div class="text-xs text-emerald-700 mb-1">📌 ค่าจริงล่าสุด</div>
+        <div class="text-xl font-bold text-emerald-700" id="kdm-latest">—</div>
+      </div>
+      <div class="bg-blue-50 rounded-xl p-3 text-center border border-blue-200">
+        <div class="text-xs text-blue-700 mb-1">📈 % บรรลุ 5 ปี</div>
+        <div class="text-xl font-bold text-blue-700" id="kdm-avg5y">—</div>
+      </div>
+    </div>
+    <div class="font-semibold text-sm text-slate-700 mb-2">📊 แนวโน้มรายปีงบประมาณ</div>
+    <div class="relative mb-4" style="height:200px"><canvas id="kdm-trend"></canvas></div>
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-semibold text-sm text-slate-700">📅 รายเดือน ปีงบฯ <span id="kdm-monthly-year" class="text-purple-600"></span></div>
+      <select id="kdm-yr-pick" class="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600" onchange="renderMonthly()"></select>
+    </div>
+    <div class="relative mb-4" style="height:180px"><canvas id="kdm-monthly"></canvas></div>
+    <div class="font-semibold text-sm text-slate-700 mb-2">📋 ผลรายปีงบประมาณ</div>
+    <div class="overflow-x-auto rounded-lg border border-slate-200">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-slate-500 text-xs">
+          <tr>
+            <th class="text-left py-2 px-3">ปีงบฯ</th>
+            <th class="text-right px-3">ค่าจริง</th>
+            <th class="text-right px-3">เป้า</th>
+            <th class="text-right px-3">% บรรลุ</th>
+            <th class="text-right px-3">เดือน</th>
+            <th class="text-left px-3">หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody id="kdm-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let _kpis = [], _history = [];
+let _trendChart = null, _monthChart = null, _curKid = null;
+
+const now = new Date();
+const curFy = now.getFullYear() + 543 + (now.getMonth() >= 9 ? 1 : 0);
+
+async function init() {
+  // ปีงบ dropdown
+  const sel = document.getElementById('kd-year');
+  [curFy-4,curFy-3,curFy-2,curFy-1,curFy].forEach(y => {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === curFy) o.selected = true;
+    sel.appendChild(o);
+  });
+
+  const [k, h] = await Promise.all([
+    sbDB.list('kpis', { order:'code', asc:true }),
+    sbDB.list('kpi_history', { order:'fiscal_year', asc:true })
+  ]);
+  _kpis = k; _history = h;
+  renderDash();
+}
+
+function renderDash() {
+  const fy = parseInt(document.getElementById('kd-year').value) || curFy;
+  let pass=0, fail=0, totalAch=0, achCnt=0;
+
+  document.getElementById('kpiCards').innerHTML = _kpis.map(k => {
+    const h = _history.find(x => x.kpi_id === k.id && x.fiscal_year === fy);
+    const avg = h?.value ?? null;
+    const cnt = h ? Object.keys(h.month_data||{}).length : 0;
+    const isLow = k.direction === 'lower';
+    const onTarget = avg !== null && k.target != null
+      ? (isLow ? avg <= k.target : avg >= k.target) : null;
+
+    if (onTarget === true) pass++;
+    else if (onTarget === false) fail++;
+
+    let ach = null;
+    if (avg !== null && k.target != null && k.target !== 0) {
+      ach = isLow ? Math.max(0,100-((avg-k.target)/k.target*100)) : (avg/k.target*100);
+      ach = Math.min(120,ach);
+      totalAch += ach; achCnt++;
+    }
+
+    const accent = onTarget===null?'slate':onTarget?'emerald':'rose';
+    const badgeBg = onTarget===null?'bg-slate-100 text-slate-500':onTarget?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700';
+    const barPct = ach!==null?Math.min(100,ach):0;
+    const barColor = onTarget===true?'#10b981':onTarget===false?'#f43f5e':'#cbd5e1';
+
+    return `<div class="card kpi-card overflow-hidden border-l-4 border-${accent}-500" onclick="openModal('${k.id}')">
+      <div class="p-4">
+        <div class="flex items-start justify-between gap-2 mb-2.5">
+          <div class="flex-1 min-w-0">
+            <div class="text-[10px] font-mono text-slate-400 mb-0.5">${k.code}</div>
+            <div class="font-semibold text-sm text-slate-800 leading-snug line-clamp-2">${k.name}</div>
+          </div>
+          <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 mt-0.5 ${badgeBg}">
+            ${onTarget===null?'—':onTarget?'✓ บรรลุ':'✗ ไม่บรรลุ'}
+          </span>
+        </div>
+        <div class="flex items-end justify-between gap-1 mb-2.5">
+          <div>
+            <div class="text-[10px] text-slate-400">ค่าจริง ปี ${fy}</div>
+            <div class="text-2xl font-bold text-${accent}-600 leading-tight">
+              ${avg!==null?(avg%1===0?avg:avg.toFixed(2)):'—'}
+              <span class="text-xs font-normal text-slate-500 ml-0.5">${k.unit||''}</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] text-slate-400">เป้า</div>
+            <div class="text-sm font-semibold text-slate-600">${k.target!=null?k.target:'—'}${k.unit||''}</div>
+          </div>
+        </div>
+        <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-700" style="width:${barPct}%;background:${barColor}"></div>
+        </div>
+        <div class="flex justify-between mt-1.5">
+          <div class="text-[10px] text-slate-400">${cnt}/12 เดือน</div>
+          ${ach!==null?`<div class="text-[10px] font-bold text-${accent}-600">${ach.toFixed(1)}%</div>`:''}
+        </div>
+      </div>
+      <div class="h-1 bg-gradient-to-r ${onTarget===true?'from-emerald-400 to-teal-400':onTarget===false?'from-rose-400 to-pink-400':'from-slate-200 to-slate-300'} opacity-70"></div>
+    </div>`;
+  }).join('') || `<div class="col-span-full text-center text-slate-400 py-14"><div class="text-5xl mb-3">📊</div><div>ยังไม่มีข้อมูล KPI</div></div>`;
+
+  document.getElementById('kd-total').textContent = _kpis.length;
+  document.getElementById('kd-pass').textContent = pass;
+  document.getElementById('kd-fail').textContent = fail;
+  document.getElementById('kd-avg').textContent = achCnt ? (totalAch/achCnt).toFixed(1)+'%' : '—';
+}
+
+function openModal(kid) {
+  const k = _kpis.find(x => x.id === kid);
+  if (!k) return;
+  _curKid = kid;
+  const isLow = k.direction === 'lower';
+  const h = _history.filter(x => x.kpi_id === kid && Object.keys(x.month_data||{}).length > 0)
+    .sort((a,b) => a.fiscal_year - b.fiscal_year);
+
+  document.getElementById('kdm-code').textContent = k.code+' · '+(isLow?'น้อยกว่า = ดี ⬇️':'มากกว่า = ดี ⬆️');
+  document.getElementById('kdm-name').textContent = k.name;
+  document.getElementById('kdm-desc').textContent = k.description||'';
+  document.getElementById('kdm-target').textContent = (k.target??'—')+(k.unit||'');
+
+  const last = h[h.length-1];
+  document.getElementById('kdm-latest').textContent = last?.value!=null
+    ? (Number.isInteger(last.value)?last.value:last.value.toFixed(2))+(k.unit||'')+` (ปี ${last.fiscal_year})` : '—';
+
+  let tAch=0,cnt=0;
+  h.forEach(r => {
+    if (r.value!=null&&k.target!=null&&k.target!==0) {
+      tAch += Math.min(120, isLow?Math.max(0,100-((r.value-k.target)/k.target*100)):(r.value/k.target*100));
+      cnt++;
+    }
+  });
+  document.getElementById('kdm-avg5y').textContent = cnt?(tAch/cnt).toFixed(1)+'%':'—';
+
+  // Year picker
+  const yrPick = document.getElementById('kdm-yr-pick');
+  yrPick.innerHTML = [curFy-4,curFy-3,curFy-2,curFy-1,curFy]
+    .map(y=>`<option value="${y}" ${y===curFy?'selected':''}>${y}</option>`).join('');
+
+  // History table
+  document.getElementById('kdm-tbody').innerHTML = h.slice().reverse().map(r => {
+    const ach = r.value!=null&&k.target!=null&&k.target!==0
+      ? Math.min(120,isLow?Math.max(0,100-((r.value-k.target)/k.target*100)):(r.value/k.target*100)) : null;
+    const ok = r.value!=null&&k.target!=null?(isLow?r.value<=k.target:r.value>=k.target):null;
+    return `<tr class="border-b last:border-0 hover:bg-slate-50">
+      <td class="py-2 px-3 font-semibold">${r.fiscal_year}</td>
+      <td class="text-right px-3 font-bold ${ok===true?'text-emerald-600':ok===false?'text-rose-500':'text-slate-600'}">${r.value!=null?r.value.toFixed(2):'—'}</td>
+      <td class="text-right px-3 text-slate-500 text-xs">${k.target??'—'}${k.unit||''}</td>
+      <td class="text-right px-3">${ach!==null?`<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${ach>=100?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-600'}">${ach.toFixed(1)}%</span>`:'<span class="text-slate-400 text-xs">—</span>'}</td>
+      <td class="text-right px-3 text-slate-400 text-xs">${Object.keys(r.month_data||{}).length}/12</td>
+      <td class="px-3 text-xs text-slate-500">${r.notes||''}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="text-center text-slate-400 py-6">ยังไม่มีประวัติ</td></tr>';
+
+  // Annual trend
+  if (_trendChart) { _trendChart.destroy(); _trendChart=null; }
+  _trendChart = new Chart(document.getElementById('kdm-trend'), {
+    type:'line',
+    data: {
+      labels: h.map(r=>'ปี '+r.fiscal_year),
+      datasets: [
+        { label:'ค่าจริง', data:h.map(r=>r.value), borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,.1)', tension:.35, fill:true, pointRadius:5, pointHoverRadius:7, pointBackgroundColor:'#7c3aed', pointBorderColor:'#fff', pointBorderWidth:2 },
+        { label:'เป้าหมาย '+(k.target??'')+(k.unit||''), data:h.map(()=>k.target), borderColor:'#f59e0b', borderDash:[6,4], pointRadius:0, fill:false, tension:0 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom',labels:{font:{family:'Sarabun'},boxWidth:20,padding:14}} }, scales:{ y:{title:{display:true,text:k.unit||'ค่า',font:{family:'Sarabun',size:11}}} } }
+  });
+
+  renderMonthly();
+
+  const m = document.getElementById('kpiModal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+  document.body.style.overflow='hidden';
+}
+
+function renderMonthly() {
+  const k = _kpis.find(x => x.id === _curKid); if(!k) return;
+  const fy = parseInt(document.getElementById('kdm-yr-pick').value);
+  document.getElementById('kdm-monthly-year').textContent = fy;
+  const h = _history.find(x => x.kpi_id===_curKid && x.fiscal_year===fy);
+  const MONTHS=[10,11,12,1,2,3,4,5,6,7,8,9];
+  const LABELS=['ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.'];
+  const isLow = k.direction==='lower';
+  const data = MONTHS.map(m=>h?.month_data?.[m]??null);
+  const colors = data.map(v=>v===null?'rgba(203,213,225,.4)':(isLow?v<=k.target:v>=k.target)?'rgba(16,185,129,.8)':'rgba(239,68,68,.75)');
+  const borders = data.map(v=>v===null?'rgba(203,213,225,.6)':(isLow?v<=k.target:v>=k.target)?'#059669':'#dc2626');
+  if (_monthChart) { _monthChart.destroy(); _monthChart=null; }
+  _monthChart = new Chart(document.getElementById('kdm-monthly'), {
+    type:'bar',
+    data:{ labels:LABELS, datasets:[
+      { label:'ค่าจริง', data, backgroundColor:colors, borderColor:borders, borderWidth:1.5, borderRadius:5, borderSkipped:false },
+      { label:'เป้า '+(k.target??'')+(k.unit||''), data:MONTHS.map(()=>k.target), type:'line', borderColor:'#f59e0b', borderDash:[5,4], pointRadius:0, fill:false, tension:0, borderWidth:2 }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom',labels:{font:{family:'Sarabun'},boxWidth:14,padding:12}}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y!=null?ctx.parsed.y:'—'}${k.unit||''}`}} }, scales:{ y:{title:{display:true,text:k.unit||'ค่า',font:{family:'Sarabun',size:11}}} } }
+  });
+}
+
+function closeModal() {
+  document.getElementById('kpiModal').classList.add('hidden');
+  document.getElementById('kpiModal').classList.remove('flex');
+  document.body.style.overflow='';
+  if(_trendChart){_trendChart.destroy();_trendChart=null;}
+  if(_monthChart){_monthChart.destroy();_monthChart=null;}
+}
+
+document.getElementById('kpiModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+
+init();
+</script>
+</body>
+</html>
