@@ -1260,10 +1260,10 @@ async function loadStock() {
   try {
     const [itemsRes, allRec, allTrans, rToday, tToday] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
-      // รับเข้าทั้งหมดที่มี item_id (นับทุก lot ทุก receipt)
+      // รับเข้าทั้งหมดที่มี item_id (snapshot + รับเข้าปกติ)
       sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
-      // เบิกออกทั้งหมดที่มี item_id
-      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null),
+      // เบิกออกจริงเท่านั้น — ไม่นับ "ประวัติการใช้" (ข้อมูลย้อนหลัง snapshot ครอบคลุมแล้ว)
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).not('notes','like','ประวัติการใช้%'),
       sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
       sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
     ]);
@@ -1649,7 +1649,7 @@ async function loadAlerts() {
     const [itemsRes, allRec2, allTrans2] = await Promise.all([
       sb.from('supply_items').select('id,name,unit,min_stock,max_stock'),
       sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
-      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null),
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).not('notes','like','ประวัติการใช้%'),
     ]);
     const inMap2 = {}, outMap2 = {};
     (allRec2.data||[]).forEach(r   => inMap2[r.item_id]  = (inMap2[r.item_id]||0)  + r.quantity);
@@ -1744,10 +1744,10 @@ async function loadAnalysis() {
       sb.from('supply_items').select('*').order('name'),
       // รับเข้าทั้งหมด
       sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
-      // เบิกออกทั้งหมด
-      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null),
+      // เบิกออกจริง (ไม่นับประวัติ)
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).not('notes','like','ประวัติการใช้%'),
       // ยอดเบิก 3 เดือนล่าสุดสำหรับ Safety Stock
-      sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoffStr).not('item_id','is',null),
+      sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoffStr).not('item_id','is',null).not('notes','like','ประวัติการใช้%'),
     ]);
 
     const inMapAn = {}, outMapAn = {}, tRecentMap = {};
