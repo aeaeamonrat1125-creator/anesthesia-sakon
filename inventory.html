@@ -192,10 +192,10 @@ select.input { cursor:pointer; }
   <div id="tab-receive" class="space-y-3 fade-in">
 
     <div class="card p-4">
-      <div class="section-h mb-2">สแกนบาร์โค้ด / QR</div>
-      <p class="text-xs text-slate-400 mb-3">รองรับ GS1-128, GS1 DataMatrix, QR Code — ดึง Lot และวันหมดอายุอัตโนมัติ<br>เครื่องสแกน USB/Bluetooth: วางบาร์โค้ดในช่องแล้วกด Enter</p>
+      <div class="section-h mb-2">สแกนบาร์โค้ด / QR <span class="text-sm font-normal text-slate-400">(ไม่บังคับ)</span></div>
+      <p class="text-xs text-slate-400 mb-3">รองรับ GS1-128, GS1 DataMatrix, QR Code — ดึง Lot และวันหมดอายุอัตโนมัติ<br>เครื่องสแกน USB/Bluetooth: วางบาร์โค้ดในช่องแล้วกด Enter · <strong>ไม่มีบาร์โค้ด:</strong> กรอกชื่อเวชภัณฑ์ด้านล่างได้เลย</p>
       <div class="flex gap-2">
-        <input id="r-barcode-input" type="text" class="input" placeholder="สแกนหรือพิมพ์บาร์โค้ด แล้วกด Enter" autocomplete="off" autocorrect="off" spellcheck="false">
+        <input id="r-barcode-input" type="text" class="input" placeholder="สแกนหรือพิมพ์บาร์โค้ด แล้วกด Enter (ไม่บังคับ)" autocomplete="off" autocorrect="off" spellcheck="false">
         <button class="btn-scan" onclick="openScanner('receive')">📷 <span class="hidden sm:inline">สแกน</span></button>
       </div>
       <div id="r-lookup-info" class="hidden mt-3 text-sm"></div>
@@ -220,8 +220,10 @@ select.input { cursor:pointer; }
           <input id="r-req" type="text" class="input" placeholder="เช่น REQ-2568-001">
         </div>
         <div class="sm:col-span-2">
-          <label class="lbl">ชื่อเวชภัณฑ์ *</label>
-          <input id="r-name" type="text" class="input" placeholder="กรอกหรือสแกน Barcode เพื่อดึงอัตโนมัติ">
+          <label class="lbl">ชื่อเวชภัณฑ์ * <span class="text-slate-400 font-normal text-xs">— พิมพ์เพื่อค้นหาจากระบบ หรือกรอกชื่อใหม่</span></label>
+          <input id="r-name" type="text" class="input" placeholder="พิมพ์ชื่อเวชภัณฑ์เพื่อค้นหา หรือกรอกเอง" oninput="searchItemName(this.value,'r')" autocomplete="off">
+          <div id="r-name-results" class="hidden border border-violet-100 rounded-xl overflow-hidden max-h-40 overflow-y-auto mt-1 bg-white shadow-md z-10 relative"></div>
+          <input type="hidden" id="r-item-id">
         </div>
         <div>
           <label class="lbl">จำนวนที่เบิกจาก รพ. (ที่คีย์เบิก)</label>
@@ -239,11 +241,11 @@ select.input { cursor:pointer; }
           <input id="r-unit" type="text" class="input" placeholder="ชิ้น / กล่อง / อัน">
         </div>
         <div>
-          <label class="lbl">Lot Number <span class="text-violet-400">(ดึงจาก Barcode)</span></label>
-          <input id="r-lot" type="text" class="input" placeholder="Lot number">
+          <label class="lbl">Lot Number <span class="text-slate-400 font-normal text-xs">— สแกนอัตโนมัติ หรือกรอกเอง</span></label>
+          <input id="r-lot" type="text" class="input" placeholder="กรอก Lot number">
         </div>
         <div>
-          <label class="lbl">วันหมดอายุ <span class="text-violet-400">(ดึงจาก Barcode)</span></label>
+          <label class="lbl">วันหมดอายุ <span class="text-slate-400 font-normal text-xs">— สแกนอัตโนมัติ หรือกรอกเอง</span></label>
           <input id="r-expiry" type="date" class="input">
         </div>
         <div>
@@ -287,9 +289,9 @@ select.input { cursor:pointer; }
 
     <div class="card p-4">
       <div class="section-h mb-2">สแกนบาร์โค้ด / QR</div>
-      <p class="text-xs text-slate-400 mb-3">สแกนเพื่อดึงชื่อเวชภัณฑ์และตรวจสอบยอดคงเหลือในคลังใหญ่</p>
+      <p class="text-xs text-slate-400 mb-3">สแกนเพื่อดึงชื่อเวชภัณฑ์อัตโนมัติ · <strong>ไม่มีบาร์โค้ด:</strong> กรอกชื่อในช่องชื่อเวชภัณฑ์ด้านล่างได้เลย ไม่ต้องสแกน</p>
       <div class="flex gap-2">
-        <input id="t-barcode-input" type="text" class="input" placeholder="สแกนหรือพิมพ์บาร์โค้ด แล้วกด Enter" autocomplete="off" autocorrect="off" spellcheck="false">
+        <input id="t-barcode-input" type="text" class="input" placeholder="สแกนหรือพิมพ์บาร์โค้ด แล้วกด Enter (ไม่บังคับ)" autocomplete="off" autocorrect="off" spellcheck="false">
         <button class="btn-scan" onclick="openScanner('transfer')">📷 <span class="hidden sm:inline">สแกน</span></button>
       </div>
       <div id="t-lookup-info" class="hidden mt-3 text-sm"></div>
@@ -320,8 +322,10 @@ select.input { cursor:pointer; }
           </select>
         </div>
         <div class="sm:col-span-2">
-          <label class="lbl">ชื่อเวชภัณฑ์ *</label>
-          <input id="t-name" type="text" class="input" placeholder="กรอกหรือสแกน Barcode">
+          <label class="lbl">ชื่อเวชภัณฑ์ * <span class="text-slate-400 font-normal text-xs">— พิมพ์เพื่อค้นหาจากระบบ หรือกรอกชื่อใหม่</span></label>
+          <input id="t-name" type="text" class="input" placeholder="พิมพ์ชื่อเวชภัณฑ์เพื่อค้นหา หรือกรอกเอง" oninput="searchItemName(this.value,'t')" autocomplete="off">
+          <div id="t-name-results" class="hidden border border-violet-100 rounded-xl overflow-hidden max-h-40 overflow-y-auto mt-1 bg-white shadow-md z-10 relative"></div>
+          <input type="hidden" id="t-item-id">
         </div>
         <div>
           <label class="lbl">จำนวนที่เบิก *</label>
@@ -332,8 +336,12 @@ select.input { cursor:pointer; }
           <input id="t-unit" type="text" class="input" placeholder="ชิ้น / กล่อง">
         </div>
         <div>
-          <label class="lbl">Lot Number <span class="text-violet-400">(ดึงจาก Barcode)</span></label>
-          <input id="t-lot" type="text" class="input" placeholder="Lot number">
+          <label class="lbl">Lot Number <span class="text-slate-400 font-normal text-xs">— สแกนอัตโนมัติ หรือกรอกเอง</span></label>
+          <input id="t-lot" type="text" class="input" placeholder="กรอก Lot number">
+        </div>
+        <div>
+          <label class="lbl">วันหมดอายุ <span class="text-slate-400 font-normal text-xs">— สแกนอัตโนมัติ หรือกรอกเอง</span></label>
+          <input id="t-expiry" type="date" class="input">
         </div>
         <div>
           <label class="lbl">ผู้เบิก</label>
@@ -364,8 +372,8 @@ select.input { cursor:pointer; }
       </div>
       <div class="scroll-x">
         <table class="tbl">
-          <thead><tr><th>วันที่</th><th>ชื่อเวชภัณฑ์</th><th>จำนวน</th><th>Lot</th><th>คลังย่อย</th><th>ผู้เบิก</th><th></th></tr></thead>
-          <tbody id="t-hist-body"><tr><td colspan="7" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
+          <thead><tr><th>วันที่</th><th>ชื่อเวชภัณฑ์</th><th>จำนวน</th><th>Lot</th><th>หมดอายุ</th><th>คลังย่อย</th><th>ผู้เบิก</th><th></th></tr></thead>
+          <tbody id="t-hist-body"><tr><td colspan="8" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -759,6 +767,9 @@ async function lookupBarcode(raw, target) {
   if (item) {
     if (nameEl)   nameEl.value   = item.name;
     if (unitEl)   unitEl.value   = item.unit || '';
+    const itemIdEl = document.getElementById(prefix+'-item-id');
+    if (itemIdEl) itemIdEl.value = item.id;
+    document.getElementById(prefix+'-name-results')?.classList.add('hidden');
   }
   if (lotEl    && parsed.lot)    lotEl.value    = parsed.lot;
   if (expiryEl && parsed.expiry) expiryEl.value = parsed.expiry;
@@ -814,13 +825,31 @@ async function showItemStock(itemId, unit) {
   document.getElementById('t-stock-info').classList.remove('hidden');
 }
 
-// Barcode inputs: Enter key triggers lookup
+// Barcode inputs: Enter key + debounce auto-trigger (รองรับเครื่องสแกนทุกชนิด)
+const _bcTimers = {};
 ['r-barcode-input','t-barcode-input'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', e => {
+  const target = id.startsWith('r') ? 'receive' : 'transfer';
+  const el = document.getElementById(id);
+
+  // Enter key (เครื่องสแกนที่ส่ง Enter / พิมพ์เอง)
+  el.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      clearTimeout(_bcTimers[id]);
       const val = e.target.value.trim();
-      if (val) lookupBarcode(val, id.startsWith('r') ? 'receive' : 'transfer');
+      if (val) lookupBarcode(val, target);
+    }
+  });
+
+  // Auto-trigger: พอข้อมูลหยุดไหล 350ms และยาว ≥ 6 ตัว → ดึงอัตโนมัติ
+  // รองรับเครื่องสแกนที่ไม่ส่ง Enter และการวาง (paste) บาร์โค้ด
+  el.addEventListener('input', () => {
+    clearTimeout(_bcTimers[id]);
+    const val = el.value.trim();
+    if (val.length >= 6) {
+      _bcTimers[id] = setTimeout(() => {
+        if (el.value.trim() === val) lookupBarcode(val, target);
+      }, 350);
     }
   });
 });
@@ -882,14 +911,44 @@ document.getElementById('manual-scan').addEventListener('keydown', e => {
   }
 });
 
+// ── Item Name Search ──────────────────────────────────────────
+async function searchItemName(q, prefix) {
+  const resEl = document.getElementById(prefix+'-name-results');
+  if (!resEl) return;
+  document.getElementById(prefix+'-item-id').value = '';
+  if (!q || q.length < 1) { resEl.classList.add('hidden'); return; }
+  const { data } = await sb.from('supply_items')
+    .select('id,name,unit,req_code')
+    .or(`name.ilike.%${q}%,req_code.ilike.%${q}%`)
+    .order('name').limit(12);
+  if (!data?.length) { resEl.classList.add('hidden'); return; }
+  resEl.innerHTML = data.map(item => `
+    <div class="p-2.5 hover:bg-violet-50 cursor-pointer text-sm border-b border-violet-50 last:border-0"
+         onclick="selectItemName('${item.id}','${item.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${(item.unit||'').replace(/'/g,"\\'")}','${prefix}')">
+      <div class="font-medium text-slate-800">${item.name}</div>
+      <div class="text-xs text-slate-400">${item.req_code ? 'รหัสเบิก: '+item.req_code+' · ' : ''}${item.unit||''}</div>
+    </div>`).join('');
+  resEl.classList.remove('hidden');
+}
+
+function selectItemName(id, name, unit, prefix) {
+  document.getElementById(prefix+'-name').value = name;
+  document.getElementById(prefix+'-unit').value = unit;
+  document.getElementById(prefix+'-item-id').value = id;
+  document.getElementById(prefix+'-name-results').classList.add('hidden');
+  if (prefix === 't') showItemStock(id, unit);
+  setTimeout(() => document.getElementById(prefix+'-qty')?.focus(), 50);
+}
+
 // ── รับเข้า Form ──────────────────────────────────────────────
 function clearReceiptForm() {
-  ['r-barcode-input','r-req','r-name','r-qty-ordered','r-qty','r-unit','r-lot','r-expiry','r-receiver','r-location','r-notes'].forEach(id => {
+  ['r-barcode-input','r-req','r-name','r-qty-ordered','r-qty','r-unit','r-lot','r-expiry','r-receiver','r-location','r-notes','r-item-id'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.value = ''; delete el.dataset.parsed; }
   });
   document.getElementById('r-date').value = TODAY;
   document.getElementById('r-lookup-info').classList.add('hidden');
+  document.getElementById('r-name-results')?.classList.add('hidden');
 }
 
 async function submitReceipt() {
@@ -899,13 +958,20 @@ async function submitReceipt() {
   if (!name)       { toast('กรุณาระบุชื่อเวชภัณฑ์', 'error'); return; }
   if (!qty || qty<1) { toast('กรุณาระบุจำนวนที่ถูกต้อง', 'error'); return; }
 
-  const barcode = document.getElementById('r-barcode-input').dataset.parsed || document.getElementById('r-barcode-input').value.trim() || null;
-  let itemId = null;
-  if (barcode) {
-    const { data: bd } = await sb.from('supply_items').select('id').eq('barcode', barcode).maybeSingle();
-    if (bd) { itemId = bd.id; } else {
-      const { data: rd } = await sb.from('supply_items').select('id').eq('req_code', barcode).maybeSingle();
-      itemId = rd?.id || null;
+  // item_id: จาก hidden field (เลือกจาก dropdown) → barcode lookup → ค้นชื่อ
+  let itemId = document.getElementById('r-item-id').value || null;
+  if (!itemId) {
+    const barcode = document.getElementById('r-barcode-input').dataset.parsed || document.getElementById('r-barcode-input').value.trim() || null;
+    if (barcode) {
+      const { data: bd } = await sb.from('supply_items').select('id').eq('barcode', barcode).maybeSingle();
+      if (bd) { itemId = bd.id; } else {
+        const { data: rd } = await sb.from('supply_items').select('id').eq('req_code', barcode).maybeSingle();
+        itemId = rd?.id || null;
+      }
+    }
+    if (!itemId) {
+      const { data: nd } = await sb.from('supply_items').select('id').eq('name', name).maybeSingle();
+      itemId = nd?.id || null;
     }
   }
 
@@ -936,7 +1002,7 @@ async function submitReceipt() {
 
 // ── เบิกออก Form ──────────────────────────────────────────────
 function clearTransferForm() {
-  ['t-barcode-input','t-name','t-qty','t-unit','t-lot','t-requester','t-issuer','t-notes'].forEach(id => {
+  ['t-barcode-input','t-name','t-qty','t-unit','t-lot','t-expiry','t-requester','t-issuer','t-notes','t-item-id'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.value = ''; delete el.dataset.parsed; }
   });
@@ -944,6 +1010,7 @@ function clearTransferForm() {
   document.getElementById('t-warehouse').value = '';
   document.getElementById('t-lookup-info').classList.add('hidden');
   document.getElementById('t-stock-info').classList.add('hidden');
+  document.getElementById('t-name-results')?.classList.add('hidden');
 }
 
 async function submitTransfer() {
@@ -956,32 +1023,54 @@ async function submitTransfer() {
   if (!whId)       { toast('กรุณาเลือกคลังย่อยปลายทาง', 'error'); return; }
 
   const wh = subWarehouses.find(w => w.id === whId);
-  const barcode = document.getElementById('t-barcode-input').dataset.parsed || document.getElementById('t-barcode-input').value.trim() || null;
-  let itemId = null;
-  if (barcode) {
-    const { data: bd } = await sb.from('supply_items').select('id').eq('barcode', barcode).maybeSingle();
-    if (bd) { itemId = bd.id; } else {
-      const { data: rd } = await sb.from('supply_items').select('id').eq('req_code', barcode).maybeSingle();
-      itemId = rd?.id || null;
+  // item_id: จาก hidden field (dropdown) → barcode → ค้นชื่อ
+  let itemId = document.getElementById('t-item-id').value || null;
+  if (!itemId) {
+    const barcode = document.getElementById('t-barcode-input').dataset.parsed || document.getElementById('t-barcode-input').value.trim() || null;
+    if (barcode) {
+      const { data: bd } = await sb.from('supply_items').select('id').eq('barcode', barcode).maybeSingle();
+      if (bd) { itemId = bd.id; } else {
+        const { data: rd } = await sb.from('supply_items').select('id').eq('req_code', barcode).maybeSingle();
+        itemId = rd?.id || null;
+      }
+    }
+    if (!itemId) {
+      const { data: nd } = await sb.from('supply_items').select('id').eq('name', name).maybeSingle();
+      itemId = nd?.id || null;
     }
   }
 
+  const transferRow = {
+    transfer_date:      document.getElementById('t-date').value || TODAY,
+    item_id:            itemId,
+    barcode_raw:        document.getElementById('t-barcode-input').value.trim() || null,
+    item_name:          name,
+    quantity:           qty,
+    unit:               document.getElementById('t-unit').value.trim() || null,
+    lot:                document.getElementById('t-lot').value.trim() || null,
+    sub_warehouse_id:   whId,
+    sub_warehouse_name: wh?.name || null,
+    requested_by:       document.getElementById('t-requester').value.trim() || null,
+    issued_by:          document.getElementById('t-issuer').value.trim() || null,
+    notes:              document.getElementById('t-notes').value.trim() || null,
+    created_by:         currentUser.id,
+  };
+  const expiryVal = document.getElementById('t-expiry')?.value || null;
+
   try {
-    await sbDB.insert('supply_transfers', {
-      transfer_date:      document.getElementById('t-date').value || TODAY,
-      item_id:            itemId,
-      barcode_raw:        document.getElementById('t-barcode-input').value.trim() || null,
-      item_name:          name,
-      quantity:           qty,
-      unit:               document.getElementById('t-unit').value.trim() || null,
-      lot:                document.getElementById('t-lot').value.trim() || null,
-      sub_warehouse_id:   whId,
-      sub_warehouse_name: wh?.name || null,
-      requested_by:       document.getElementById('t-requester').value.trim() || null,
-      issued_by:          document.getElementById('t-issuer').value.trim() || null,
-      notes:              document.getElementById('t-notes').value.trim() || null,
-      created_by:         currentUser.id,
-    });
+    if (expiryVal) {
+      try {
+        await sbDB.insert('supply_transfers', { ...transferRow, expiry_date: expiryVal });
+      } catch(e2) {
+        if (/column|does not exist/i.test(e2.message)) {
+          await sbDB.insert('supply_transfers', transferRow);
+          toast('✅ บันทึกเบิกออกสำเร็จ (วันหมดอายุยังไม่บันทึก — แจ้ง Admin เพิ่ม column)', 'warn');
+          clearTransferForm(); loadTransferHistory(); return;
+        } else throw e2;
+      }
+    } else {
+      await sbDB.insert('supply_transfers', transferRow);
+    }
     toast('✅ บันทึกเบิกออกสำเร็จ', 'success');
     clearTransferForm();
     loadTransferHistory();
@@ -1022,10 +1111,10 @@ async function loadReceiptHistory() {
 async function loadTransferHistory() {
   const date = document.getElementById('t-hist-date').value || TODAY;
   const body = document.getElementById('t-hist-body');
-  body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-4">กำลังโหลด...</td></tr>';
+  body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-4">กำลังโหลด...</td></tr>';
   try {
     const rows = await sbDB.list('supply_transfers', { eq:{ transfer_date:date }, order:'created_at', asc:false });
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">ไม่มีรายการ</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-6">ไม่มีรายการ</td></tr>'; return; }
     rows.forEach(r => { _editRowCache[r.id] = r; });
     body.innerHTML = rows.map(r => `
       <tr>
@@ -1033,6 +1122,7 @@ async function loadTransferHistory() {
         <td class="font-medium">${r.item_name}</td>
         <td class="font-semibold text-blue-700">${r.quantity} <span class="text-slate-400 font-normal">${r.unit||''}</span></td>
         <td>${r.lot?`<span class="badge badge-purple">${r.lot}</span>`:'—'}</td>
+        <td>${r.expiry_date ? expiryBadge(r.expiry_date) : '—'}</td>
         <td><span class="wh-chip">🏷️ ${r.sub_warehouse_name||'—'}</span></td>
         <td class="text-xs">${r.requested_by||'—'}</td>
         <td class="whitespace-nowrap">
@@ -1040,7 +1130,7 @@ async function loadTransferHistory() {
           <button onclick="deleteRow('supply_transfers','${r.id}',loadTransferHistory)" class="text-xs text-rose-400 hover:text-rose-600 px-2 py-1">ลบ</button>
         </td>
       </tr>`).join('');
-  } catch(e) { body.innerHTML = '<tr><td colspan="7" class="text-center text-rose-400 py-4">โหลดไม่ได้</td></tr>'; }
+  } catch(e) { body.innerHTML = '<tr><td colspan="8" class="text-center text-rose-400 py-4">โหลดไม่ได้</td></tr>'; }
 }
 
 async function deleteRow(table, id, reload) {
@@ -1125,8 +1215,12 @@ function editTransfer(id) {
       <div><label class="lbl">หน่วย</label>
         <input id="em-unit" class="input" value="${r.unit||''}"></div>
     </div>
-    <div><label class="lbl">Lot</label>
-      <input id="em-lot" class="input" value="${r.lot||''}"></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="lbl">Lot</label>
+        <input id="em-lot" class="input" value="${r.lot||''}"></div>
+      <div><label class="lbl">วันหมดอายุ</label>
+        <input id="em-expiry" type="date" class="input" value="${r.expiry_date||''}"></div>
+    </div>
     <div><label class="lbl">คลังย่อย</label>
       <input id="em-wh" class="input" value="${r.sub_warehouse_name||''}"></div>
     <div><label class="lbl">ผู้เบิก</label>
@@ -1136,7 +1230,7 @@ function editTransfer(id) {
   `;
   document.getElementById('editModalSave').onclick = async () => {
     try {
-      const { error } = await sb.from('supply_transfers').update({
+      const updateData = {
         transfer_date:      document.getElementById('em-date').value,
         item_name:          document.getElementById('em-name').value,
         quantity:           parseInt(document.getElementById('em-qty').value),
@@ -1145,7 +1239,10 @@ function editTransfer(id) {
         sub_warehouse_name: document.getElementById('em-wh').value||null,
         requested_by:       document.getElementById('em-by').value||null,
         notes:              document.getElementById('em-notes').value||null,
-      }).eq('id', id);
+      };
+      const expiryEdit = document.getElementById('em-expiry')?.value || null;
+      if (expiryEdit) updateData.expiry_date = expiryEdit;
+      const { error } = await sb.from('supply_transfers').update(updateData).eq('id', id);
       if (error) throw error;
       toast('บันทึกแล้ว', 'success'); closeEditModal(); loadTransferHistory();
     } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
@@ -1161,25 +1258,25 @@ const SNAPSHOT_DATE = '2026-07-16';
 async function loadStock() {
   document.getElementById('stock-body').innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังคำนวณ...</td></tr>';
   try {
-    const [itemsRes, snapRes, realTRes, rToday, tToday] = await Promise.all([
+    const [itemsRes, allRec, allTrans, rToday, tToday] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
-      // เฉพาะ receipt ที่เป็น snapshot ยอดคงคลัง
-      sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
-      // transfer จริง = ไม่ใช่ประวัติ (not notes like 'ประวัติการใช้%')
-      sb.from('supply_transfers').select('item_id,quantity').not('notes','like','ประวัติการใช้%'),
+      // รับเข้าทั้งหมดที่มี item_id (นับทุก lot ทุก receipt)
+      sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
+      // เบิกออกทั้งหมดที่มี item_id
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null),
       sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
       sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
     ]);
 
-    const snapMap = {}, tMap = {};
-    (snapRes.data||[]).forEach(r => snapMap[r.item_id] = (snapMap[r.item_id]||0) + r.quantity);
-    (realTRes.data||[]).forEach(r => tMap[r.item_id]  = (tMap[r.item_id]||0)  + r.quantity);
+    const inMap = {}, outMap = {};
+    (allRec.data||[]).forEach(r => inMap[r.item_id]   = (inMap[r.item_id]||0)   + r.quantity);
+    (allTrans.data||[]).forEach(r => outMap[r.item_id] = (outMap[r.item_id]||0) + r.quantity);
 
     stockData = (itemsRes.data||[]).map(item => ({
       ...item,
-      total_in:      snapMap[item.id]||0,
-      total_out:     tMap[item.id]||0,
-      current_stock: (snapMap[item.id]||0) - (tMap[item.id]||0),
+      total_in:      inMap[item.id]||0,
+      total_out:     outMap[item.id]||0,
+      current_stock: (inMap[item.id]||0) - (outMap[item.id]||0),
     }));
 
     document.getElementById('s-total').textContent = stockData.length;
@@ -1548,18 +1645,18 @@ async function loadAlerts() {
     const expired  = (receipts||[]).filter(r => r.expiry_date <= todayStr);
     const expiring = (receipts||[]).filter(r => r.expiry_date > todayStr);
 
-    // 2. ดึง stock ต่ำ — ใช้ snapshot − transfer จริงหลัง snapshot
-    const [itemsRes, snapRes2, realT2] = await Promise.all([
+    // 2. ดึง stock ต่ำ — คำนวณจากรับเข้าทั้งหมด − เบิกออกทั้งหมด
+    const [itemsRes, allRec2, allTrans2] = await Promise.all([
       sb.from('supply_items').select('id,name,unit,min_stock,max_stock'),
-      sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
-      sb.from('supply_transfers').select('item_id,quantity').not('notes','like','ประวัติการใช้%'),
+      sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null),
     ]);
-    const snapMap2 = {}, tMap2 = {};
-    (snapRes2.data||[]).forEach(r => snapMap2[r.item_id] = (snapMap2[r.item_id]||0) + r.quantity);
-    (realT2.data||[]).forEach(r  => tMap2[r.item_id]    = (tMap2[r.item_id]||0)    + r.quantity);
+    const inMap2 = {}, outMap2 = {};
+    (allRec2.data||[]).forEach(r   => inMap2[r.item_id]  = (inMap2[r.item_id]||0)  + r.quantity);
+    (allTrans2.data||[]).forEach(r => outMap2[r.item_id] = (outMap2[r.item_id]||0) + r.quantity);
     const allItemsWithStock = (itemsRes.data||[]).map(item => ({
       ...item,
-      stock: (snapMap2[item.id]||0) - (tMap2[item.id]||0)
+      stock: (inMap2[item.id]||0) - (outMap2[item.id]||0)
     }));
     const lowStock  = allItemsWithStock.filter(i => i.min_stock > 0 && i.stock <= i.min_stock);
     const overStock = allItemsWithStock.filter(i => i.max_stock > 0 && i.stock > i.max_stock);
@@ -1643,23 +1740,23 @@ async function loadAnalysis() {
   const cutoffStr = cutoff.toISOString().split('T')[0];
 
   try {
-    const [itemsRes, snapRes, realTRes, tRecent] = await Promise.all([
+    const [itemsRes, allRecAn, allTransAn, tRecent] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
-      // snapshot ยอดคงคลัง
-      sb.from('supply_receipts').select('item_id,quantity').like('notes','ยอดคงคลัง%'),
-      // transfer จริง = ไม่ใช่ประวัติ
-      sb.from('supply_transfers').select('item_id,quantity').not('notes','like','ประวัติการใช้%'),
-      // ยอดใช้ 3 เดือนล่าสุด (จากประวัติ) สำหรับคำนวณ Safety Stock
-      sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoffStr).lte('transfer_date', SNAPSHOT_DATE),
+      // รับเข้าทั้งหมด
+      sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
+      // เบิกออกทั้งหมด
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null),
+      // ยอดเบิก 3 เดือนล่าสุดสำหรับ Safety Stock
+      sb.from('supply_transfers').select('item_id,quantity').gte('transfer_date', cutoffStr).not('item_id','is',null),
     ]);
 
-    const snapMap = {}, tMap = {}, tRecentMap = {};
-    (snapRes.data||[]).forEach(r => { snapMap[r.item_id] = (snapMap[r.item_id]||0) + r.quantity; });
-    (realTRes.data||[]).forEach(r => { tMap[r.item_id]   = (tMap[r.item_id]||0)   + r.quantity; });
-    (tRecent.data||[]).forEach(r => { tRecentMap[r.item_id] = (tRecentMap[r.item_id]||0) + r.quantity; });
+    const inMapAn = {}, outMapAn = {}, tRecentMap = {};
+    (allRecAn.data||[]).forEach(r   => { inMapAn[r.item_id]  = (inMapAn[r.item_id]||0)  + r.quantity; });
+    (allTransAn.data||[]).forEach(r => { outMapAn[r.item_id] = (outMapAn[r.item_id]||0) + r.quantity; });
+    (tRecent.data||[]).forEach(r    => { tRecentMap[r.item_id] = (tRecentMap[r.item_id]||0) + r.quantity; });
 
     const items = (itemsRes.data||[]).map(item => {
-      const stock    = (snapMap[item.id]||0) - (tMap[item.id]||0);
+      const stock    = (inMapAn[item.id]||0) - (outMapAn[item.id]||0);
       const used3mo  = tRecentMap[item.id]||0;
       const avgMonth = used3mo / 3;
       const safety   = Math.ceil(avgMonth * 1.5);
