@@ -257,15 +257,15 @@ async function loadAll() {
   const isHistorical = r => (r.notes||'').includes('ประวัติการใช้');
 
   // Stock maps
-  const snapMap={}, tActualMap={}, tRecentMap={};
-  // snapshot receipt เท่านั้น
-  snapReceipts.filter(r=>(r.notes||'').includes('ยอดคงคลัง'))
-    .forEach(r=>{ snapMap[r.item_id]=(snapMap[r.item_id]||0)+r.quantity; });
-  // transfer จริง = ไม่ใช่ประวัติ (ตอนนี้ยังไม่มี → tActualMap = 0)
+  const inMap={}, tActualMap={}, tRecentMap={};
+  // รับเข้าทั้งหมด (snapshot + รับเข้าปกติ) — นับทุก receipt ที่มี item_id
+  snapReceipts.filter(r=>r.item_id)
+    .forEach(r=>{ inMap[r.item_id]=(inMap[r.item_id]||0)+r.quantity; });
+  // transfer จริง = ไม่ใช่ประวัติการใช้
   transfers.filter(r=>!isHistorical(r))
     .forEach(r=>{ tActualMap[r.item_id]=(tActualMap[r.item_id]||0)+r.quantity; });
-  // 3 เดือนล่าสุดของประวัติ สำหรับคำนวณ safety stock
-  transfers.filter(r=>isHistorical(r) && r.transfer_date>=cutoff3mStr)
+  // 3 เดือนล่าสุด (ไม่ใช่ประวัติ) สำหรับคำนวณ safety stock
+  transfers.filter(r=>!isHistorical(r) && r.transfer_date>=cutoff3mStr)
     .forEach(r=>{ tRecentMap[r.item_id]=(tRecentMap[r.item_id]||0)+r.quantity; });
 
   // Per-year usage maps (2024=ปี67, 2025=ปี68, 2026=ปี69)
@@ -279,7 +279,7 @@ async function loadAll() {
 
   // Compute per-item
   allItemData = items.map(item => {
-    const stock    = (snapMap[item.id]||0)-(tActualMap[item.id]||0);
+    const stock    = (inMap[item.id]||0)-(tActualMap[item.id]||0);
     const used3mo  = tRecentMap[item.id]||0;
     const avgMonth = used3mo/3;
     const safety   = Math.ceil(avgMonth*1.5);
