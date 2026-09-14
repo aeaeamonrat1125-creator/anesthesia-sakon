@@ -402,7 +402,8 @@ select.input { cursor:pointer; }
       </div>
     </div>
     <div class="card p-4">
-      <div class="section-h mb-3">สรุปยอดส่งคลังย่อย</div>
+      <div class="section-h mb-1">สรุปยอดส่งคลังย่อย</div>
+      <div class="text-xs text-slate-400 mb-3">ข้อมูลสะสมทั้งหมด (รวมก่อน กย.69) — ยอดเบิกออกในตารางข้างบนนับเฉพาะหลัง กย.69</div>
       <div id="sub-wh-summary"><div class="text-center text-slate-400 py-6">กำลังโหลด...</div></div>
     </div>
   </div>
@@ -1411,12 +1412,8 @@ async function loadSubWhSummary() {
     const { data } = await sb.from('supply_transfers').select('sub_warehouse_name,item_name,unit,quantity,notes');
     if (!data?.length) { el.innerHTML = '<div class="text-center text-slate-400 py-4">ยังไม่มีข้อมูลเบิกออก</div>'; return; }
 
-    // กรองเฉพาะที่ไม่ใช่ประวัติการใช้ (เหมือนกับ stock คำนวณ)
-    const real = data.filter(r => !(r.notes||'').startsWith('ประวัติการใช้'));
-    if (!real.length) { el.innerHTML = '<div class="text-center text-slate-400 py-4">ยังไม่มีข้อมูลเบิกออกปัจจุบัน</div>'; return; }
-
     const grouped = {};
-    real.forEach(r => {
+    data.forEach(r => {
       const wh = r.sub_warehouse_name||'ไม่ระบุ';
       if (!grouped[wh]) grouped[wh] = {};
       grouped[wh][r.item_name] = { qty: (grouped[wh][r.item_name]?.qty||0)+r.quantity, unit: r.unit };
