@@ -1290,20 +1290,24 @@ async function loadStock() {
   document.getElementById('stock-body').innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-8">กำลังคำนวณ...</td></tr>';
   try {
     const WEEK_START = getWeekStart();
-    const [itemsRes, allRec, allTrans, rToday, tToday, tWeek] = await Promise.all([
+    const [itemsRes, allRec, allTrans, rToday, tToday] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
       sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
-      // รวม notes=NULL + notes ที่ไม่ใช่ "ประวัติการใช้" (NULL จะถูก exclude โดย NOT LIKE ใน PostgreSQL)
-      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).or('notes.is.null,notes.nlike.ประวัติการใช้*'),
+      // ดึงทุก transfer ที่มี item_id — กรอง "ประวัติการใช้" ใน JS (หลีกเลี่ยง NULL NOT LIKE = false ใน PostgreSQL)
+      sb.from('supply_transfers').select('item_id,quantity,transfer_date,notes').not('item_id','is',null),
       sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
-      sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY).or('notes.is.null,notes.nlike.ประวัติการใช้*'),
-      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).gte('transfer_date', WEEK_START).or('notes.is.null,notes.nlike.ประวัติการใช้*'),
+      sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
     ]);
 
+    // กรอง: ไม่นับที่ขึ้นต้นด้วย "ประวัติการใช้"
+    const isHistory = r => (r.notes||'').startsWith('ประวัติการใช้');
+    const realTrans = (allTrans.data||[]).filter(r => !isHistory(r));
+    const weekTrans = realTrans.filter(r => r.transfer_date >= WEEK_START);
+
     const inMap = {}, outMap = {}, weekMap = {};
-    (allRec.data||[]).forEach(r => inMap[r.item_id]    = (inMap[r.item_id]||0)    + r.quantity);
-    (allTrans.data||[]).forEach(r => outMap[r.item_id]  = (outMap[r.item_id]||0)  + r.quantity);
-    (tWeek.data||[]).forEach(r => weekMap[r.item_id]    = (weekMap[r.item_id]||0) + r.quantity);
+    (allRec.data||[]).forEach(r => inMap[r.item_id]   = (inMap[r.item_id]||0)   + r.quantity);
+    realTrans.forEach(r => outMap[r.item_id]           = (outMap[r.item_id]||0)  + r.quantity);
+    weekTrans.forEach(r => weekMap[r.item_id]          = (weekMap[r.item_id]||0) + r.quantity);
 
     stockData = (itemsRes.data||[]).map(item => ({
       ...item,
@@ -1313,9 +1317,10 @@ async function loadStock() {
       current_stock: (inMap[item.id]||0) - (outMap[item.id]||0),
     }));
 
+    const todayOut = (tToday.data||[]).filter(r => !isHistory(r)).reduce((s,r)=>s+r.quantity,0);
     document.getElementById('s-total').textContent = stockData.length;
     document.getElementById('s-in').textContent    = (rToday.data||[]).reduce((s,r)=>s+r.quantity,0);
-    document.getElementById('s-out').textContent   = (tToday.data||[]).reduce((s,r)=>s+r.quantity,0);
+    document.getElementById('s-out').textContent   = todayOut;
     document.getElementById('s-low').textContent   = stockData.filter(i=>i.current_stock <= i.min_stock).length;
 
     renderStock();
