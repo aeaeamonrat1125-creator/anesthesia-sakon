@@ -1491,6 +1491,7 @@ async function exportBackup() {
 
     // Sheet 1: ยอดคลัง
     const stockSheet = stockData.length ? stockData.map(i => ({
+      'รหัสเบิก': i.req_code||'',
       'บาร์โค้ด': i.barcode||'',
       'ชื่อเวชภัณฑ์': i.name,
       'หน่วย': i.unit||'',
@@ -1498,6 +1499,7 @@ async function exportBackup() {
       'รับเข้าทั้งหมด': i.total_in,
       'เบิกออกทั้งหมด': i.total_out,
       'คงเหลือ': i.current_stock,
+      'สถานะ': i.current_stock <= 0 ? 'หมด' : i.current_stock <= (i.min_stock||0) ? 'ต่ำ' : 'ปกติ',
     })) : [{ 'หมายเหตุ': 'ยังไม่มีข้อมูล (โหลดแท็บยอดคลังก่อน Export)' }];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockSheet), 'ยอดคลัง');
 
