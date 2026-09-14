@@ -1291,23 +1291,28 @@ async function loadStock() {
   document.getElementById('stock-body').innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-8">กำลังคำนวณ...</td></tr>';
   try {
     const WEEK_START = getWeekStart();
-    const [itemsRes, allRec, allTrans, rToday, tToday] = await Promise.all([
+    // แยก 2 query เพื่อ bypass PostgreSQL NULL NOT LIKE = false
+    // และหลีกเลี่ยง 1000-row limit (ประวัติ 5640 แถว ถูกกรองทิ้งที่ server)
+    const [itemsRes, allRec, realTransRes, nullTransRes, rToday, tToday] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
       sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
-      // ดึงทุก transfer (ไม่ filter item_id) — จับคู่ด้วย item_id ก่อน fallback ด้วย item_name
-      sb.from('supply_transfers').select('item_id,item_name,quantity,transfer_date,notes'),
+      // non-historical ที่มี notes (notes NOT LIKE 'ประวัติ...')
+      sb.from('supply_transfers').select('item_id,item_name,quantity,transfer_date,notes')
+        .not('notes','like','ประวัติการใช้%').not('notes','is',null),
+      // transfers ที่ notes = NULL (ไม่มี notes = ไม่ใช่ประวัติ)
+      sb.from('supply_transfers').select('item_id,item_name,quantity,transfer_date,notes')
+        .is('notes',null),
       sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
-      sb.from('supply_transfers').select('quantity,notes').eq('transfer_date', TODAY),
+      sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
     ]);
 
-    // build name → id map สำหรับ fallback
-    const validIds  = new Set((itemsRes.data||[]).map(i => i.id));
-    const nameToId  = {};
-    (itemsRes.data||[]).forEach(i => { if (i.name) nameToId[i.name.trim()] = i.id; });
-
-    const isHistory = r => (r.notes||'').startsWith('ประวัติการใช้');
-    const realTrans = (allTrans.data||[]).filter(r => !isHistory(r));
+    const realTrans = [...(realTransRes.data||[]), ...(nullTransRes.data||[])];
     const weekTrans = realTrans.filter(r => r.transfer_date >= WEEK_START);
+
+    // build name → id map สำหรับ fallback (transfer เก่าที่ item_id ไม่ตรง)
+    const validIds = new Set((itemsRes.data||[]).map(i => i.id));
+    const nameToId = {};
+    (itemsRes.data||[]).forEach(i => { if (i.name) nameToId[i.name.trim()] = i.id; });
 
     // คำนวณ: ใช้ item_id ถ้า valid, ไม่งั้น fallback ด้วย item_name
     const resolveId = r => (r.item_id && validIds.has(r.item_id))
@@ -1326,7 +1331,7 @@ async function loadStock() {
       current_stock: (inMap[item.id]||0) - (outMap[item.id]||0),
     }));
 
-    const todayOut = (tToday.data||[]).filter(r => !isHistory(r)).reduce((s,r)=>s+r.quantity,0);
+    const todayOut = (tToday.data||[]).reduce((s,r)=>s+r.quantity,0);
     document.getElementById('s-total').textContent = stockData.length;
     document.getElementById('s-in').textContent    = (rToday.data||[]).reduce((s,r)=>s+r.quantity,0);
     document.getElementById('s-out').textContent   = todayOut;
