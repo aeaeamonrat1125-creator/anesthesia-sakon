@@ -396,7 +396,7 @@ select.input { cursor:pointer; }
       <div class="section-h mb-3">ยอดคลังใหญ่วิสัญญี</div>
       <div class="scroll-x">
         <table class="tbl">
-          <thead><tr><th>#</th><th>ชื่อเวชภัณฑ์</th><th>รับเข้า</th><th>เบิกออก</th><th>คงเหลือ</th><th>หน่วย</th><th>Min/Max</th><th>สถานะ</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>ชื่อเวชภัณฑ์</th><th>รับเข้า</th><th>เบิกออก</th><th style="color:#f97316">สัปดาห์นี้</th><th>คงเหลือ</th><th>หน่วย</th><th>สถานะ</th><th></th></tr></thead>
           <tbody id="stock-body"><tr><td colspan="9" class="text-center text-slate-400 py-8">กำลังโหลด...</td></tr></tbody>
         </table>
       </div>
@@ -593,6 +593,33 @@ select.input { cursor:pointer; }
   <div class="scanner-btm">
     <div class="text-white/50 text-xs text-center mb-2">หรือพิมพ์/วางบาร์โค้ดจากเครื่องสแกน USB/Bluetooth แล้วกด Enter</div>
     <input id="manual-scan" class="manual-input" type="text" placeholder="พิมพ์ barcode แล้วกด Enter" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+</div>
+
+<!-- ====== QUICK ISSUE MODAL ====== -->
+<div id="quickIssueModal" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-5">
+    <div class="text-lg font-bold text-orange-700 mb-1">➖ บันทึกการใช้วัสดุ</div>
+    <div id="qi-name" class="text-sm font-semibold text-violet-800 bg-violet-50 rounded-xl p-3 mb-4"></div>
+    <div class="space-y-3">
+      <div>
+        <label class="lbl">วันที่ใช้</label>
+        <input id="qi-date" type="date" class="input">
+      </div>
+      <div>
+        <label class="lbl">จำนวนที่ใช้ *</label>
+        <input id="qi-qty" type="number" class="input" min="1" placeholder="0" oninput="updateQiRemaining()">
+        <div id="qi-remaining" class="text-xs text-slate-400 mt-1"></div>
+      </div>
+      <div>
+        <label class="lbl">หมายเหตุ <span class="text-slate-400 font-normal">(เช่น OR1, ห้องคลอด)</span></label>
+        <input id="qi-notes" type="text" class="input" placeholder="ไม่บังคับ">
+      </div>
+    </div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="submitQuickIssue()" class="btn btn-primary flex-1" style="background:linear-gradient(135deg,#ea580c,#f97316);">💾 บันทึก</button>
+      <button onclick="closeQuickIssue()" class="btn btn-ghost">ยกเลิก</button>
+    </div>
   </div>
 </div>
 
@@ -1252,30 +1279,37 @@ function editTransfer(id) {
 
 // ── Stock ─────────────────────────────────────────────────────
 // SNAPSHOT_DATE = วันที่นับยอดจริง (ยอดคงคลัง ณ 16 กค 2569)
-// stock = snapshot − transfer จริงหลัง snapshot เท่านั้น
-const SNAPSHOT_DATE = '2026-07-16';
+function getWeekStart() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(new Date().setDate(diff)).toISOString().split('T')[0];
+}
 
 async function loadStock() {
-  document.getElementById('stock-body').innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังคำนวณ...</td></tr>';
+  document.getElementById('stock-body').innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-8">กำลังคำนวณ...</td></tr>';
   try {
-    const [itemsRes, allRec, allTrans, rToday, tToday] = await Promise.all([
+    const WEEK_START = getWeekStart();
+    const [itemsRes, allRec, allTrans, rToday, tToday, tWeek] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
-      // รับเข้าทั้งหมดที่มี item_id (snapshot + รับเข้าปกติ)
       sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
-      // เบิกออกจริงเท่านั้น — ไม่นับ "ประวัติการใช้" (ข้อมูลย้อนหลัง snapshot ครอบคลุมแล้ว)
-      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).not('notes','like','ประวัติการใช้%'),
+      // รวม notes=NULL + notes ที่ไม่ใช่ "ประวัติการใช้" (NULL จะถูก exclude โดย NOT LIKE ใน PostgreSQL)
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).or('notes.is.null,notes.nlike.ประวัติการใช้*'),
       sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
-      sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
+      sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY).or('notes.is.null,notes.nlike.ประวัติการใช้*'),
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).gte('transfer_date', WEEK_START).or('notes.is.null,notes.nlike.ประวัติการใช้*'),
     ]);
 
-    const inMap = {}, outMap = {};
-    (allRec.data||[]).forEach(r => inMap[r.item_id]   = (inMap[r.item_id]||0)   + r.quantity);
-    (allTrans.data||[]).forEach(r => outMap[r.item_id] = (outMap[r.item_id]||0) + r.quantity);
+    const inMap = {}, outMap = {}, weekMap = {};
+    (allRec.data||[]).forEach(r => inMap[r.item_id]    = (inMap[r.item_id]||0)    + r.quantity);
+    (allTrans.data||[]).forEach(r => outMap[r.item_id]  = (outMap[r.item_id]||0)  + r.quantity);
+    (tWeek.data||[]).forEach(r => weekMap[r.item_id]    = (weekMap[r.item_id]||0) + r.quantity);
 
     stockData = (itemsRes.data||[]).map(item => ({
       ...item,
       total_in:      inMap[item.id]||0,
       total_out:     outMap[item.id]||0,
+      week_out:      weekMap[item.id]||0,
       current_stock: (inMap[item.id]||0) - (outMap[item.id]||0),
     }));
 
@@ -1307,16 +1341,21 @@ function renderStock() {
       : '<span class="badge badge-green">ปกติ</span>';
     const minTxt = item.min_stock > 0 ? `<span class="text-amber-600">▼${item.min_stock}</span>` : '—';
     const maxTxt = item.max_stock > 0 ? `<span class="text-blue-500">▲${item.max_stock}</span>` : '—';
+    const nameEsc = item.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const unitEsc = (item.unit||'').replace(/'/g,"\\'");
     return `<tr id="stock-row-${item.id}">
       <td class="text-slate-400 text-xs">${i+1}</td>
       <td><div class="font-medium text-sm">${item.name}</div>${item.barcode?`<div class="text-xs text-slate-400 font-mono">${item.barcode}</div>`:item.req_code?`<div class="text-xs text-slate-300">รหัสเบิก: ${item.req_code}</div>`:''}<div class="stock-bar-wrap"><div class="stock-bar" style="width:${pct}%;background:${barColor}"></div></div></td>
       <td class="text-green-700 font-semibold">${item.total_in}</td>
       <td class="text-blue-600 font-semibold">${item.total_out}</td>
+      <td class="font-semibold ${item.week_out>0?'text-orange-500':'text-slate-300'}">${item.week_out||0}</td>
       <td class="font-bold text-lg ${s<=0?'text-red-600':s<=item.min_stock?'text-amber-600':'text-violet-700'}">${s}</td>
       <td class="text-slate-500 text-xs">${item.unit||'—'}</td>
-      <td class="text-xs">${minTxt} / ${maxTxt}</td>
       <td>${badge}</td>
-      <td><button onclick="toggleAlertEdit('${item.id}',${item.min_stock||0},${item.max_stock||0})" class="text-xs text-violet-500 hover:text-violet-700 px-2 py-1 rounded hover:bg-violet-50">✏️ แก้ไข</button></td>
+      <td class="whitespace-nowrap">
+        <button onclick="openQuickIssue('${item.id}','${nameEsc}','${unitEsc}')" class="text-xs bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 px-2 py-1 rounded mr-1">➖ บันทึกใช้</button>
+        <button onclick="toggleAlertEdit('${item.id}',${item.min_stock||0},${item.max_stock||0})" class="text-xs text-violet-500 hover:text-violet-700 px-2 py-1 rounded hover:bg-violet-50">✏️</button>
+      </td>
     </tr>
     <tr id="alert-edit-${item.id}" class="hidden bg-violet-50">
       <td colspan="9" class="px-4 py-3">
@@ -1973,6 +2012,60 @@ async function init() {
 }
 
 init();
+
+// ── Quick Issue ────────────────────────────────────────────────
+let _qiId = null, _qiStock = 0;
+
+function openQuickIssue(itemId, name, unit) {
+  if (!currentUser) { toast('กรุณาเข้าสู่ระบบก่อน', 'error'); return; }
+  _qiId = itemId;
+  const item = stockData.find(i => i.id === itemId);
+  _qiStock = item ? item.current_stock : 0;
+  document.getElementById('qi-name').textContent = name + (unit ? '  (' + unit + ')' : '');
+  document.getElementById('qi-date').value = TODAY;
+  document.getElementById('qi-qty').value = '';
+  document.getElementById('qi-notes').value = '';
+  document.getElementById('qi-remaining').textContent = `คงเหลือปัจจุบัน: ${_qiStock} ${unit||''}`;
+  document.getElementById('quickIssueModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('qi-qty').focus(), 100);
+}
+
+function updateQiRemaining() {
+  const qty = parseInt(document.getElementById('qi-qty').value) || 0;
+  const rem = _qiStock - qty;
+  const el = document.getElementById('qi-remaining');
+  el.textContent = `คงเหลือปัจจุบัน: ${_qiStock} → หลังบันทึก: ${rem}`;
+  el.className = `text-xs mt-1 ${rem < 0 ? 'text-red-500 font-semibold' : 'text-slate-400'}`;
+}
+
+function closeQuickIssue() {
+  document.getElementById('quickIssueModal').style.display = 'none';
+  _qiId = null;
+}
+
+async function submitQuickIssue() {
+  if (!currentUser || !_qiId) return;
+  const qty = parseInt(document.getElementById('qi-qty').value);
+  if (!qty || qty < 1) { toast('กรุณาระบุจำนวน', 'error'); return; }
+  const item = stockData.find(i => i.id === _qiId);
+  const notes = document.getElementById('qi-notes').value.trim() || null;
+  try {
+    await sbDB.insert('supply_transfers', {
+      transfer_date: document.getElementById('qi-date').value || TODAY,
+      item_id:       _qiId,
+      item_name:     item?.name || '',
+      quantity:      qty,
+      unit:          item?.unit || null,
+      notes,
+      created_by:    currentUser.id,
+    });
+    toast(`✅ บันทึกใช้ ${qty} ${item?.unit||''} สำเร็จ`, 'success');
+    closeQuickIssue();
+    loadStock();
+  } catch(e) {
+    toast('บันทึกไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
 </script>
 </body>
 </html>
