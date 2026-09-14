@@ -1293,21 +1293,29 @@ async function loadStock() {
     const [itemsRes, allRec, allTrans, rToday, tToday] = await Promise.all([
       sb.from('supply_items').select('*').order('name'),
       sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
-      // ดึงทุก transfer ที่มี item_id — กรอง "ประวัติการใช้" ใน JS (หลีกเลี่ยง NULL NOT LIKE = false ใน PostgreSQL)
-      sb.from('supply_transfers').select('item_id,quantity,transfer_date,notes').not('item_id','is',null),
+      // ดึงทุก transfer (ไม่ filter item_id) — จับคู่ด้วย item_id ก่อน fallback ด้วย item_name
+      sb.from('supply_transfers').select('item_id,item_name,quantity,transfer_date,notes'),
       sb.from('supply_receipts').select('quantity').eq('receipt_date', TODAY),
-      sb.from('supply_transfers').select('quantity').eq('transfer_date', TODAY),
+      sb.from('supply_transfers').select('quantity,notes').eq('transfer_date', TODAY),
     ]);
 
-    // กรอง: ไม่นับที่ขึ้นต้นด้วย "ประวัติการใช้"
+    // build name → id map สำหรับ fallback
+    const validIds  = new Set((itemsRes.data||[]).map(i => i.id));
+    const nameToId  = {};
+    (itemsRes.data||[]).forEach(i => { if (i.name) nameToId[i.name.trim()] = i.id; });
+
     const isHistory = r => (r.notes||'').startsWith('ประวัติการใช้');
     const realTrans = (allTrans.data||[]).filter(r => !isHistory(r));
     const weekTrans = realTrans.filter(r => r.transfer_date >= WEEK_START);
 
+    // คำนวณ: ใช้ item_id ถ้า valid, ไม่งั้น fallback ด้วย item_name
+    const resolveId = r => (r.item_id && validIds.has(r.item_id))
+      ? r.item_id : (r.item_name ? nameToId[r.item_name.trim()] : null);
+
     const inMap = {}, outMap = {}, weekMap = {};
-    (allRec.data||[]).forEach(r => inMap[r.item_id]   = (inMap[r.item_id]||0)   + r.quantity);
-    realTrans.forEach(r => outMap[r.item_id]           = (outMap[r.item_id]||0)  + r.quantity);
-    weekTrans.forEach(r => weekMap[r.item_id]          = (weekMap[r.item_id]||0) + r.quantity);
+    (allRec.data||[]).forEach(r => inMap[r.item_id]   = (inMap[r.item_id]||0)  + r.quantity);
+    realTrans.forEach(r => { const id=resolveId(r); if(id) outMap[id]  = (outMap[id]||0)  + r.quantity; });
+    weekTrans.forEach(r => { const id=resolveId(r); if(id) weekMap[id] = (weekMap[id]||0) + r.quantity; });
 
     stockData = (itemsRes.data||[]).map(item => ({
       ...item,
@@ -1400,11 +1408,15 @@ async function saveAlert(id) {
 async function loadSubWhSummary() {
   const el = document.getElementById('sub-wh-summary');
   try {
-    const { data } = await sb.from('supply_transfers').select('sub_warehouse_name,item_name,unit,quantity');
+    const { data } = await sb.from('supply_transfers').select('sub_warehouse_name,item_name,unit,quantity,notes');
     if (!data?.length) { el.innerHTML = '<div class="text-center text-slate-400 py-4">ยังไม่มีข้อมูลเบิกออก</div>'; return; }
 
+    // กรองเฉพาะที่ไม่ใช่ประวัติการใช้ (เหมือนกับ stock คำนวณ)
+    const real = data.filter(r => !(r.notes||'').startsWith('ประวัติการใช้'));
+    if (!real.length) { el.innerHTML = '<div class="text-center text-slate-400 py-4">ยังไม่มีข้อมูลเบิกออกปัจจุบัน</div>'; return; }
+
     const grouped = {};
-    data.forEach(r => {
+    real.forEach(r => {
       const wh = r.sub_warehouse_name||'ไม่ระบุ';
       if (!grouped[wh]) grouped[wh] = {};
       grouped[wh][r.item_name] = { qty: (grouped[wh][r.item_name]?.qty||0)+r.quantity, unit: r.unit };
