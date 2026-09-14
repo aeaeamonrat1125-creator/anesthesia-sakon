@@ -1530,14 +1530,28 @@ function expiryBadge(dateStr) {
   return `<span class="badge badge-green">${fmtDate(dateStr)}</span>`;
 }
 
+// ── Paginated fetch (ดึงทุกแถว ไม่ติด Supabase 1000-row limit) ──
+async function fetchAll(table, query) {
+  const CHUNK = 1000;
+  let all = [], from = 0;
+  while (true) {
+    const { data, error } = await query.range(from, from + CHUNK - 1);
+    if (error) throw error;
+    all = all.concat(data || []);
+    if (!data || data.length < CHUNK) break;
+    from += CHUNK;
+  }
+  return all;
+}
+
 // ── Export / Backup ───────────────────────────────────────────
 async function exportBackup() {
-  toast('กำลังดึงข้อมูล...', 'info');
+  toast('กำลังดึงข้อมูล (อาจใช้เวลาสักครู่)...', 'info');
   try {
     const [rRows, tRows, items] = await Promise.all([
-      sb.from('supply_receipts').select('*').order('receipt_date', { ascending: false }),
-      sb.from('supply_transfers').select('*').order('transfer_date', { ascending: false }),
-      sb.from('supply_items').select('*').order('name'),
+      fetchAll('supply_receipts', sb.from('supply_receipts').select('*').order('receipt_date', { ascending: false })),
+      fetchAll('supply_transfers', sb.from('supply_transfers').select('*').order('transfer_date', { ascending: false })),
+      fetchAll('supply_items',     sb.from('supply_items').select('*').order('name')),
     ]);
 
     const wb = XLSX.utils.book_new();
@@ -1557,7 +1571,7 @@ async function exportBackup() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stockSheet), 'ยอดคลัง');
 
     // Sheet 2: ประวัติรับเข้า
-    const rSheet = (rRows.data||[]).map(r => ({
+    const rSheet = rRows.map(r => ({
       'วันที่': r.receipt_date,
       'เลขใบเบิก': r.requisition_no||'',
       'บาร์โค้ด': r.barcode_raw||'',
@@ -1573,13 +1587,12 @@ async function exportBackup() {
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rSheet.length ? rSheet : [{}]), 'รับเข้า');
 
-    // Sheet 3: ประวัติเบิกออก
-    const tSheet = (tRows.data||[]).map(r => ({
+    // Sheet 3: ประวัติเบิกออก (ทุกรายการ ไม่กรอง)
+    const tSheet = tRows.map(r => ({
       'วันที่': r.transfer_date,
       'ชื่อเวชภัณฑ์': r.item_name,
       'จำนวน': r.quantity,
       'หน่วย': r.unit||'',
-      'Lot': r.lot||'',
       'คลังย่อย': r.sub_warehouse_name||'',
       'ผู้เบิก': r.requested_by||'',
       'ผู้จ่าย': r.issued_by||'',
@@ -1589,10 +1602,10 @@ async function exportBackup() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tSheet.length ? tSheet : [{}]), 'เบิกออก');
 
     // Sheet 4: Master เวชภัณฑ์
-    const mSheet = (items.data||[]).map(i => ({
+    const mSheet = items.map(i => ({
+      'รหัสเบิก': i.req_code||'',
       'Barcode': i.barcode||'',
       'ชื่อ': i.name,
-      'ชื่อสามัญ': i.generic_name||'',
       'หน่วย': i.unit||'',
       'หมวดหมู่': i.category||'',
       'จุดแจ้งเตือน': i.min_stock||0,
