@@ -548,8 +548,8 @@ select.input { cursor:pointer; }
       <button onclick="addItem()" class="btn btn-primary">➕ เพิ่มรายการ</button>
       <div class="scroll-x mt-4">
         <table class="tbl">
-          <thead><tr><th>รหัสเบิก</th><th>Barcode</th><th>ชื่อ</th><th>หน่วย</th><th>หมวด</th><th>แจ้งเตือน</th><th></th></tr></thead>
-          <tbody id="items-body"><tr><td colspan="6" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
+          <thead><tr><th>รหัสเบิก</th><th>Barcode</th><th>ชื่อ</th><th>หน่วย</th><th>หมวด</th><th>ยอดคงเหลือ</th><th></th></tr></thead>
+          <tbody id="items-body"><tr><td colspan="7" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -572,6 +572,32 @@ select.input { cursor:pointer; }
           <thead><tr><th>ชื่อคลังย่อย</th><th>สถานที่</th><th>สถานะ</th><th></th></tr></thead>
           <tbody id="sw-body"><tr><td colspan="4" class="text-center text-slate-400 py-6">กำลังโหลด...</td></tr></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== ADJUST STOCK MODAL ====== -->
+  <div id="adjustModal" style="display:none" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+      <div class="flex items-center justify-between p-5 border-b">
+        <h3 class="font-bold text-lg text-slate-800">⚖️ ตั้งยอดคงคลัง</h3>
+        <button onclick="document.getElementById('adjustModal').style.display='none'" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div class="bg-violet-50 rounded-xl p-3">
+          <div id="adj-item-name" class="font-semibold text-violet-800 text-sm"></div>
+          <div class="text-xs text-slate-500 mt-1">ยอดที่ระบบคำนวณได้ปัจจุบัน: <span id="adj-current" class="font-bold text-violet-700"></span></div>
+        </div>
+        <div>
+          <label class="lbl">ยอดที่นับได้จริง (Physical Count) *</label>
+          <input id="adj-count" type="number" class="input" placeholder="กรอกจำนวนที่นับได้จริง" min="0">
+        </div>
+        <div id="adj-diff-box" class="hidden text-xs p-3 rounded-xl"></div>
+        <div class="text-xs text-slate-400">ระบบจะสร้างรายการรับเข้าหรือเบิกออกเพื่อปรับยอดให้ตรงกับที่นับได้</div>
+      </div>
+      <div class="flex justify-end gap-3 p-5 border-t">
+        <button onclick="document.getElementById('adjustModal').style.display='none'" class="btn btn-ghost">ยกเลิก</button>
+        <button onclick="saveAdjust()" class="btn btn-primary">⚖️ ปรับยอด</button>
       </div>
     </div>
   </div>
@@ -840,17 +866,13 @@ async function lookupBarcode(raw, target) {
 }
 
 async function showItemStock(itemId, unit) {
-  const [rRes, tRes] = await Promise.all([
-    sb.from('supply_receipts').select('quantity').eq('item_id', itemId),
-    sb.from('supply_transfers').select('quantity').eq('item_id', itemId),
-  ]);
-  const totalIn  = (rRes.data||[]).reduce((s,r)=>s+r.quantity,0);
-  const totalOut = (tRes.data||[]).reduce((s,r)=>s+r.quantity,0);
-  const stock    = totalIn - totalOut;
+  const stock = await getItemCurrentStock(itemId);
   const el = document.getElementById('t-stock-val');
   el.textContent = `${stock} ${unit||''}`;
-  el.className   = `font-bold ${stock > 0 ? 'text-green-700' : 'text-red-600'}`;
-  document.getElementById('t-stock-info').classList.remove('hidden');
+  el.className   = `font-bold ${stock > 10 ? 'text-green-700' : stock > 0 ? 'text-amber-600' : 'text-red-600'}`;
+  const info = document.getElementById('t-stock-info');
+  info.className = `mt-2 p-3 rounded-xl border text-sm ${stock <= 0 ? 'bg-red-50 border-red-200' : stock <= 10 ? 'bg-amber-50 border-amber-200' : 'bg-violet-50 border-violet-100'}`;
+  info.classList.remove('hidden');
 }
 
 // Barcode inputs: Enter key + debounce auto-trigger (รองรับเครื่องสแกนทุกชนิด)
@@ -1028,6 +1050,17 @@ async function submitReceipt() {
   } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message, 'error'); }
 }
 
+// ── Stock Helper ──────────────────────────────────────────────
+async function getItemCurrentStock(itemId) {
+  const [rRes, tRes] = await Promise.all([
+    sb.from('supply_receipts').select('quantity').eq('item_id', itemId),
+    sb.from('supply_transfers').select('quantity').eq('item_id', itemId).not('notes','like','ประวัติการใช้%'),
+  ]);
+  const totalIn  = (rRes.data||[]).reduce((s,r)=>s+r.quantity, 0);
+  const totalOut = (tRes.data||[]).reduce((s,r)=>s+r.quantity, 0);
+  return totalIn - totalOut;
+}
+
 // ── เบิกออก Form ──────────────────────────────────────────────
 function clearTransferForm() {
   ['t-barcode-input','t-name','t-qty','t-unit','t-lot','t-expiry','t-requester','t-issuer','t-notes','t-item-id'].forEach(id => {
@@ -1065,6 +1098,20 @@ async function submitTransfer() {
     if (!itemId) {
       const { data: nd } = await sb.from('supply_items').select('id').eq('name', name).maybeSingle();
       itemId = nd?.id || null;
+    }
+  }
+
+  // ── ตรวจสอบยอดคงเหลือก่อนเบิก ─────────────────────────────
+  if (itemId) {
+    const currentStock = await getItemCurrentStock(itemId);
+    const unit = document.getElementById('t-unit').value.trim() || '';
+    if (qty > currentStock) {
+      const proceed = confirm(
+        `⚠️ ยอดคงเหลือในคลัง: ${currentStock} ${unit}\n` +
+        `ต้องการเบิก: ${qty} ${unit}\n\n` +
+        `ยอดไม่เพียงพอ — ยืนยันเบิกออกต่อไหม?`
+      );
+      if (!proceed) return;
     }
   }
 
@@ -1437,6 +1484,78 @@ async function loadSubWhSummary() {
   } catch(e) { el.innerHTML = '<div class="text-rose-400 text-sm py-4">โหลดไม่ได้</div>'; }
 }
 
+// ── Stock Adjustment ──────────────────────────────────────────
+let _adjItemId = null, _adjItemName = '', _adjItemUnit = '', _adjCurrentStock = 0;
+
+function openAdjustModal(id, name, unit, currentStock) {
+  _adjItemId = id; _adjItemName = name; _adjItemUnit = unit; _adjCurrentStock = currentStock;
+  document.getElementById('adj-item-name').textContent = name;
+  document.getElementById('adj-current').textContent = `${currentStock} ${unit}`;
+  document.getElementById('adj-count').value = currentStock < 0 ? '' : currentStock;
+  document.getElementById('adj-diff-box').classList.add('hidden');
+  document.getElementById('adjustModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('adj-count')?.select(), 100);
+}
+
+document.addEventListener('input', e => {
+  if (e.target.id !== 'adj-count') return;
+  const target = parseInt(e.target.value);
+  const box = document.getElementById('adj-diff-box');
+  if (isNaN(target)) { box.classList.add('hidden'); return; }
+  const diff = target - _adjCurrentStock;
+  box.classList.remove('hidden');
+  if (diff === 0) {
+    box.className = 'text-xs p-3 rounded-xl bg-slate-50 text-slate-500';
+    box.textContent = 'ยอดเท่าเดิม ไม่มีการปรับ';
+  } else if (diff > 0) {
+    box.className = 'text-xs p-3 rounded-xl bg-green-50 border border-green-200 text-green-700';
+    box.textContent = `➕ เพิ่มยอด ${diff} ${_adjItemUnit} (สร้างรายการรับเข้า)`;
+  } else {
+    box.className = 'text-xs p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700';
+    box.textContent = `➖ ลดยอด ${Math.abs(diff)} ${_adjItemUnit} (สร้างรายการเบิกออก)`;
+  }
+});
+
+async function saveAdjust() {
+  if (!currentUser) { toast('กรุณาเข้าสู่ระบบก่อน', 'error'); return; }
+  if (!_adjItemId) return;
+  const target = parseInt(document.getElementById('adj-count').value);
+  if (isNaN(target) || target < 0) { toast('กรุณากรอกยอดที่ถูกต้อง', 'error'); return; }
+  const diff = target - _adjCurrentStock;
+  if (diff === 0) { document.getElementById('adjustModal').style.display = 'none'; return; }
+
+  try {
+    if (diff > 0) {
+      // เพิ่มยอด → สร้าง receipt
+      await sbDB.insert('supply_receipts', {
+        receipt_date: TODAY,
+        item_id:      _adjItemId,
+        item_name:    _adjItemName,
+        quantity:     diff,
+        unit:         _adjItemUnit || null,
+        notes:        `ปรับยอดคงคลัง (นับจริง: ${target})`,
+        created_by:   currentUser.id,
+      });
+    } else {
+      // ลดยอด → สร้าง transfer พิเศษ
+      await sbDB.insert('supply_transfers', {
+        transfer_date:      TODAY,
+        item_id:            _adjItemId,
+        item_name:          _adjItemName,
+        quantity:           Math.abs(diff),
+        unit:               _adjItemUnit || null,
+        sub_warehouse_name: 'ปรับยอดคงคลัง',
+        notes:              `ปรับยอดคงคลัง (นับจริง: ${target})`,
+        created_by:         currentUser.id,
+      });
+    }
+    toast(`✅ ปรับยอด "${_adjItemName}" เป็น ${target} ${_adjItemUnit} แล้ว`, 'success');
+    document.getElementById('adjustModal').style.display = 'none';
+    loadItems();
+    loadStock();
+  } catch(e) { toast('ปรับยอดไม่สำเร็จ: '+e.message, 'error'); }
+}
+
 // ── Settings ─────────────────────────────────────────────────
 async function loadSettings() {
   await Promise.all([loadItems(), loadSubWarehouses()]);
@@ -1446,18 +1565,37 @@ async function loadItems() {
   const body = document.getElementById('items-body');
   try {
     const items = await sbDB.list('supply_items', { order:'name' });
-    if (!items.length) { body.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-4">ยังไม่มีรายการ — เพิ่มด้านบน</td></tr>'; return; }
-    body.innerHTML = items.map(item => `
+    if (!items.length) { body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-4">ยังไม่มีรายการ — เพิ่มด้านบน</td></tr>'; return; }
+
+    // โหลดยอดคงเหลือทุกรายการพร้อมกัน
+    const [allRec, allTrans] = await Promise.all([
+      sb.from('supply_receipts').select('item_id,quantity').not('item_id','is',null),
+      sb.from('supply_transfers').select('item_id,quantity').not('item_id','is',null).not('notes','like','ประวัติการใช้%'),
+    ]);
+    const inMap = {}, outMap = {};
+    (allRec.data||[]).forEach(r   => inMap[r.item_id]  = (inMap[r.item_id]||0)  + r.quantity);
+    (allTrans.data||[]).forEach(r => outMap[r.item_id] = (outMap[r.item_id]||0) + r.quantity);
+
+    body.innerHTML = items.map(item => {
+      const stock = (inMap[item.id]||0) - (outMap[item.id]||0);
+      const stockColor = stock < 0 ? 'text-red-600 font-bold' : stock === 0 ? 'text-slate-400' : 'text-violet-700 font-semibold';
+      const nameEsc = item.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const unitEsc = (item.unit||'').replace(/'/g,"\\'");
+      return `
       <tr>
         <td class="text-xs text-slate-400 font-mono">${item.req_code||'—'}</td>
         <td class="text-xs text-slate-300 font-mono">${item.barcode||'(รอสแกน)'}</td>
         <td><div class="font-medium">${item.name}</div>${item.generic_name?`<div class="text-xs text-slate-400">${item.generic_name}</div>`:''}</td>
         <td>${item.unit||'—'}</td>
         <td>${item.category?`<span class="badge badge-purple">${item.category}</span>`:'—'}</td>
-        <td>${item.min_stock||0}</td>
-        <td><button onclick="deleteRow('supply_items','${item.id}',loadItems)" class="btn btn-danger" style="padding:4px 10px;font-size:12px;">ลบ</button></td>
-      </tr>`).join('');
-  } catch(e) { body.innerHTML = '<tr><td colspan="6" class="text-rose-400 py-4 text-center">โหลดไม่ได้</td></tr>'; }
+        <td class="${stockColor}">${stock}</td>
+        <td class="whitespace-nowrap">
+          <button onclick="openAdjustModal('${item.id}','${nameEsc}','${unitEsc}',${stock})" class="btn btn-ghost" style="padding:4px 10px;font-size:12px;color:#059669;border-color:#86efac;">⚖️ ตั้งยอด</button>
+          <button onclick="deleteRow('supply_items','${item.id}',loadItems)" class="btn btn-danger" style="padding:4px 10px;font-size:12px;">ลบ</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="7" class="text-rose-400 py-4 text-center">โหลดไม่ได้</td></tr>'; }
 }
 
 async function addItem() {
