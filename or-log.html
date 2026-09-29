@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AnesSKH">
+<meta name="theme-color" content="#7c3aed">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ยอดการใช้ห้องผ่าตัด — วิสัญญี รพ.สกลนคร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family:'Sarabun',system-ui,sans-serif; background:#f1f5f9; }
+  .grad-hero { background:linear-gradient(135deg,#0ea5e9,#2563eb 60%,#7c3aed); }
+  .card { background:#fff; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06); }
+  .input { width:100%; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; background:#fff; font-family:'Sarabun',sans-serif; }
+  .input:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+  .btn { padding:10px 14px; border-radius:8px; font-weight:500; font-size:14px; cursor:pointer; transition:all .15s; }
+  .btn-primary { background:#2563eb; color:#fff; } .btn-primary:hover { background:#1d4ed8; }
+  .btn-ghost { background:#f1f5f9; color:#334155; } .btn-ghost:hover { background:#e2e8f0; }
+  .lbl { font-size:12px; color:#64748b; margin-bottom:3px; display:block; }
+  .section-h { font-weight:600; color:#1e293b; font-size:15px; border-left:4px solid #2563eb; padding:2px 0 2px 10px; }
+
+  /* ===== OR TABLE ===== */
+  .or-tbl { border-collapse:collapse; font-size:12px; min-width:820px; width:100%; }
+  .or-tbl th {
+    background:#f1f5f9; font-weight:700; color:#475569; font-size:11px;
+    padding:8px 6px; text-align:center; border:1px solid #cbd5e1;
+    line-height:1.35; white-space:nowrap;
+  }
+  .or-tbl td { border:1px solid #e2e8f0; padding:4px 5px; vertical-align:middle; }
+  .or-tbl tbody tr:hover td { background:#f8fafc; }
+
+  /* inputs inside table */
+  .ti {
+    padding:5px 7px; font-size:12px; font-family:'Sarabun',sans-serif;
+    border:1px solid #e2e8f0; border-radius:6px; background:#fff;
+    width:100%; box-sizing:border-box;
+  }
+  .ti:focus { outline:none; border-color:#2563eb; }
+  .ti-room { font-weight:700; color:#1d4ed8; width:46px; text-align:center; }
+  .ti-num  { text-align:center; }
+  .ti-time { font-size:11px; }
+  .ti-sm   { width:38px; }
+
+  .room-bg { background:#eff6ff; }
+  .total-pill { background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; border-radius:10px; padding:5px 18px; font-weight:800; font-size:18px; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- ===== HEADER ===== -->
+<header class="grad-hero text-white">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-2">
+    <div>
+      <div class="text-lg sm:text-xl font-bold">🏥 ยอดการใช้ห้องผ่าตัด</div>
+      <div class="text-white/80 text-xs sm:text-sm" id="user-info">กรุณาเข้าสู่ระบบ</div>
+    </div>
+    <div class="flex gap-2 flex-wrap justify-end">
+      <a href="index.html"       class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
+      <a href="service-log.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">📋 ลงยอด</a>
+      <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== LOGIN OVERLAY ===== -->
+<div id="loginOverlay" style="display:none" class="fixed inset-0 bg-slate-900/60 z-40 items-center justify-center p-4">
+  <div class="card max-w-sm w-full p-6">
+    <div id="loginPanel">
+      <div class="text-xl font-bold mb-1">เข้าสู่ระบบ</div>
+      <div class="space-y-2 mb-3">
+        <input id="loginEmail"    type="email"    class="input" placeholder="อีเมล" autocomplete="username">
+        <input id="loginPassword" type="password" class="input" placeholder="รหัสผ่าน" autocomplete="current-password">
+      </div>
+      <div id="loginError" class="text-xs text-rose-500 mb-2 hidden"></div>
+      <button onclick="signIn()" class="btn btn-primary w-full mb-2">เข้าสู่ระบบ</button>
+      <div class="text-center text-xs text-slate-500">
+        <button onclick="showForgotPw(true)" style="background:none;border:none;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;" class="text-violet-600 font-semibold">ลืมรหัสผ่าน?</button> ·
+        <a href="index.html" class="text-blue-600">กลับหน้าหลัก</a>
+      </div>
+    </div>
+    <div id="forgotPanel" style="display:none">
+      <div class="text-xl font-bold mb-1">ลืมรหัสผ่าน</div>
+      <div class="text-sm text-slate-500 mb-4">ใส่อีเมลที่ใช้สมัคร ระบบจะส่งลิ้งก์รีเซ็ตให้</div>
+      <input id="resetEmail" type="email" class="input mb-3" placeholder="you@example.com">
+      <div id="resetMsg" class="text-xs mb-2" style="display:none"></div>
+      <button onclick="sendPasswordReset()" class="btn btn-primary w-full mb-2">ส่งลิ้งก์รีเซ็ต</button>
+      <button onclick="showForgotPw(false)" style="background:none;border:none;cursor:pointer;font-family:inherit;" class="block w-full text-center text-xs text-slate-500">← กลับเข้าสู่ระบบ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<main class="max-w-6xl mx-auto px-3 sm:px-4 py-5 space-y-4">
+
+  <!-- วันที่ + Leader + ตึก -->
+  <div class="card p-4">
+    <div class="section-h mb-3">ใบส่งเวร Leader — ยอดการใช้ห้องผ่าตัด</div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div>
+        <span class="lbl">📅 วันที่</span>
+        <input id="or-date" type="date" class="input">
+      </div>
+      <div>
+        <span class="lbl">👤 Leader ผู้บันทึก</span>
+        <input id="or-leader" list="nurses-dl" class="input" placeholder="พิมพ์ชื่อ..." autocomplete="off">
+        <datalist id="nurses-dl"></datalist>
+      </div>
+      <div>
+        <span class="lbl">🏢 ตึก / ส่วน</span>
+        <input id="or-section" class="input" list="sections-dl" value="ตึกหัวใจ">
+        <datalist id="sections-dl">
+          <option>ตึกหัวใจ</option>
+          <option>OR ส่วนกลาง</option>
+          <option>CVT</option>
+          <option>อื่นๆ</option>
+        </datalist>
+      </div>
+    </div>
+  </div>
+
+  <!-- ตารางห้องผ่าตัด -->
+  <div class="card p-4">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div class="section-h">ตารางห้องผ่าตัด</div>
+      <button onclick="addRow()" class="text-xs bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-semibold px-3 py-1.5 rounded-lg transition">+ เพิ่มห้อง</button>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="or-tbl">
+        <thead>
+          <tr>
+            <th style="min-width:110px">ห้อง /<br>ศัลยแพทย์</th>
+            <th style="min-width:60px">Case<br>(ราย)</th>
+            <th style="min-width:75px">เริ่ม case<br>(เวลา)</th>
+            <th style="min-width:100px">พักเที่ยง<br>(เช่น 12:00–13:00)</th>
+            <th style="min-width:75px">Case บ่าย<br>เริ่มเวลา</th>
+            <th style="min-width:75px">เสร็จ case<br>สุดท้าย</th>
+            <th style="min-width:60px">ย้ายฝัง<br>(ราย)</th>
+            <th style="min-width:95px">เลื่อนผ่าตัด<br>(ราย) / สาเหตุ</th>
+            <th style="min-width:95px">Off case<br>(ราย) / สาเหตุ</th>
+            <th style="width:30px"></th>
+          </tr>
+        </thead>
+        <tbody id="orBody">
+          <!-- populated by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- รวมยอด -->
+    <div class="flex items-center gap-3 mt-4 pt-3 border-t border-slate-100 flex-wrap">
+      <span class="font-semibold text-slate-700 text-sm">รวมยอดทั้งหมด</span>
+      <span class="total-pill" id="totalBadge">0</span>
+      <span class="text-slate-500 text-sm">ราย</span>
+    </div>
+  </div>
+
+  <!-- หมายเหตุ + บันทึก -->
+  <div class="card p-4 space-y-3">
+    <div>
+      <span class="lbl">หมายเหตุเพิ่มเติม</span>
+      <textarea id="or-notes" class="input" rows="2" placeholder="—"></textarea>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn btn-primary flex-1" onclick="saveOrLog()">💾 บันทึกยอดการใช้ห้อง</button>
+      <button class="btn btn-ghost"          onclick="resetForm()">รีเซ็ต</button>
+    </div>
+  </div>
+
+  <!-- ประวัติ -->
+  <div class="card p-4">
+    <div class="font-semibold mb-3 text-slate-800">📋 ประวัติบันทึกล่าสุด</div>
+    <div id="historyList" class="space-y-2 text-sm"></div>
+  </div>
+
+</main>
+
+<footer class="text-center py-6 text-xs text-slate-500">
+  © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · ยอดห้องผ่าตัด
+</footer>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+let currentUser = null;
+
+const DEFAULT_ROOMS = ['41','42','43','44','45','RR','CVT'];
+
+// ===== ROW =====
+function makeRow(room = '') {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="room-bg" style="min-width:110px">
+      <input class="ti ti-room" value="${room}" placeholder="ห้อง">
+      <input class="ti" style="margin-top:4px" placeholder="ศัลยแพทย์">
+    </td>
+    <td style="min-width:60px">
+      <input class="ti ti-num or-cases" type="number" min="0" placeholder="0" oninput="calcTotal()" style="width:52px">
+    </td>
+    <td style="min-width:75px">
+      <input class="ti ti-time" type="time">
+    </td>
+    <td style="min-width:100px">
+      <input class="ti" placeholder="12:00–13:00">
+    </td>
+    <td style="min-width:75px">
+      <input class="ti ti-time" type="time">
+    </td>
+    <td style="min-width:75px">
+      <input class="ti ti-time" type="time">
+    </td>
+    <td style="min-width:60px">
+      <input class="ti ti-num ti-sm" type="number" min="0" placeholder="0" style="width:52px">
+    </td>
+    <td style="min-width:95px">
+      <input class="ti ti-num ti-sm" type="number" min="0" placeholder="0" style="width:40px">
+      <input class="ti" style="margin-top:4px" placeholder="สาเหตุ">
+    </td>
+    <td style="min-width:95px">
+      <input class="ti ti-num ti-sm" type="number" min="0" placeholder="0" style="width:40px">
+      <input class="ti" style="margin-top:4px" placeholder="สาเหตุ">
+    </td>
+    <td style="text-align:center; width:30px">
+      <button onclick="removeRow(this)" title="ลบแถว"
+        class="text-slate-300 hover:text-rose-500 text-xl leading-none transition" style="background:none;border:none;cursor:pointer;padding:2px;">✕</button>
+    </td>
+  `;
+  return tr;
+}
+
+function initTable() {
+  const tbody = document.getElementById('orBody');
+  tbody.innerHTML = '';
+  DEFAULT_ROOMS.forEach(r => tbody.appendChild(makeRow(r)));
+  calcTotal();
+}
+
+function addRow() {
+  document.getElementById('orBody').appendChild(makeRow());
+  calcTotal();
+}
+
+function removeRow(btn) {
+  const tbody = document.getElementById('orBody');
+  if (tbody.rows.length <= 1) { sbUtils.toast('ต้องมีอย่างน้อย 1 แถว','error'); return; }
+  btn.closest('tr').remove();
+  calcTotal();
+}
+
+function calcTotal() {
+  const total = Array.from(document.querySelectorAll('.or-cases'))
+    .reduce((s, el) => s + (parseInt(el.value) || 0), 0);
+  document.getElementById('totalBadge').textContent = total;
+}
+
+// ===== COLLECT =====
+function collectRows() {
+  return Array.from(document.querySelectorAll('#orBody tr')).map(tr => {
+    const inputs = tr.querySelectorAll('.ti');
+    return {
+      room:             inputs[0]?.value.trim() || '',
+      surgeon:          inputs[1]?.value.trim() || '',
+      cases:            parseInt(inputs[2]?.value) || 0,
+      start_time:       inputs[3]?.value || '',
+      lunch_break:      inputs[4]?.value.trim() || '',
+      pm_start:         inputs[5]?.value || '',
+      end_time:         inputs[6]?.value || '',
+      transfer:         parseInt(inputs[7]?.value) || 0,
+      postpone_count:   parseInt(inputs[8]?.value) || 0,
+      postpone_reason:  inputs[9]?.value.trim() || '',
+      off_count:        parseInt(inputs[10]?.value) || 0,
+      off_reason:       inputs[11]?.value.trim() || '',
+    };
+  }).filter(r => r.room);
+}
+
+// ===== SAVE =====
+async function saveOrLog() {
+  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const date    = document.getElementById('or-date').value;
+  const leader  = document.getElementById('or-leader').value.trim();
+  const section = document.getElementById('or-section').value.trim() || 'ตึกหัวใจ';
+  const notes   = document.getElementById('or-notes').value.trim();
+
+  if (!date) { sbUtils.toast('กรุณาเลือกวันที่','error'); return; }
+
+  const rooms = collectRows();
+  const total = rooms.reduce((s, r) => s + r.cases, 0);
+
+  if (total === 0) {
+    if (!confirm('ยังไม่มีจำนวน Case — บันทึกต่อ?')) return;
+  }
+
+  const row = {
+    date,
+    type: 'or_room',
+    service_point: section,
+    location: section,
+    recorder_id: currentUser.id,
+    metrics: { leader, section, total_cases: total, rooms },
+    notes: `Leader: ${leader}${notes ? ' | '+notes : ''}`
+  };
+
+  sbUtils.toast('กำลังบันทึก...');
+  try {
+    await sbDB.insert('service_logs', row);
+    sbUtils.toast('✅ บันทึกยอดห้องผ่าตัดสำเร็จ','success');
+    document.getElementById('or-notes').value = '';
+    loadHistory();
+  } catch(e) { sbUtils.toast(e.message,'error'); }
+}
+
+function resetForm() {
+  if (!confirm('รีเซ็ตฟอร์มทั้งหมด?')) return;
+  document.getElementById('or-date').value   = new Date().toISOString().slice(0,10);
+  document.getElementById('or-leader').value = '';
+  document.getElementById('or-notes').value  = '';
+  document.getElementById('or-section').value= 'ตึกหัวใจ';
+  initTable();
+}
+
+// ===== HISTORY =====
+async function loadHistory() {
+  try {
+    const hist = await sbDB.list('service_logs', {
+      eq:{ type:'or_room' }, order:'created_at', asc:false, limit:8
+    });
+    const el = document.getElementById('historyList');
+    if (!hist.length) { el.innerHTML = '<div class="text-slate-500">ยังไม่มีบันทึก</div>'; return; }
+    el.innerHTML = hist.map(h => {
+      const m = h.metrics || {};
+      const activeRooms = (m.rooms || []).filter(r => r.cases > 0);
+      const roomTags = activeRooms.map(r =>
+        `<span class="inline-block bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded font-semibold">ห้อง ${r.room}: ${r.cases} ราย</span>`
+      ).join(' ');
+      return `
+        <div style="background:#eff6ff;border:1.5px solid #bfdbfe" class="p-3 rounded-xl">
+          <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span style="background:#2563eb" class="text-white text-xs font-semibold px-2 py-0.5 rounded-full">🏥 OR</span>
+            <span class="font-medium text-sm">${sbUtils.fmtDate(h.date)}</span>
+            <span class="text-xs text-slate-400">${m.section || ''}</span>
+            ${m.leader ? `<span class="text-xs text-violet-600 font-semibold">Leader: ${m.leader}</span>` : ''}
+          </div>
+          <div class="text-xs text-slate-600 mb-1.5">
+            รวมทั้งหมด <b class="text-blue-700">${m.total_cases || 0} ราย</b>
+          </div>
+          ${roomTags ? `<div class="flex flex-wrap gap-1">${roomTags}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  } catch(e) { console.warn(e); }
+}
+
+// ===== AUTH =====
+async function ensureAuth() {
+  try {
+    const u = await sbAuth.getUser();
+    if (u) {
+      currentUser = u;
+      const p = await sbAuth.getProfile().catch(() => null);
+      document.getElementById('user-info').textContent = p?.nickname || p?.full_name || u.email;
+      document.getElementById('signOutBtn').classList.remove('hidden');
+      document.getElementById('loginOverlay').style.display = 'none';
+      if (p && !document.getElementById('or-leader').value)
+        document.getElementById('or-leader').value = p.nickname || p.full_name || '';
+      return true;
+    }
+  } catch(e) { console.warn(e); }
+  document.getElementById('loginOverlay').style.display = 'flex';
+  return false;
+}
+async function signIn() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPassword').value;
+  const err   = document.getElementById('loginError');
+  err.classList.add('hidden');
+  try { await sbAuth.signIn(email, pwd); location.reload(); }
+  catch(e) { err.textContent = e.message; err.classList.remove('hidden'); }
+}
+async function signOut() { await sbAuth.signOut(); location.reload(); }
+function showForgotPw(show) {
+  document.getElementById('loginPanel').style.display = show ? 'none' : '';
+  document.getElementById('forgotPanel').style.display = show ? '' : 'none';
+  if (show) setTimeout(() => document.getElementById('resetEmail').focus(), 50);
+}
+async function sendPasswordReset() {
+  const email = document.getElementById('resetEmail').value.trim();
+  const msg   = document.getElementById('resetMsg');
+  msg.style.display = '';
+  if (!email) { msg.textContent = 'กรุณาใส่อีเมล'; msg.style.color = '#ef4444'; return; }
+  try {
+    await sbAuth.resetPasswordForEmail(email);
+    msg.innerHTML = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว<br>กรุณาเช็คกล่องจดหมาย (รวมถึง Spam/Junk)';
+    msg.style.color = '#16a34a';
+  } catch(e) { msg.textContent = e.message || 'เกิดข้อผิดพลาด'; msg.style.color = '#ef4444'; }
+}
+
+async function loadNurses() {
+  try {
+    const list = await sbDB.list('nurses', { eq:{active:true}, order:'sort_order', asc:true });
+    document.getElementById('nurses-dl').innerHTML =
+      list.map(n => `<option value="${n.name}"></option>`).join('');
+  } catch(e) {}
+}
+
+// ===== INIT =====
+document.getElementById('or-date').value = new Date().toISOString().slice(0,10);
+initTable();
+
+(async () => {
+  await ensureAuth();
+  await loadNurses();
+  await loadHistory();
+})();
+</script>
+</body>
+</html>
