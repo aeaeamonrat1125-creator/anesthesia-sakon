@@ -130,6 +130,7 @@
       <div><span class="lbl">ไม่ผ่าน RR</span><input id="m-fail" type="number" class="input"></div>
       <div><span class="lbl">ใส่ ETT กลับ</span><input id="m-ett" type="number" class="input"></div>
       <div><span class="lbl">ส่งต่อเวรถัดไปดูแล</span><input id="m-handover" type="number" class="input"></div>
+      <div><span class="lbl">ดรอส่งกลับตึก</span><input id="m-drop-ward" type="number" class="input"></div>
     </div>
 
     <!-- (Pre/Post op อยู่ที่ tab ที่ 3 ด้านบน) -->
@@ -416,11 +417,12 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <div><span class="lbl">Pt ทั้งหมด (ราย)</span><input id="ot-total" type="number" class="input"></div>
         <div><span class="lbl">Pt ดูแลใน RR (ราย)</span><input id="ot-rr" type="number" class="input"></div>
         <div><span class="lbl">ใส่ ETT กลับ (ราย)</span><input id="ot-ett-return" type="number" class="input"></div>
         <div><span class="lbl">ส่งต่อเวรถัดไป (ราย)</span><input id="ot-handover" type="number" class="input"></div>
+        <div><span class="lbl">ดรอส่งกลับตึก (ราย)</span><input id="ot-drop-ward" type="number" class="input"></div>
       </div>
       <div class="grid-2">
         <div><span class="lbl">ผู้ป่วยอยู่ RR เกิน 1 ชม. (ราย)</span><input id="ot-pacu1h" type="number" class="input"></div>
@@ -1174,6 +1176,7 @@ async function saveLog() {
     total: num('m-total'), ga: num('m-ga'), ra: num('m-ra'), mac: num('m-mac'),
     pass_rr: num('m-pass'), fail_rr: num('m-fail'),
     ett_return: num('m-ett'), handover_pm: num('m-handover'),
+    drop_ward: num('m-drop-ward'),
     pacu_over_1h: num('m-pacu1h'), pacu_over_1h_reason: txt('m-pacu1h-reason'),
     ext_ett: num('ext-ett'), ext_where: txt('ext-where')
   };
@@ -1519,6 +1522,7 @@ async function saveOvertimeLog() {
     rr_patients: num('ot-rr'),
     ett_return: num('ot-ett-return'),
     handover: num('ot-handover'),
+    drop_ward: num('ot-drop-ward'),
     pacu_over_1h: num('ot-pacu1h'),
     pacu_over_1h_reason: txt('ot-pacu1h-reason'),
     ga: num('ot-m-ga'), ra: num('ot-m-ra'), mac: num('ot-m-mac'),
