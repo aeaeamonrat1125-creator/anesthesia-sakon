@@ -983,7 +983,7 @@ async function sendPasswordReset() {
   if (!email) { msg.textContent = 'กรุณาใส่อีเมล'; msg.style.color = '#ef4444'; return; }
   try {
     await sbAuth.resetPasswordForEmail(email);
-    msg.textContent = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว กรุณาเช็คกล่องจดหมาย';
+    msg.innerHTML = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว<br>กรุณาเช็คกล่องจดหมาย (รวมถึงกล่อง Spam/Junk)';
     msg.style.color = '#16a34a';
   } catch(e) {
     msg.textContent = e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
@@ -2950,6 +2950,11 @@ function toggleStaffMoreMenu() {
 // ===== INIT =====
 (async () => {
   await ensureAuth();
+  // auto-open forgot panel ถ้ามาจาก reset-password.html ที่ลิ้งก์หมดอายุ
+  if (localStorage.getItem('openForgot')) {
+    localStorage.removeItem('openForgot');
+    setTimeout(() => showForgotPw(true), 300);
+  }
   await loadAll();
   subscribeAll();
   // เปิด tab ตาม hash ถ้ามี

@@ -712,70 +712,145 @@
   </div>
 
   <!-- PRE/POST OP FORM (โผล่เฉพาะเมื่อเลือก tab Pre/Post op) -->
-  <div id="prePostForm" class="card p-4 space-y-3 hidden">
-    <div class="section-h">📋 ส่งยอดเยี่ยม Pre/Post op</div>
-    <div class="grid-2">
+  <div id="prePostForm" class="space-y-3 hidden">
+
+    <!-- หัวข้อ + วันที่ + สาย -->
+    <div class="card p-4 space-y-3">
+      <div class="section-h">📋 แบบรายงานการส่งเยี่ยมก่อนและหลังการระงับความรู้สึก</div>
+      <div class="grid-2">
+        <div>
+          <span class="lbl">📅 วันที่</span>
+          <input id="pp-date" type="date" class="input">
+        </div>
+        <div>
+          <span class="lbl">🏥 สาย</span>
+          <select id="pp-team" class="input">
+            <option value="">— เลือกสาย —</option>
+            <option value="1">สาย 1</option>
+            <option value="2">สาย 2</option>
+            <option value="3">สาย 3</option>
+            <option value="other">อื่นๆ</option>
+          </select>
+          <input id="pp-team-other" class="input mt-2 hidden" placeholder="ระบุสาย">
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. การเยี่ยมก่อนการระงับความรู้สึก -->
+    <div class="card p-4 space-y-2">
+      <div class="font-semibold text-blue-700 text-sm border-l-4 border-blue-400 pl-3">1. การเยี่ยมก่อนการระงับความรู้สึก</div>
+      <div class="grid-2">
+        <div>
+          <span class="lbl">1.1 จำนวนผู้ป่วยทั้งหมด (ก่อนเวลา 14.00น.)</span>
+          <input id="pp-pre-total" type="number" min="0" class="input" placeholder="0" oninput="calcPreVisitTotal()">
+        </div>
+        <div>
+          <span class="lbl">1.5 จำนวน ASA ≥ 3</span>
+          <input id="pp-asa3" type="number" min="0" class="input" placeholder="0">
+        </div>
+      </div>
+      <div class="grid-3">
+        <div>
+          <span class="lbl">1.2 จำนวนที่ได้รับการเยี่ยมก่อน (ก่อน 14.00น.)</span>
+          <input id="pp-pre-visit-before" type="number" min="0" class="input" placeholder="0" oninput="calcPreVisitTotal()">
+        </div>
+        <div>
+          <span class="lbl">1.3 จำนวนที่ได้รับการเยี่ยมก่อน (หลัง 14.00น.)</span>
+          <input id="pp-pre-visit-after" type="number" min="0" class="input" placeholder="0" oninput="calcPreVisitTotal()">
+        </div>
+        <div>
+          <span class="lbl">1.4 รวมจำนวนที่ได้รับการเยี่ยมก่อนทั้งหมด</span>
+          <input id="pp-pre-visit-total" type="number" min="0" class="input font-bold" style="background:#eff6ff;border-color:#bfdbfe" readonly placeholder="คำนวณอัตโนมัติ">
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. การเยี่ยมหลังการระงับความรู้สึก -->
+    <div class="card p-4 space-y-2">
+      <div class="font-semibold text-emerald-700 text-sm border-l-4 border-emerald-400 pl-3">2. การเยี่ยมหลังการระงับความรู้สึก</div>
+      <div class="grid-3">
+        <div>
+          <span class="lbl">2.1 จำนวนผู้ป่วยที่เข้าเกณฑ์การเยี่ยมหลัง</span>
+          <input id="pp-post-eligible" type="number" min="0" class="input" placeholder="0" oninput="calcPostNotVisited()">
+        </div>
+        <div>
+          <span class="lbl">2.2 จำนวนผู้ป่วยที่ได้รับการเยี่ยมหลัง</span>
+          <input id="pp-post-visited" type="number" min="0" class="input" placeholder="0" oninput="calcPostNotVisited()">
+        </div>
+        <div>
+          <span class="lbl">2.3 จำนวนผู้ป่วยที่ไม่ได้รับการเยี่ยมหลัง</span>
+          <input id="pp-post-not-visited" type="number" min="0" class="input font-bold" style="background:#f0fdf4;border-color:#bbf7d0" readonly placeholder="คำนวณอัตโนมัติ">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <span class="lbl">2.4 จำนวนผู้ป่วยที่เสียชีวิตภายใน 24 ชม.</span>
+          <input id="pp-dead" type="number" min="0" class="input" placeholder="0">
+        </div>
+        <div>
+          <span class="lbl">2.5 ภาวะแทรกซ้อน: ผู้ป่วยที่ต้อง reintubate (ราย)</span>
+          <input id="pp-reint" type="number" min="0" class="input" placeholder="0">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <span class="lbl">2.6 ภาวะแทรกซ้อนอื่นๆ (ราย)</span>
+          <input id="pp-cx-other-count" type="number" min="0" class="input" placeholder="0">
+        </div>
+        <div>
+          <span class="lbl">2.6 ระบุ</span>
+          <input id="pp-cx-other-detail" class="input" placeholder="ระบุภาวะแทรกซ้อน">
+        </div>
+      </div>
       <div>
-        <span class="lbl">📅 วันที่</span>
-        <input id="pp-date" type="date" class="input">
+        <span class="lbl">2.7 หมายเหตุ / อื่นๆ</span>
+        <input id="pp-post-other" class="input" placeholder="—">
       </div>
+    </div>
+
+    <!-- 3. การสอบถามความพึงพอใจ -->
+    <div class="card p-4">
+      <div class="font-semibold text-violet-700 text-sm border-l-4 border-violet-400 pl-3 mb-2">3. การสอบถามความพึงพอใจ</div>
       <div>
-        <span class="lbl">🏥 สาย</span>
-        <select id="pp-team" class="input">
-          <option value="">— เลือกสาย —</option>
-          <option value="1">สาย 1</option>
-          <option value="2">สาย 2</option>
-          <option value="3">สาย 3</option>
-          <option value="other">อื่นๆ</option>
-        </select>
-        <input id="pp-team-other" class="input mt-2 hidden" placeholder="ระบุสายอื่นๆ">
+        <span class="lbl">จำนวนที่ได้รับการสอบถามความพึงพอใจ (ราย)</span>
+        <input id="pp-sat" type="number" min="0" class="input" placeholder="0">
       </div>
     </div>
 
-    <div class="section-h">จำนวนเยี่ยม (ตัวหลัก)</div>
-    <div class="grid-2">
-      <div class="bg-blue-50 rounded p-2 border border-blue-100">
-        <span class="lbl text-blue-700">จำนวนผู้ป่วย Pre op *</span>
-        <input id="pp-preop" type="number" min="0" class="input" placeholder="0">
+    <!-- 5. ปัญหาข้อขัดข้อง -->
+    <div class="card p-4">
+      <div class="font-semibold text-amber-700 text-sm border-l-4 border-amber-400 pl-3 mb-2">5. ปัญหาข้อขัดข้องในการปฏิบัติงาน</div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="radio-row" data-group="pp-iss-yn">
+          <button class="radio-pill active" onclick="setRadio(this);toggleSection('ppIssDetail',false)">ไม่มี</button>
+          <button class="radio-pill" onclick="setRadio(this);toggleSection('ppIssDetail',true)">มี</button>
+        </div>
       </div>
-      <div class="bg-emerald-50 rounded p-2 border border-emerald-100">
-        <span class="lbl text-emerald-700">จำนวนผู้ป่วย Post op *</span>
-        <input id="pp-postop" type="number" min="0" class="input" placeholder="0">
-      </div>
-    </div>
-
-    <div class="section-h">ข้อมูลผู้ป่วย</div>
-    <div class="grid-4">
-      <div><span class="lbl">ASA ≥ 3</span><input id="pp-asa3" type="number" min="0" class="input"></div>
-      <div><span class="lbl">การสอบถามความพึงพอใจ</span><input id="pp-sat" type="number" min="0" class="input"></div>
-      <div><span class="lbl">จำนวนไม่ได้ลงบันทึก</span><input id="pp-notrec" type="number" min="0" class="input"></div>
-      <div><span class="lbl">Dead in 24 hr.</span><input id="pp-dead" type="number" min="0" class="input"></div>
-    </div>
-
-    <div class="section-h">⚠️ ภาวะแทรกซ้อนหลังผ่าตัด</div>
-    <div class="grid-4">
-      <div><span class="lbl">Re-intubation</span><input id="pp-reint" type="number" min="0" class="input"></div>
-      <div><span class="lbl">N/V</span><input id="pp-nv" type="number" min="0" class="input"></div>
-      <div><span class="lbl">เจ็บคอ</span><input id="pp-sore" type="number" min="0" class="input"></div>
-      <div><span class="lbl">อื่นๆ (ระบุ)</span><input id="pp-other" class="input"></div>
-    </div>
-
-    <div class="section-h">ผู้บันทึก / หมายเหตุ</div>
-    <div class="grid-2">
-      <div>
-        <span class="lbl">ผู้บันทึก (พิมพ์ค้นหา)</span>
-        <input id="pp-recorder" list="nurses-options" class="input" autocomplete="off">
-      </div>
-      <div>
-        <span class="lbl">หมายเหตุ</span>
-        <input id="pp-notes" class="input">
+      <div id="ppIssDetail" class="hidden mt-2">
+        <span class="lbl">ระบุ</span>
+        <input id="pp-iss-detail" class="input" placeholder="ระบุปัญหาข้อขัดข้อง">
       </div>
     </div>
 
-    <div class="flex gap-2 pt-2">
-      <button class="btn btn-primary flex-1" onclick="savePrePost()">💾 ส่งยอด Pre/Post op</button>
-      <button class="btn btn-ghost" onclick="clearPrePostForm()">รีเซ็ต</button>
+    <!-- 4. วิสัญญีพยาบาล / ผู้บันทึก -->
+    <div class="card p-4 space-y-2">
+      <div class="font-semibold text-slate-700 text-sm border-l-4 border-slate-400 pl-3 mb-2">4. วิสัญญีพยาบาล / ผู้บันทึก</div>
+      <div class="grid-2">
+        <div>
+          <span class="lbl">ชื่อวิสัญญีพยาบาล (พิมพ์ค้นหา)</span>
+          <input id="pp-recorder" list="nurses-options" class="input" autocomplete="off" placeholder="พิมพ์ชื่อ...">
+        </div>
+        <div>
+          <span class="lbl">หมายเหตุ</span>
+          <input id="pp-notes" class="input" placeholder="—">
+        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button class="btn btn-primary flex-1" onclick="savePrePost()">💾 บันทึกข้อมูลการเยี่ยม</button>
+        <button class="btn btn-ghost" onclick="clearPrePostForm()">รีเซ็ต</button>
+      </div>
     </div>
+
   </div>
 
   <div class="card p-4">
@@ -865,7 +940,7 @@ async function sendPasswordReset() {
   if (!email) { msg.textContent = 'กรุณาใส่อีเมล'; msg.style.color = '#ef4444'; return; }
   try {
     await sbAuth.resetPasswordForEmail(email);
-    msg.textContent = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว กรุณาเช็คกล่องจดหมาย';
+    msg.innerHTML = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว<br>กรุณาเช็คกล่องจดหมาย (รวมถึงกล่อง Spam/Junk)';
     msg.style.color = '#16a34a';
   } catch(e) {
     msg.textContent = e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
@@ -905,43 +980,66 @@ document.getElementById('pp-team')?.addEventListener('change', e => {
   document.getElementById('pp-team-other').classList.toggle('hidden', e.target.value !== 'other');
 });
 
+function calcPreVisitTotal() {
+  const before = parseInt(document.getElementById('pp-pre-visit-before').value) || 0;
+  const after  = parseInt(document.getElementById('pp-pre-visit-after').value)  || 0;
+  document.getElementById('pp-pre-visit-total').value = before + after || '';
+}
+function calcPostNotVisited() {
+  const eligible = parseInt(document.getElementById('pp-post-eligible').value) || 0;
+  const visited  = parseInt(document.getElementById('pp-post-visited').value)  || 0;
+  document.getElementById('pp-post-not-visited').value = Math.max(0, eligible - visited) || '';
+}
+
 async function savePrePost() {
   if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
   const team = document.getElementById('pp-team').value;
   if (!team) { sbUtils.toast('กรุณาเลือกสาย','error'); return; }
-  const num = id => parseInt(document.getElementById(id).value) || 0;
-  const txt = id => document.getElementById(id).value || '';
-  const preop  = num('pp-preop');
-  const postop = num('pp-postop');
-  if (preop === 0 && postop === 0) {
-    if (!confirm('ยังไม่ได้กรอก Pre-op หรือ Post-op — บันทึกต่อ?')) return;
+  const num = id => parseInt(document.getElementById(id)?.value) || 0;
+  const txt = id => document.getElementById(id)?.value || '';
+  const teamLabel = team === 'other' ? (txt('pp-team-other') || 'อื่นๆ') : 'สาย ' + team;
+  const preTotal  = num('pp-pre-total');
+  const postVisited = num('pp-post-visited');
+  if (preTotal === 0 && postVisited === 0) {
+    if (!confirm('ยังไม่ได้กรอกจำนวนผู้ป่วย — บันทึกต่อ?')) return;
   }
-  const teamLabel = team === 'other' ? (txt('pp-team-other') || 'อื่นๆ') : team;
   const row = {
     date: document.getElementById('pp-date').value,
     type: 'preop_postop',
-    location: 'Pre/Post op สาย ' + teamLabel,
-    service_point: 'สาย ' + teamLabel,
+    location: 'Pre/Post op ' + teamLabel,
+    service_point: teamLabel,
     recorder_id: currentUser.id,
     metrics: {
       team: teamLabel,
-      pre_op: preop, post_op: postop,
-      asa_ge_3: num('pp-asa3'),
+      // 1. การเยี่ยมก่อน
+      pre_total:          preTotal,
+      pre_visit_before14: num('pp-pre-visit-before'),
+      pre_visit_after14:  num('pp-pre-visit-after'),
+      pre_visit_total:    num('pp-pre-visit-total'),
+      asa_ge_3:           num('pp-asa3'),
+      // 2. การเยี่ยมหลัง
+      post_eligible:      num('pp-post-eligible'),
+      post_visited:       postVisited,
+      post_not_visited:   num('pp-post-not-visited'),
+      dead_24hr:          num('pp-dead'),
+      // 3. ความพึงพอใจ
       satisfaction_asked: num('pp-sat'),
-      not_recorded: num('pp-notrec'),
-      dead_24hr: num('pp-dead')
     },
     complications: {
-      reintubation: num('pp-reint'),
-      nausea_vomiting: num('pp-nv'),
-      sore_throat: num('pp-sore'),
-      other: txt('pp-other')
+      reintubate:   num('pp-reint'),
+      other_count:  num('pp-cx-other-count'),
+      other_detail: txt('pp-cx-other-detail'),
+      note:         txt('pp-post-other'),
     },
-    notes: `ผู้บันทึก: ${txt('pp-recorder')}\n${txt('pp-notes')}`
+    issues: {
+      state:  getRadio('pp-iss-yn') || 'ไม่มี',
+      detail: txt('pp-iss-detail'),
+    },
+    notes: `วิสัญญีพยาบาล: ${txt('pp-recorder')} | หมายเหตุ: ${txt('pp-notes')}`
   };
   try {
     await sbDB.insert('service_logs', row);
-    sbUtils.toast('✅ ส่งยอด Pre/Post op สำเร็จ','success');
+    sbUtils.toast('✅ บันทึกข้อมูลการเยี่ยมสำเร็จ','success');
     clearDraft();
     clearPrePostForm();
     loadHistory();
@@ -949,13 +1047,20 @@ async function savePrePost() {
 }
 
 function clearPrePostForm() {
-  ['pp-preop','pp-postop','pp-asa3','pp-sat','pp-notrec','pp-dead',
-   'pp-reint','pp-nv','pp-sore','pp-other','pp-notes','pp-team-other'].forEach(id => {
+  ['pp-pre-total','pp-pre-visit-before','pp-pre-visit-after','pp-pre-visit-total',
+   'pp-asa3','pp-post-eligible','pp-post-visited','pp-post-not-visited',
+   'pp-dead','pp-reint','pp-cx-other-count','pp-cx-other-detail',
+   'pp-post-other','pp-sat','pp-iss-detail','pp-recorder','pp-notes','pp-team-other'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('pp-team').value = '';
   document.getElementById('pp-team-other').classList.add('hidden');
   document.getElementById('pp-date').value = new Date().toISOString().slice(0,10);
+  const issYn = document.querySelector('.radio-row[data-group="pp-iss-yn"]');
+  if (issYn) {
+    issYn.querySelectorAll('.radio-pill').forEach((b,i) => b.classList.toggle('active', i===0));
+    toggleSection('ppIssDetail', false);
+  }
 }
 
 function setRadio(btn) {
@@ -1128,15 +1233,32 @@ async function loadHistory() {
   const hist = await sbDB.list('service_logs', { order:'created_at', asc:false, limit:10 });
   const el = document.getElementById('historyList');
   if (hist.length === 0) { el.innerHTML = '<div class="text-slate-500">ยังไม่มีบันทึก</div>'; return; }
-  el.innerHTML = hist.map(h => `
-    <div class="bg-slate-50 p-3 rounded-lg flex justify-between items-start gap-3">
+  const TYPE_STYLE = {
+    'ในเวลา':       { bg:'#eff6ff', border:'#bfdbfe', badge:'#2563eb', label:'🕐 ในเวลา' },
+    'นอกเวลา':     { bg:'#f5f3ff', border:'#ddd6fe', badge:'#7c3aed', label:'🌙 นอกเวลา' },
+    'preop_postop': { bg:'#f0fdf4', border:'#bbf7d0', badge:'#16a34a', label:'📋 Pre/Post op' },
+  };
+  el.innerHTML = hist.map(h => {
+    const s = TYPE_STYLE[h.type] || { bg:'#f8fafc', border:'#e2e8f0', badge:'#64748b', label:h.type||'—' };
+    const total = h.metrics?.total || h.metrics?.pre_op || 0;
+    return `
+    <div style="background:${s.bg};border:1.5px solid ${s.border}" class="p-3 rounded-xl flex justify-between items-start gap-3">
       <div class="flex-1 min-w-0">
-        <div class="font-medium">${sbUtils.fmtDate(h.date)} · ${h.type} ${h.shift?'· '+h.shift:''} ${h.service_point?'· '+h.service_point:''}</div>
-        <div class="text-xs text-slate-600 mt-1">Pt รวม ${h.metrics?.total||0} · GA ${h.metrics?.ga||0} · RA ${h.metrics?.ra||0} · MAC ${h.metrics?.mac||0}</div>
-        ${h.photo_url ? `<a href="${h.photo_url}" target="_blank" class="text-xs text-blue-600">📷 ดูรูป</a>` : ''}
+        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+          <span style="background:${s.badge}" class="text-white text-xs font-semibold px-2 py-0.5 rounded-full">${s.label}</span>
+          <span class="font-medium text-sm">${sbUtils.fmtDate(h.date)}${h.shift?' · เวร '+h.shift:''}</span>
+          ${h.service_point && h.service_point !== 'นอกเวลา' ? `<span class="text-xs text-slate-500">${h.service_point}</span>` : ''}
+        </div>
+        <div class="text-xs text-slate-600">
+          ${h.type!=='preop_postop'
+            ? `Pt รวม <b>${total}</b> · GA ${h.metrics?.ga||0} · RA ${h.metrics?.ra||0} · MAC ${h.metrics?.mac||0}`
+            : `เยี่ยมก่อน <b>${h.metrics?.pre_visit_total ?? h.metrics?.pre_op ?? 0}</b> · เยี่ยมหลัง <b>${h.metrics?.post_visited ?? h.metrics?.post_op ?? 0}</b> · ASA≥3 ${h.metrics?.asa_ge_3||0}`}
+        </div>
+        ${h.photo_url ? `<a href="${h.photo_url}" target="_blank" class="text-xs text-blue-600 mt-0.5 block">📷 ดูรูป</a>` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // ===== HELPER =====
