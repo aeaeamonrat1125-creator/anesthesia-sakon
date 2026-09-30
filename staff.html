@@ -219,6 +219,7 @@
   </div>
   <div class="topbar-right">
     <span class="topbar-user" id="user-info">กรุณาเข้าสู่ระบบ</span>
+    <button id="changePwBtnStaff" onclick="openChangePwStaff()" class="topbar-btn hidden" style="background:#f5f3ff;color:#7c3aed;border:1.5px solid #e9d5ff;">🔒 เปลี่ยนรหัสผ่าน</button>
     <button id="signOutBtn" onclick="signOut()" class="topbar-btn topbar-btn-out hidden">ออก</button>
     <a href="index.html" class="topbar-btn topbar-btn-home">🏠 หน้าหลัก</a>
   </div>
@@ -941,7 +942,7 @@ async function ensureAuth() {
       currentProfile = await sbAuth.getProfile().catch(() => null);
       const uLabel = `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
       ['user-info'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=uLabel; });
-      ['signOutBtn'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
+      ['signOutBtn','changePwBtnStaff'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
       // ปุ่ม unlink LINE (แสดงเมื่อผูกบัญชีแล้ว)
       if (currentProfile?.line_user_id && !document.getElementById('unlinkLineBtn')) {
         document.getElementById('signOutBtn')?.insertAdjacentHTML('beforebegin',
@@ -3051,6 +3052,65 @@ function closeLightbox() {
   document.body.style.overflow = '';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// ===== เปลี่ยนรหัสผ่าน =====
+function openChangePwStaff() {
+  const m = document.getElementById('changePwModalStaff');
+  m.classList.remove('hidden'); m.classList.add('flex');
+  document.getElementById('cpws-new').value = '';
+  document.getElementById('cpws-confirm').value = '';
+  document.getElementById('cpws-msg').classList.add('hidden');
+  setTimeout(() => document.getElementById('cpws-new').focus(), 100);
+}
+function closeChangePwStaff() {
+  const m = document.getElementById('changePwModalStaff');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+async function saveChangePwStaff() {
+  const pw  = document.getElementById('cpws-new').value;
+  const pw2 = document.getElementById('cpws-confirm').value;
+  const msg = document.getElementById('cpws-msg');
+  const btn = document.getElementById('cpws-btn');
+  msg.classList.remove('hidden');
+  if (pw.length < 6) { msg.textContent = '❗ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; msg.style.color='#ef4444'; return; }
+  if (pw !== pw2)    { msg.textContent = '❗ รหัสผ่านทั้งสองช่องไม่ตรงกัน';        msg.style.color='#ef4444'; return; }
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  try {
+    const { error } = await window.sb.auth.updateUser({ password: pw });
+    if (error) throw error;
+    msg.textContent = '✅ เปลี่ยนรหัสผ่านสำเร็จ'; msg.style.color = '#16a34a';
+    setTimeout(closeChangePwStaff, 1500);
+  } catch(e) {
+    msg.textContent = e.message || 'เกิดข้อผิดพลาด'; msg.style.color = '#ef4444';
+  }
+  btn.disabled = false; btn.textContent = 'บันทึก';
+}
 </script>
+
+<!-- Modal เปลี่ยนรหัสผ่าน -->
+<div id="changePwModalStaff" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="font-bold text-lg">🔒 เปลี่ยนรหัสผ่าน</div>
+      <button onclick="closeChangePwStaff()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+    </div>
+    <div class="space-y-3 mb-4">
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)</label>
+        <input id="cpws-new" type="password" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400" placeholder="รหัสผ่านใหม่" autocomplete="new-password">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">ยืนยันรหัสผ่านใหม่</label>
+        <input id="cpws-confirm" type="password" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400" placeholder="พิมพ์อีกครั้ง" autocomplete="new-password" onkeydown="if(event.key==='Enter')saveChangePwStaff()">
+      </div>
+    </div>
+    <div id="cpws-msg" class="text-sm mb-3 hidden"></div>
+    <div class="flex gap-2">
+      <button onclick="closeChangePwStaff()" class="flex-1 py-2.5 rounded-lg bg-slate-100 text-slate-600 font-semibold text-sm">ยกเลิก</button>
+      <button id="cpws-btn" onclick="saveChangePwStaff()" class="flex-1 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm">บันทึก</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
