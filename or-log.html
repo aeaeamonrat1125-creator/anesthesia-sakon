@@ -185,7 +185,6 @@
   © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · ยอดห้องผ่าตัด
 </footer>
 
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="supabase-config.js"></script>
 <script src="supabase-client.js"></script>
 <script>
@@ -198,29 +197,40 @@ window._liffAutoLink = async function() {
     if (!session?.access_token) return;
     await fetch('/api/line-auth', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'link', idToken: window._liffIdToken, accessToken: session.access_token }) }).catch(() => {});
-    sbUtils.toast('✅ ผูก LINE สำเร็จ', 'success');
+    if (typeof sbUtils !== 'undefined') sbUtils.toast('✅ ผูก LINE สำเร็จ — ครั้งถัดไปเข้าผ่าน LINE ได้เลย', 'success');
   } catch {}
 };
-window._liffAuthPromise = (async () => {
-  if (typeof liff === 'undefined') return;
-  try {
-    await liff.init({ liffId: '2011801505-Iu03s2xR' });
-    const st = new URLSearchParams(location.search).get('liff.state');
-    if (st) { try { const d=decodeURIComponent(st); if(d.startsWith('#')) history.replaceState(null,'',location.pathname+d); else if(d.includes('#')){const[p,h]=d.split('#');history.replaceState(null,'',(p||location.pathname)+'#'+h);} } catch {} }
-    if (!liff.isInClient()) return;
-    const idToken = liff.getIDToken(); if (!idToken) return;
-    const r = await fetch('/api/line-auth', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'login', idToken }) });
-    if (!r.ok) return; const d = await r.json();
-    if (d.linked && d.access_token) {
-      await window.sb.auth.setSession({ access_token: d.access_token, refresh_token: 'line-session' });
-      window.sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT' && liff?.isInClient?.()) setTimeout(() => location.reload(), 300); });
-    } else if (!d.linked) {
-      window._liffPendingLink = true; window._liffIdToken = idToken;
-      setTimeout(() => { const p=document.getElementById('loginPanel'); if(p&&!document.getElementById('liff-link-banner')) p.insertAdjacentHTML('afterbegin',`<div id="liff-link-banner" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:#166534"><b style="font-size:14px">🟢 เข้ามาจาก LINE</b><br><span style="font-size:12px;opacity:.85">ล็อกอิน 1 ครั้งเพื่อผูกบัญชี — ครั้งต่อไปไม่ต้องใส่รหัสผ่านอีก</span></div>`); }, 400);
-    }
-  } catch (e) { console.warn('[LIFF]', e.message); }
-})();
+window._liffAuthPromise = new Promise((resolve) => {
+  const LIFF_ID = '2011801505-Iu03s2xR';
+  const done = () => resolve();
+  const timer = setTimeout(done, 5000); // timeout 5 วิ กันค้าง
+  const s = document.createElement('script');
+  s.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
+  s.onerror = () => { clearTimeout(timer); done(); };
+  s.onload = async () => {
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      // restore hash จาก liff.state
+      const st = new URLSearchParams(location.search).get('liff.state');
+      if (st) { try { const dec = decodeURIComponent(st); if (dec.startsWith('#')) history.replaceState(null,'',location.pathname+dec); else if (dec.includes('#')) { const[p,h]=dec.split('#'); history.replaceState(null,'',(p||location.pathname)+'#'+h); } } catch {} }
+      if (!liff.isInClient()) { clearTimeout(timer); done(); return; }
+      const idToken = liff.getIDToken(); if (!idToken) { clearTimeout(timer); done(); return; }
+      const r = await fetch('/api/line-auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', idToken }) });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.linked && d.access_token) {
+          await window.sb.auth.setSession({ access_token: d.access_token, refresh_token: 'line-session' });
+          window.sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT' && liff?.isInClient?.()) setTimeout(() => location.reload(), 300); });
+        } else if (!d.linked) {
+          window._liffPendingLink = true; window._liffIdToken = idToken;
+          setTimeout(() => { const p = document.getElementById('loginPanel'); if (p && !document.getElementById('liff-link-banner')) p.insertAdjacentHTML('afterbegin', '<div id="liff-link-banner" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:#166534"><b style=\"font-size:14px\">🟢 เข้ามาจาก LINE</b><br><span style=\"font-size:12px;opacity:.85\">ล็อกอิน 1 ครั้งเพื่อผูกบัญชี — ครั้งต่อไปไม่ต้องใส่รหัสผ่านอีก</span></div>'); }, 400);
+        }
+      }
+    } catch (e) { console.warn('[LIFF]', e.message); }
+    clearTimeout(timer); done();
+  };
+  document.head.appendChild(s);
+});
 /* ─────────────────────────────────────────────────────────────── */
 </script>
 <script>
