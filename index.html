@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="th">
 <head>
+<!-- ถ้าเปิดจาก LINE → ไปหน้าล็อกอินเจ้าหน้าที่ทันที -->
+<script>
+  if (/Line\//i.test(navigator.userAgent)) {
+    var p = new URLSearchParams(location.search).get('liff.state') || '';
+    var dest = p.replace(/^\//, '') || 'staff.html';
+    if (!dest.includes('.html')) dest = 'staff.html';
+    location.replace(dest);
+  }
+</script>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร</title>
