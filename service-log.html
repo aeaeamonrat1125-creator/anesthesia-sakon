@@ -363,8 +363,10 @@
     <div class="section-h">หมายเหตุ / ผู้บันทึก</div>
     <div class="grid-2">
       <div>
-        <span class="lbl">ผู้บันทึก (พิมพ์ค้นหา หรือเลือกจากรายชื่อ)</span>
-        <input id="recorder" list="nurses-options" class="input" placeholder="พิมพ์ชื่อ-นามสกุล หรือเลื่อนเลือก..." autocomplete="off">
+        <span class="lbl">ผู้บันทึก</span>
+        <select id="recorder" class="input">
+          <option value="">— เลือกชื่อ —</option>
+        </select>
         <datalist id="nurses-options"></datalist>
         <datalist id="nurses-dl"></datalist>
         <datalist id="asst-dl"></datalist>
@@ -701,7 +703,7 @@
       <div class="grid-2">
         <div>
           <span class="lbl">ผู้บันทึก</span>
-          <input id="ot-recorder" list="nurses-options" class="input" placeholder="พิมพ์ชื่อ..." autocomplete="off">
+          <select id="ot-recorder" class="input"><option value="">— เลือกชื่อ —</option></select>
         </div>
         <div><span class="lbl">ตำแหน่ง</span><input id="ot-recorder-pos" class="input" value="พยาบาลวิสัญญี"></div>
       </div>
@@ -840,8 +842,8 @@
       <div class="font-semibold text-slate-700 text-sm border-l-4 border-slate-400 pl-3 mb-2">4. วิสัญญีพยาบาล / ผู้บันทึก</div>
       <div class="grid-2">
         <div>
-          <span class="lbl">ชื่อวิสัญญีพยาบาล (พิมพ์ค้นหา)</span>
-          <input id="pp-recorder" list="nurses-options" class="input" autocomplete="off" placeholder="พิมพ์ชื่อ...">
+          <span class="lbl">ชื่อวิสัญญีพยาบาล</span>
+          <select id="pp-recorder" class="input"><option value="">— เลือกชื่อ —</option></select>
         </div>
         <div>
           <span class="lbl">หมายเหตุ</span>
@@ -900,18 +902,23 @@ async function loadNurses() {
   } catch(e) { nursesList = []; }
   const nurses = nursesList.filter(n => n.role === 'พยาบาลวิสัญญี');
   const assts  = nursesList.filter(n => ['ผู้ช่วยพยาบาล','ผู้ช่วยเหลือคนไข้'].includes(n.role));
-  // datalist ทั่วไป
+  // datalist สำหรับ team cards นอกเวลา
   document.getElementById('nurses-options').innerHTML =
     nursesList.map(n => `<option value="${n.name}" label="${n.role}"></option>`).join('');
-  // datalist แยกสำหรับทีมนอกเวลา
   document.getElementById('nurses-dl').innerHTML =
     nurses.map(n => `<option value="${n.name}"></option>`).join('');
   document.getElementById('asst-dl').innerHTML =
     assts.map(n => `<option value="${n.name}"></option>`).join('');
+  // populate <select> dropdown ผู้บันทึก ทุกฟอร์ม
+  const opts = '<option value="">— เลือกชื่อ —</option>' +
+    nursesList.map(n => `<option value="${n.name}">${n.name}${n.role?' ('+n.role+')':''}</option>`).join('');
+  ['recorder','ot-recorder','pp-recorder'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.tagName === 'SELECT') el.innerHTML = opts;
+  });
   // auto-fill ตำแหน่ง
-  const inp = document.getElementById('recorder');
-  inp.addEventListener('input', () => {
-    const found = nursesList.find(n => n.name === inp.value);
+  document.getElementById('recorder')?.addEventListener('change', e => {
+    const found = nursesList.find(n => n.name === e.target.value);
     if (found) document.getElementById('recorder-pos').value = found.role;
   });
 }
