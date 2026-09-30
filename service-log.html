@@ -51,7 +51,6 @@
       <a href="index.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
       <a href="or-log.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏥 ยอดห้อง OR</a>
       <a href="service-report.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">📊 รายงาน</a>
-      <button id="changePwBtn" onclick="openChangePw()" class="hidden bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🔒 เปลี่ยนรหัสผ่าน</button>
       <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
     </div>
   </div>
@@ -980,7 +979,6 @@ async function ensureAuth() {
       const p = await sbAuth.getProfile().catch(() => null);
       document.getElementById('user-info').textContent = (p?.nickname || p?.full_name || u.email);
       document.getElementById('signOutBtn').classList.remove('hidden');
-      document.getElementById('changePwBtn').classList.remove('hidden');
       document.getElementById('loginOverlay').style.display = 'none';
       // recorder เป็น dropdown ดึงจาก nurses — ไม่ต้อง autofill จาก profile
       if (p?.position) document.getElementById('recorder-pos').value = p.position;
