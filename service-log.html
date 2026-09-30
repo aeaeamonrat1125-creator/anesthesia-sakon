@@ -51,6 +51,7 @@
       <a href="index.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏠 หน้าหลัก</a>
       <a href="or-log.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🏥 ยอดห้อง OR</a>
       <a href="service-report.html" class="bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">📊 รายงาน</a>
+      <button id="changePwBtn" onclick="openChangePw()" class="hidden bg-white/15 hover:bg-white/25 text-white text-sm px-3 py-1.5 rounded-lg">🔒 เปลี่ยนรหัสผ่าน</button>
       <button id="signOutBtn" onclick="signOut()" class="hidden bg-rose-500 hover:bg-rose-600 text-white text-sm px-3 py-1.5 rounded-lg">ออก</button>
     </div>
   </div>
@@ -865,6 +866,48 @@
 
 </main>
 
+<!-- ===== Modal เปลี่ยนรหัสผ่าน ===== -->
+<div id="changePwModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="font-bold text-lg">🔒 เปลี่ยนรหัสผ่าน</div>
+      <button onclick="closeChangePw()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+    </div>
+    <div class="space-y-3 mb-4">
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)</label>
+        <input id="cpw-new" type="password" class="input" placeholder="รหัสผ่านใหม่" autocomplete="new-password">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">ยืนยันรหัสผ่านใหม่</label>
+        <input id="cpw-confirm" type="password" class="input" placeholder="พิมพ์อีกครั้ง" autocomplete="new-password"
+          onkeydown="if(event.key==='Enter')saveChangePw()">
+      </div>
+    </div>
+    <div id="cpw-msg" class="text-sm mb-3 hidden"></div>
+    <div class="flex gap-2">
+      <button onclick="closeChangePw()" class="btn btn-ghost flex-1">ยกเลิก</button>
+      <button id="cpw-btn" onclick="saveChangePw()" class="btn btn-primary flex-1">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal แก้ไขบันทึก ===== -->
+<div id="editLogModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="font-bold text-lg" id="editLogTitle">✏️ แก้ไขบันทึก</div>
+      <button onclick="closeEditLog()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+    </div>
+    <div id="editLogBody" class="space-y-3"></div>
+    <div id="editLogMsg" class="text-sm mt-2 hidden"></div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="closeEditLog()" class="btn btn-ghost flex-1">ยกเลิก</button>
+      <button id="editLogBtn" onclick="saveEditLog()" class="btn btn-primary flex-1">💾 บันทึกการแก้ไข</button>
+    </div>
+  </div>
+</div>
+
 <footer class="text-center py-6 text-xs text-slate-500">
   © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · V2 Supabase
 </footer>
@@ -937,6 +980,7 @@ async function ensureAuth() {
       const p = await sbAuth.getProfile().catch(() => null);
       document.getElementById('user-info').textContent = (p?.nickname || p?.full_name || u.email);
       document.getElementById('signOutBtn').classList.remove('hidden');
+      document.getElementById('changePwBtn').classList.remove('hidden');
       document.getElementById('loginOverlay').style.display = 'none';
       // recorder เป็น dropdown ดึงจาก nurses — ไม่ต้อง autofill จาก profile
       if (p?.position) document.getElementById('recorder-pos').value = p.position;
@@ -955,6 +999,154 @@ async function signIn() {
   catch (e) { err.textContent = e.message; err.classList.remove('hidden'); }
 }
 async function signOut() { await sbAuth.signOut(); location.reload(); }
+
+// ===== เปลี่ยนรหัสผ่าน =====
+function openChangePw() {
+  document.getElementById('cpw-new').value = '';
+  document.getElementById('cpw-confirm').value = '';
+  document.getElementById('cpw-msg').classList.add('hidden');
+  const m = document.getElementById('changePwModal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+  setTimeout(() => document.getElementById('cpw-new').focus(), 100);
+}
+function closeChangePw() {
+  const m = document.getElementById('changePwModal');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+async function saveChangePw() {
+  const pw  = document.getElementById('cpw-new').value;
+  const pw2 = document.getElementById('cpw-confirm').value;
+  const msg = document.getElementById('cpw-msg');
+  const btn = document.getElementById('cpw-btn');
+  msg.classList.remove('hidden');
+  if (pw.length < 6) { msg.textContent = '❗ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; msg.style.color='#ef4444'; return; }
+  if (pw !== pw2)    { msg.textContent = '❗ รหัสผ่านทั้งสองช่องไม่ตรงกัน';        msg.style.color='#ef4444'; return; }
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  try {
+    const { error } = await window.sb.auth.updateUser({ password: pw });
+    if (error) throw error;
+    msg.textContent = '✅ เปลี่ยนรหัสผ่านสำเร็จ'; msg.style.color = '#16a34a';
+    setTimeout(closeChangePw, 1500);
+  } catch(e) {
+    msg.textContent = e.message || 'เกิดข้อผิดพลาด'; msg.style.color = '#ef4444';
+  }
+  btn.disabled = false; btn.textContent = 'บันทึก';
+}
+
+// ===== แก้ไขบันทึก =====
+let _editLogId = null, _editLogData = null;
+
+function openEditLog(id, data) {
+  _editLogId = id; _editLogData = data;
+  const m = data.metrics || {}, a = data.asa || {};
+  const isPP = data.type === 'preop_postop';
+  document.getElementById('editLogTitle').textContent = `✏️ แก้ไข ${sbUtils.fmtDate(data.date)} · ${data.type}`;
+  document.getElementById('editLogMsg').classList.add('hidden');
+  document.getElementById('editLogBody').innerHTML = isPP ? `
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="text-xs text-slate-500">วันที่</label><input id="el-date" type="date" class="input" value="${data.date||''}"></div>
+      <div><label class="text-xs text-slate-500">สาย</label><input id="el-point" class="input" value="${data.service_point||''}"></div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 mt-2">
+      <div><label class="text-xs text-slate-500">เยี่ยมก่อน (ก่อน14)</label><input id="el-pre-before" type="number" class="input" value="${m.pre_visit_before14||0}"></div>
+      <div><label class="text-xs text-slate-500">เยี่ยมก่อน (หลัง14)</label><input id="el-pre-after" type="number" class="input" value="${m.pre_visit_after14||0}"></div>
+      <div><label class="text-xs text-slate-500">เข้าเกณฑ์เยี่ยมหลัง</label><input id="el-post-elig" type="number" class="input" value="${m.post_eligible||0}"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-2 mt-2">
+      <div><label class="text-xs text-slate-500">เยี่ยมหลัง</label><input id="el-post-vis" type="number" class="input" value="${m.post_visited||0}"></div>
+      <div><label class="text-xs text-slate-500">ASA ≥ 3</label><input id="el-asa3" type="number" class="input" value="${m.asa_ge_3||0}"></div>
+    </div>
+    <div class="mt-2"><label class="text-xs text-slate-500">หมายเหตุ</label><textarea id="el-notes" class="input" rows="2">${data.notes||''}</textarea></div>
+  ` : `
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="text-xs text-slate-500">วันที่</label><input id="el-date" type="date" class="input" value="${data.date||''}"></div>
+      <div><label class="text-xs text-slate-500">จุดบริการ</label><input id="el-point" class="input" value="${data.service_point||''}"></div>
+    </div>
+    <div class="grid grid-cols-4 gap-2 mt-2">
+      <div><label class="text-xs text-slate-500">Pt รวม</label><input id="el-total" type="number" class="input" value="${m.total||0}"></div>
+      <div><label class="text-xs text-slate-500">GA</label><input id="el-ga" type="number" class="input" value="${m.ga||0}"></div>
+      <div><label class="text-xs text-slate-500">RA</label><input id="el-ra" type="number" class="input" value="${m.ra||0}"></div>
+      <div><label class="text-xs text-slate-500">MAC</label><input id="el-mac" type="number" class="input" value="${m.mac||0}"></div>
+    </div>
+    <div class="grid grid-cols-5 gap-2 mt-2">
+      ${['ASA1','ASA2','ASA3','ASA4','ASA5'].map(k=>`<div><label class="text-xs text-slate-500">${k}</label><input id="el-${k.toLowerCase()}" type="number" class="input" value="${a[k]||0}"></div>`).join('')}
+    </div>
+    <div class="grid grid-cols-5 gap-2 mt-2">
+      ${['ASA1E','ASA2E','ASA3E','ASA4E','ASA5E'].map(k=>`<div><label class="text-xs text-amber-500">${k}</label><input id="el-${k.toLowerCase()}" type="number" class="input" value="${a[k]||0}"></div>`).join('')}
+    </div>
+    <div class="mt-2"><label class="text-xs text-slate-500">หมายเหตุ</label><textarea id="el-notes" class="input" rows="2">${data.notes||''}</textarea></div>
+  `;
+  const modal = document.getElementById('editLogModal');
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+}
+function closeEditLog() {
+  document.getElementById('editLogModal').classList.add('hidden');
+  document.getElementById('editLogModal').classList.remove('flex');
+  _editLogId = null; _editLogData = null;
+}
+async function saveEditLog() {
+  if (!currentUser || !_editLogId) return;
+  const btn = document.getElementById('editLogBtn');
+  const msg = document.getElementById('editLogMsg');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  const isPP = _editLogData.type === 'preop_postop';
+  const now  = new Date().toLocaleString('th-TH');
+  const editor = document.getElementById('user-info').textContent || currentUser.email;
+
+  let patch;
+  if (isPP) {
+    const preBefore = parseInt(document.getElementById('el-pre-before').value)||0;
+    const preAfter  = parseInt(document.getElementById('el-pre-after').value)||0;
+    const postElig  = parseInt(document.getElementById('el-post-elig').value)||0;
+    const postVis   = parseInt(document.getElementById('el-post-vis').value)||0;
+    patch = {
+      date: document.getElementById('el-date').value,
+      service_point: document.getElementById('el-point').value,
+      metrics: { ..._editLogData.metrics,
+        pre_visit_before14: preBefore, pre_visit_after14: preAfter,
+        pre_visit_total: preBefore + preAfter,
+        post_eligible: postElig, post_visited: postVis,
+        post_not_visited: Math.max(0, postElig - postVis),
+        asa_ge_3: parseInt(document.getElementById('el-asa3').value)||0,
+      },
+      notes: document.getElementById('el-notes').value + `\n[แก้ไขเมื่อ ${now} โดย ${editor}]`
+    };
+  } else {
+    patch = {
+      date: document.getElementById('el-date').value,
+      service_point: document.getElementById('el-point').value,
+      location: document.getElementById('el-point').value,
+      metrics: { ..._editLogData.metrics,
+        total: parseInt(document.getElementById('el-total').value)||0,
+        ga:    parseInt(document.getElementById('el-ga').value)||0,
+        ra:    parseInt(document.getElementById('el-ra').value)||0,
+        mac:   parseInt(document.getElementById('el-mac').value)||0,
+      },
+      asa: {
+        ASA1:  parseInt(document.getElementById('el-asa1').value)||0,
+        ASA2:  parseInt(document.getElementById('el-asa2').value)||0,
+        ASA3:  parseInt(document.getElementById('el-asa3').value)||0,
+        ASA4:  parseInt(document.getElementById('el-asa4').value)||0,
+        ASA5:  parseInt(document.getElementById('el-asa5').value)||0,
+        ASA1E: parseInt(document.getElementById('el-asa1e').value)||0,
+        ASA2E: parseInt(document.getElementById('el-asa2e').value)||0,
+        ASA3E: parseInt(document.getElementById('el-asa3e').value)||0,
+        ASA4E: parseInt(document.getElementById('el-asa4e').value)||0,
+        ASA5E: parseInt(document.getElementById('el-asa5e').value)||0,
+      },
+      notes: document.getElementById('el-notes').value + `\n[แก้ไขเมื่อ ${now} โดย ${editor}]`
+    };
+  }
+  try {
+    await sbDB.update('service_logs', _editLogId, patch);
+    sbUtils.toast('✅ แก้ไขบันทึกสำเร็จ','success');
+    closeEditLog();
+    loadHistory();
+  } catch(e) {
+    msg.textContent = e.message; msg.classList.remove('hidden'); msg.style.color='#ef4444';
+  }
+  btn.disabled = false; btn.textContent = '💾 บันทึกการแก้ไข';
+}
 function showForgotPw(show) {
   document.getElementById('loginPanel').style.display = show ? 'none' : '';
   document.getElementById('forgotPanel').style.display = show ? '' : 'none';
@@ -1284,9 +1476,12 @@ async function loadHistory() {
         </div>
         ${h.photo_url ? `<a href="${h.photo_url}" target="_blank" class="text-xs text-blue-600 mt-0.5 block">📷 ดูรูป</a>` : ''}
       </div>
+      <button onclick="openEditLog('${h.id}',_histCache['${h.id}'])"
+        class="flex-shrink-0 text-xs bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-2 py-1 rounded-lg transition">✏️</button>
     </div>
   `;
   }).join('');
+  window._histCache = Object.fromEntries(hist.map(h=>[h.id,h]));
 }
 
 // ===== HELPER =====
