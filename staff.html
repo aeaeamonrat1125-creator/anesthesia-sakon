@@ -837,6 +837,10 @@
 </div>
 
 <footer class="text-center py-6 text-xs text-slate-500">
+  <button id="changePwFooterBtn" onclick="openChangePwStaff()"
+    class="hidden mb-4 mx-auto block bg-white border border-violet-200 text-violet-600 hover:bg-violet-50 font-semibold text-sm px-6 py-2.5 rounded-full shadow-sm transition">
+    🔒 เปลี่ยนรหัสผ่าน
+  </button>
   © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · V2 Supabase
 </footer>
 
@@ -942,7 +946,7 @@ async function ensureAuth() {
       currentProfile = await sbAuth.getProfile().catch(() => null);
       const uLabel = `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
       ['user-info'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=uLabel; });
-      ['signOutBtn','changePwBtnStaff'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
+      ['signOutBtn','changePwBtnStaff','changePwFooterBtn'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
       // ปุ่ม unlink LINE (แสดงเมื่อผูกบัญชีแล้ว)
       if (currentProfile?.line_user_id && !document.getElementById('unlinkLineBtn')) {
         document.getElementById('signOutBtn')?.insertAdjacentHTML('beforebegin',
