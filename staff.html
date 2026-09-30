@@ -840,7 +840,74 @@
 </footer>
 
 <script src="supabase-config.js"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="supabase-client.js"></script>
+<script>
+/* ── LIFF Auth ─────────────────────────────────────────────────── */
+window._liffPendingLink = false;
+window._liffIdToken     = null;
+window._liffAutoLink    = async function() {
+  if (!window._liffPendingLink || !window._liffIdToken) return;
+  try {
+    const { data: { session } } = await window.sb.auth.getSession();
+    if (!session?.access_token) return;
+    const r = await fetch('/api/line-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'link', idToken: window._liffIdToken, accessToken: session.access_token })
+    });
+    const d = await r.json();
+    if (d.ok && typeof sbUtils !== 'undefined')
+      sbUtils.toast('✅ ผูก LINE สำเร็จ — ครั้งถัดไปเข้าผ่าน LINE ได้เลย', 'success');
+  } catch {}
+};
+window._liffAuthPromise = (async () => {
+  if (typeof liff === 'undefined') return;
+  try {
+    await liff.init({ liffId: '2011801505-Iu03s2xR' });
+    // restore hash จาก liff.state
+    const st = new URLSearchParams(location.search).get('liff.state');
+    if (st) {
+      try {
+        const dec = decodeURIComponent(st);
+        if (dec.startsWith('#')) history.replaceState(null, '', location.pathname + dec);
+        else if (dec.includes('#')) {
+          const [p, h] = dec.split('#');
+          history.replaceState(null, '', (p || location.pathname) + '#' + h);
+        }
+      } catch {}
+    }
+    if (!liff.isInClient()) return;
+    const idToken = liff.getIDToken();
+    if (!idToken) return;
+    const r = await fetch('/api/line-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', idToken })
+    });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.linked && d.access_token) {
+      await window.sb.auth.setSession({ access_token: d.access_token, refresh_token: 'line-session' });
+      window.sb.auth.onAuthStateChange((ev) => {
+        if (ev === 'SIGNED_OUT' && liff?.isInClient?.()) setTimeout(() => location.reload(), 300);
+      });
+    } else if (!d.linked) {
+      window._liffPendingLink = true;
+      window._liffIdToken     = idToken;
+      setTimeout(() => {
+        const panel = document.getElementById('loginPanel');
+        if (panel && !document.getElementById('liff-link-banner'))
+          panel.insertAdjacentHTML('afterbegin', `
+            <div id="liff-link-banner" style="background:#f0fdf4;border:1.5px solid #bbf7d0;
+              border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:#166534">
+              <b style="font-size:14px">🟢 เข้ามาจาก LINE</b><br>
+              <span style="font-size:12px;opacity:.85">ล็อกอิน 1 ครั้งเพื่อผูกบัญชี — ครั้งต่อไปไม่ต้องใส่รหัสผ่านอีก</span>
+            </div>`);
+      }, 400);
+    }
+  } catch (e) { console.warn('[LIFF]', e.message); }
+})();
+/* ─────────────────────────────────────────────────────────────── */
+</script>
 <script>
 let currentUser = null, currentProfile = null;
 const cache = { staff:[], equipment:[], schedule:[], meetings:[], activities:[], refers:[], documents:[], docTypes:[], ops:[], kpis:[], kpiHistory:[], announcements:[], nurses:[], orgChart:[], lineTokens:[] };
@@ -925,6 +992,17 @@ async function ensureAuth() {
       const uLabel = `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
       ['user-info'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=uLabel; });
       ['signOutBtn'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
+      // ปุ่ม unlink LINE (แสดงเมื่อผูกบัญชีแล้ว)
+      if (currentProfile?.line_user_id && !document.getElementById('unlinkLineBtn')) {
+        document.getElementById('signOutBtn')?.insertAdjacentHTML('beforebegin',
+          `<button id="unlinkLineBtn" onclick="unlinkLine()"
+            class="topbar-btn hidden"
+            style="background:rgba(255,255,255,.15);color:#fff;border:none;cursor:pointer;
+                   padding:6px 10px;border-radius:6px;font-size:12px;font-family:inherit">
+            🟢 ผูก LINE แล้ว
+          </button>`);
+        document.getElementById('unlinkLineBtn')?.classList.remove('hidden');
+      }
       // แสดงเมนู Admin เฉพาะ Admin (role หรือ is_admin)
       const isAdmin = currentProfile?.role === 'admin' || currentProfile?.is_admin === true;
       if (isAdmin) {
@@ -951,12 +1029,25 @@ async function signIn() {
   err.classList.add('hidden');
   try {
     await sbAuth.signIn(email, pwd);
+    await window._liffAutoLink?.();
     document.getElementById('loginOverlay').style.display = 'none';
     location.reload();
   } catch (e) {
     err.textContent = e.message || 'เข้าสู่ระบบล้มเหลว';
     err.classList.remove('hidden');
   }
+}
+async function unlinkLine() {
+  if (!confirm('ยืนยันยกเลิกการผูก LINE?\n(ต้องใช้รหัสผ่านปกติในการเข้าสู่ระบบครั้งถัดไป)')) return;
+  const { data: { session } } = await window.sb.auth.getSession();
+  if (!session?.access_token) { sbUtils.toast('กรุณาล็อกอินก่อน','error'); return; }
+  const r = await fetch('/api/line-auth', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'unlink', accessToken: session.access_token })
+  });
+  const d = await r.json();
+  if (d.ok) { sbUtils.toast('✅ ยกเลิกการผูก LINE แล้ว','success'); document.getElementById('unlinkLineBtn')?.remove(); }
+  else sbUtils.toast(d.error || 'เกิดข้อผิดพลาด','error');
 }
 async function signUp() {
   const email = document.getElementById('loginEmail').value.trim();
@@ -2949,6 +3040,7 @@ function toggleStaffMoreMenu() {
 
 // ===== INIT =====
 (async () => {
+  if (window._liffAuthPromise) await window._liffAuthPromise;
   await ensureAuth();
   // auto-open forgot panel ถ้ามาจาก reset-password.html ที่ลิ้งก์หมดอายุ
   if (localStorage.getItem('openForgot')) {
