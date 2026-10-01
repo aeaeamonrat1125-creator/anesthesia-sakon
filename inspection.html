@@ -26,29 +26,35 @@
   .btn-primary { background:#2563eb; color:#fff; }
   .btn-primary:active { background:#1d4ed8; transform:scale(0.98); }
   .btn-ghost { background:#334155; color:#f1f5f9; }
-  .check-row { display:flex; align-items:flex-start; gap:8px; padding:12px 14px;
-    background:#0f172a; border:1px solid #334155; border-radius:12px;
+  /* checklist rows */
+  .check-row { display:flex; align-items:flex-start; gap:8px; padding:10px 12px;
+    background:#0a1120; border:1px solid #1e293b; border-radius:10px;
     font-size:14px; transition:all .12s; }
   .check-row .name { flex:1; min-width:0; }
   .pill-group { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; flex-shrink:0; }
-  .pill { padding:6px 10px; border-radius:999px; font-size:12px; font-weight:600;
-    background:#334155; color:#cbd5e1; border:1px solid #475569; cursor:pointer;
+  .pill { padding:5px 9px; border-radius:999px; font-size:12px; font-weight:600;
+    background:#1e293b; color:#cbd5e1; border:1px solid #475569; cursor:pointer;
     user-select:none; transition:all .12s; white-space:nowrap; }
   .pill[data-active="yes"] { background:#10b981; color:#fff; border-color:#10b981; }
   .pill[data-active="no"]  { background:#ef4444; color:#fff; border-color:#ef4444; }
   .pill[data-active="na"]  { background:#f59e0b; color:#fff; border-color:#f59e0b; }
-  .check-row.has-issue { border-color:#ef4444; background:rgba(127,29,29,.25); }
-  .check-row.is-ok     { border-color:#10b981; background:rgba(6,78,59,.25); }
-  .check-row.is-na     { border-color:#f59e0b; background:rgba(120,53,15,.25); }
-  /* Dashboard */
+  .check-row.has-issue { border-color:#ef4444; background:rgba(127,29,29,.22); }
+  .check-row.is-ok     { border-color:#10b981; background:rgba(6,78,59,.22); }
+  .check-row.is-na     { border-color:#f59e0b; background:rgba(120,53,15,.22); }
+  /* equipment card */
+  .eq-card { border:1px solid #334155; border-radius:14px; overflow:hidden; margin-bottom:14px; }
+  .eq-card-hd { background:#1e293b; padding:10px 14px; display:flex; align-items:flex-start; gap:8px; }
+  .eq-card-hd-info { flex:1; min-width:0; }
+  .eq-card-hd-act { display:flex; align-items:center; gap:6px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+  .eq-card-body { background:#0f172a; padding:8px; display:flex; flex-direction:column; gap:6px; }
+  /* dashboard */
   .dash-room { font-size:12px; font-weight:700; padding:8px 12px; border-radius:12px;
     cursor:pointer; border:none; color:#fff; text-align:center; min-width:64px;
-    transition:transform .1s, opacity .1s; line-height:1.4; }
+    transition:transform .1s; line-height:1.4; }
   .dash-room:active { transform:scale(.95); }
   .dash-green  { background:#10b981; }
   .dash-yellow { background:#f59e0b; }
   .dash-red    { background:#ef4444; }
-  .dash-empty  { background:#334155; opacity:.55; }
   body.fs-mode header { display:none !important; }
   .show-menu-btn { display:none; position:fixed; top:12px; right:12px; z-index:50;
     background:#2563eb; color:#fff; padding:10px 14px; border-radius:999px;
@@ -123,7 +129,7 @@
       <div class="text-slate-400 text-sm py-1">⏳ กำลังโหลด...</div>
     </div>
     <div class="flex gap-4 mt-3 text-xs text-slate-400 flex-wrap">
-      <span><span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1 align-middle"></span>ตรวจครบทุกเครื่อง</span>
+      <span><span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1 align-middle"></span>ตรวจครบทุกรายการ</span>
       <span><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mr-1 align-middle"></span>ตรวจบางส่วน</span>
       <span><span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mr-1 align-middle"></span>ยังไม่ตรวจ</span>
     </div>
@@ -160,8 +166,8 @@
   </div>
 
   <!-- Machine Section -->
-  <div class="card p-4 space-y-2" id="machineSection">
-    <div class="flex items-center justify-between mb-2">
+  <div class="card p-4" id="machineSection">
+    <div class="flex items-center justify-between mb-3">
       <div class="font-semibold text-emerald-300">Machine — Anesthesia</div>
       <div class="flex gap-1">
         <button class="text-xs px-2 py-1 bg-emerald-700 rounded" onclick="bulkSet('machine','yes')">ทั้งหมด พร้อม</button>
@@ -179,8 +185,8 @@
   </div>
 
   <!-- Monitor Section -->
-  <div class="card p-4 space-y-2 hidden" id="monitorSection">
-    <div class="flex items-center justify-between mb-2">
+  <div class="card p-4 hidden" id="monitorSection">
+    <div class="flex items-center justify-between mb-3">
       <div class="font-semibold text-blue-300">Monitor</div>
       <div class="flex gap-1">
         <button class="text-xs px-2 py-1 bg-emerald-700 rounded" onclick="bulkSet('monitor','yes')">ทั้งหมด พร้อม</button>
@@ -244,72 +250,91 @@ window._liffAuthPromise = (async () => {
     const d = await r.json();
     if (d.access_token)
       await window.sb.auth.setSession({ access_token: d.access_token, refresh_token: d.refresh_token });
-  } catch (e) { console.warn('[LINE]', e.message); }
+  } catch(e) { console.warn('[LINE]', e.message); }
 })();
 </script>
 <script>
 let currentUser = null, nursesList = [];
 
+/* ── Checklist definitions ─────────────────────── */
+const MACHINE_ITEMS = [
+  { code:'M01', name:'N2O, O2 มีปริมาณเพียงพอ' },
+  { code:'M02', name:'ถัง O2 มีปริมาณเพียงพอ' },
+  { code:'M03', name:'การทำงานของ Vaporizer พร้อมใช้งาน' },
+  { code:'M04', name:'Breathing system พร้อมใช้' },
+  { code:'M05', name:'Pop off valve ทำงานได้ดี' },
+  { code:'M06', name:'Scavenging ใช้งานได้ดี' },
+  { code:'M07', name:'Ventilator พร้อมใช้งาน' },
+  { code:'M08', name:'ทำความสะอาด Water trap CO2' },
+  { code:'M09', name:'ตรวจสอบความพร้อมใช้ Water trap (Pipeline)' },
+  { code:'M10', name:'Desflurane, Sevoflurane (1,1)' },
+  { code:'M11', name:'Laryngoscope No 0,1,2,3,4 (1,1,1,1,1)' },
+  { code:'M12', name:'Face mask No.3,4,5 (2,2,1)' },
+  { code:'M13', name:'Stylet เด็ก, ผู้ใหญ่ (1,1)' },
+  { code:'M14', name:'Syringe 10 ml' },
+  { code:'M15', name:'Stethoscope' },
+  { code:'M16', name:'Magill forceps' },
+  { code:'M17', name:'Ambu bag + สายต่อ' },
+];
+const MONITOR_ITEMS = [
+  { code:'V01', name:'NIBP (1)' },
+  { code:'V02', name:'SpO₂ (Adult=1, Ped=1, Neo=1)' },
+  { code:'V03', name:'EKG (1)' },
+  { code:'V04', name:'Temp (Adult=1, Ped=1)' },
+  { code:'V05', name:'Cable A-line (2)' },
+  { code:'V06', name:'Cuff BP Adult (M=1, L=1)' },
+  { code:'V07', name:'Cuff BP Ped (S=1, M=1)' },
+  { code:'V08', name:'EtCO₂ (side=1)' },
+];
+const PILL_COLORS = { yes:'#10b981', no:'#ef4444', na:'#f59e0b' };
+
+function getCheckItems(kind) { return kind === 'machine' ? MACHINE_ITEMS : MONITOR_ITEMS; }
+
+/* ── Equipment & State ──────────────────────────── */
 const ROOMS_FALLBACK = [
   'OR1','OR2','OR3','OR4','OR5','OR6','OR7','OR8','OR9','OR10','OR11','OR12',
   'OR41','OR42','OR43','OR44','OR45',
   'OR CVT1','OR CVT2','ESWL','Cath Lab',
-  'RR2','RR3','RR ตึกหัวใจ',
-  'PACU','ส่วนกลาง'
+  'RR2','RR3','RR ตึกหัวใจ','PACU','ส่วนกลาง'
 ];
+let _eqLocations = [];
+let _eqByLocation = {};
+let currentEquipment = { machine:[], monitor:[] };
+// states[kind][eqId][checkCode] = 'yes'|'no'|'na'
+let states = { machine:{}, monitor:{} };
 
-let _eqLocations = [];    // unique locations from equipment table
-let _eqByLocation = {};   // { location: { machine:[], monitor:[] } }
-let currentEquipment = { machine: [], monitor: [] };
-let states = { machine: {}, monitor: {} };
-
-/* ── Load all equipment (once) ─── */
 async function loadAllEquipment() {
   try {
-    const { data, error } = await sb.from('equipment').select('*').order('name', { ascending: true });
+    const { data, error } = await sb.from('equipment').select('*').order('name', { ascending:true });
     if (error) throw error;
     _eqByLocation = {};
-    (data || []).forEach(eq => {
-      const loc = eq.location;
-      if (!loc) return;
-      if (!_eqByLocation[loc]) _eqByLocation[loc] = { machine: [], monitor: [] };
+    (data||[]).forEach(eq => {
+      const loc = eq.location; if (!loc) return;
+      if (!_eqByLocation[loc]) _eqByLocation[loc] = { machine:[], monitor:[] };
       if (eq.kind === 'Machine') _eqByLocation[loc].machine.push(eq);
       else if (eq.kind === 'Monitor') _eqByLocation[loc].monitor.push(eq);
     });
     _eqLocations = Object.keys(_eqByLocation).sort((a,b) => a.localeCompare(b,'th'));
-  } catch(e) {
-    console.warn('loadAllEquipment:', e.message);
-    _eqLocations = [];
-  }
+  } catch(e) { console.warn('loadAllEquipment:', e.message); _eqLocations = []; }
 }
 
 function populateRooms() {
-  const withEq  = _eqLocations;
-  const without = ROOMS_FALLBACK.filter(r => !withEq.includes(r));
-  const all = [...withEq, ...without];
-  document.getElementById('inspRoom').innerHTML = all.map(r => {
-    const hasEq = withEq.includes(r);
-    return `<option value="${r}">${r}${hasEq ? '' : ' *'}</option>`;
-  }).join('');
+  const without = ROOMS_FALLBACK.filter(r => !_eqLocations.includes(r));
+  const all = [..._eqLocations, ...without];
+  document.getElementById('inspRoom').innerHTML = all.map(r =>
+    `<option value="${r}">${r}${_eqLocations.includes(r) ? '' : ' *'}</option>`
+  ).join('');
   if (all.length > 0) onRoomChange(all[0]);
 }
 
 function onRoomChange(room) {
-  if (!room) { currentEquipment = { machine:[], monitor:[] }; renderLists(); return; }
   states = { machine:{}, monitor:{} };
-  if (_eqByLocation[room]) {
-    currentEquipment.machine = _eqByLocation[room].machine;
-    currentEquipment.monitor = _eqByLocation[room].monitor;
-  } else {
-    currentEquipment = { machine:[], monitor:[] };
-  }
-  renderLists();
-  updateTabCounts();
-}
-
-function renderLists() {
+  currentEquipment = _eqByLocation[room]
+    ? { machine:[..._eqByLocation[room].machine], monitor:[..._eqByLocation[room].monitor] }
+    : { machine:[], monitor:[] };
   renderEquipmentList('machine');
   renderEquipmentList('monitor');
+  updateTabCounts();
 }
 
 function updateTabCounts() {
@@ -319,61 +344,103 @@ function updateTabCounts() {
   document.getElementById('monitorCnt').textContent = v ? `(${v})` : '';
 }
 
+/* ── Render equipment cards with sub-checklist ── */
 function renderEquipmentList(kind) {
-  const items = currentEquipment[kind];
-  const el = document.getElementById(kind + 'List');
-  if (!items || items.length === 0) {
-    const typeName = kind === 'machine' ? 'Machine' : 'Monitor';
+  const eqList    = currentEquipment[kind];
+  const checkList = getCheckItems(kind);
+  const el        = document.getElementById(kind + 'List');
+
+  if (!eqList || eqList.length === 0) {
     el.innerHTML = `<div class="text-slate-400 text-sm py-3 text-center">
-      ไม่พบ ${typeName} ในทะเบียนของห้องนี้<br>
+      ไม่พบ ${kind==='machine'?'Machine':'Monitor'} ในทะเบียนของห้องนี้<br>
       <span class="text-xs">เพิ่มได้ที่ บุคลากร → ทะเบียนเครื่องมือ</span>
     </div>`;
     return;
   }
-  el.innerHTML = items.map(eq => {
-    const st = states[kind][eq.id] || '';
-    const cls = st === 'yes' ? 'is-ok' : st === 'no' ? 'has-issue' : st === 'na' ? 'is-na' : '';
+
+  el.innerHTML = eqList.map(eq => {
+    const eqSt   = states[kind][eq.id] || {};
+    const done   = checkList.filter(c => eqSt[c.code] && eqSt[c.code] !== 'pending').length;
+    const issues = checkList.filter(c => eqSt[c.code] === 'no').length;
+    const total  = checkList.length;
+    const statusCls  = issues > 0 ? 'text-rose-400' : done === total ? 'text-emerald-400' : 'text-slate-400';
+    const statusText = issues > 0 ? `⚠️ ${issues} รายการ` : done === total ? `✓ ครบ ${total}` : `${done}/${total}`;
+
     const desc = [eq.brand, eq.model].filter(Boolean).join(' / ');
     const sub  = [eq.asset_no, eq.skh].filter(Boolean).join(' · ');
-    return `<div class="check-row mb-2 ${cls}" data-id="${eq.id}">
-      <div class="name">
-        <div class="font-medium text-sm">${eq.name || eq.kind}</div>
-        ${desc ? `<div class="text-xs text-slate-400">${desc}</div>` : ''}
-        ${sub  ? `<div class="text-xs text-slate-500">${sub}</div>` : ''}
+
+    const rows = checkList.map(c => {
+      const st  = eqSt[c.code] || '';
+      const cls = st==='yes'?'is-ok':st==='no'?'has-issue':st==='na'?'is-na':'';
+      return `<div class="check-row ${cls}">
+        <div class="name">
+          <div class="font-medium text-sm">${c.name}</div>
+          <div class="text-xs text-slate-500">${c.code}</div>
+        </div>
+        <div class="pill-group">
+          <button class="pill" data-active="${st==='yes'?'yes':''}" onclick="setState('${kind}','${eq.id}','${c.code}','yes')">พร้อม</button>
+          <button class="pill" data-active="${st==='no'?'no':''}" onclick="setState('${kind}','${eq.id}','${c.code}','no')">ไม่พร้อม</button>
+          <button class="pill" data-active="${st==='na'?'na':''}" onclick="setState('${kind}','${eq.id}','${c.code}','na')">ไม่มี</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="eq-card">
+      <div class="eq-card-hd">
+        <div class="eq-card-hd-info">
+          <div class="font-semibold text-sm">${eq.name || eq.kind}</div>
+          ${desc ? `<div class="text-xs text-slate-400 mt-0.5">${desc}</div>` : ''}
+          ${sub  ? `<div class="text-xs text-slate-500">${sub}</div>` : ''}
+        </div>
+        <div class="eq-card-hd-act">
+          <span class="text-xs font-bold ${statusCls}">${statusText}</span>
+          <button class="text-xs px-2 py-0.5 bg-emerald-700/70 rounded" onclick="bulkSetEq('${kind}','${eq.id}','yes')">✓ ทั้งหมด</button>
+          <button class="text-xs px-2 py-0.5 bg-rose-700/70 rounded" onclick="bulkSetEq('${kind}','${eq.id}','no')">✗ ทั้งหมด</button>
+          <button class="text-xs px-2 py-0.5 bg-slate-600 rounded" onclick="bulkSetEq('${kind}','${eq.id}','')">↺</button>
+        </div>
       </div>
-      <div class="pill-group">
-        <button class="pill" data-active="${st==='yes'?'yes':''}" onclick="setState('${kind}','${eq.id}','yes')">พร้อม</button>
-        <button class="pill" data-active="${st==='no'?'no':''}" onclick="setState('${kind}','${eq.id}','no')">ไม่พร้อม</button>
-        <button class="pill" data-active="${st==='na'?'na':''}" onclick="setState('${kind}','${eq.id}','na')">ไม่มี</button>
-      </div>
+      <div class="eq-card-body">${rows}</div>
     </div>`;
   }).join('');
 }
 
-function setState(kind, id, val) {
-  if (states[kind][id] === val) delete states[kind][id];
-  else states[kind][id] = val;
+function setState(kind, eqId, code, val) {
+  if (!states[kind][eqId]) states[kind][eqId] = {};
+  if (states[kind][eqId][code] === val) delete states[kind][eqId][code];
+  else states[kind][eqId][code] = val;
+  renderEquipmentList(kind);
+}
+
+function bulkSetEq(kind, eqId, val) {
+  if (!states[kind][eqId]) states[kind][eqId] = {};
+  const checks = getCheckItems(kind);
+  if (val) checks.forEach(c => { states[kind][eqId][c.code] = val; });
+  else states[kind][eqId] = {};
   renderEquipmentList(kind);
 }
 
 function bulkSet(kind, val) {
   states[kind] = {};
-  if (val) currentEquipment[kind].forEach(eq => { states[kind][eq.id] = val; });
+  const checks = getCheckItems(kind);
+  currentEquipment[kind].forEach(eq => {
+    states[kind][eq.id] = {};
+    if (val) checks.forEach(c => { states[kind][eq.id][c.code] = val; });
+  });
   renderEquipmentList(kind);
 }
 
 function switchSection(s) {
-  document.querySelectorAll('.tab-pill').forEach(b => b.classList.toggle('active', b.dataset.section === s));
-  document.getElementById('machineSection').classList.toggle('hidden', s !== 'machine');
-  document.getElementById('monitorSection').classList.toggle('hidden', s !== 'monitor');
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.toggle('active', b.dataset.section===s));
+  document.getElementById('machineSection').classList.toggle('hidden', s!=='machine');
+  document.getElementById('monitorSection').classList.toggle('hidden', s!=='monitor');
 }
 
 function toggleFullscreen(on) {
-  if (on === undefined) on = !document.body.classList.contains('fs-mode');
+  if (on===undefined) on = !document.body.classList.contains('fs-mode');
   document.body.classList.toggle('fs-mode', !!on);
-  try { localStorage.setItem('anes_fs_insp', on ? '1' : '0'); } catch(e){}
+  try { localStorage.setItem('anes_fs_insp', on?'1':'0'); } catch(e){}
 }
-try { if (localStorage.getItem('anes_fs_insp') === '1') toggleFullscreen(true); } catch(e){}
+try { if (localStorage.getItem('anes_fs_insp')==='1') toggleFullscreen(true); } catch(e){}
 
 /* ── DASHBOARD ─────────────────────────────────── */
 async function loadDashboard(date) {
@@ -381,27 +448,27 @@ async function loadDashboard(date) {
   grid.innerHTML = '<div class="text-slate-400 text-sm py-1">⏳ กำลังโหลด...</div>';
   try {
     if (_eqLocations.length === 0) {
-      grid.innerHTML = '<div class="text-slate-400 text-sm">ยังไม่มีเครื่องมือในทะเบียน</div>';
-      return;
+      grid.innerHTML = '<div class="text-slate-400 text-sm">ยังไม่มีเครื่องมือในทะเบียน</div>'; return;
     }
-    // Load today inspections
     const { data: inspData, error } = await sb.from('daily_inspections')
       .select('room,items').eq('date', date);
     if (error) throw error;
 
-    // Build room status: latest record per room
     const roomStatus = {};
-    (inspData || []).forEach(insp => {
-      if (roomStatus[insp.room]) return; // already processed (ordered latest first)
-      const allItems = [...(insp.items?.machine||[]), ...(insp.items?.monitor||[])];
-      const hasPending = allItems.some(i => !i.state || i.state === 'pending');
+    (inspData||[]).forEach(insp => {
+      if (roomStatus[insp.room]) return;
+      const allEq = [...(insp.items?.machine||[]), ...(insp.items?.monitor||[])];
+      const hasPending = allEq.some(eq => {
+        if (eq.checks) return eq.checks.some(c => !c.state || c.state==='pending');
+        return !eq.state || eq.state==='pending';
+      });
       roomStatus[insp.room] = hasPending ? 'yellow' : 'green';
     });
 
     grid.innerHTML = _eqLocations.map(loc => {
       const status = roomStatus[loc] || 'red';
-      const cls = status === 'green' ? 'dash-green' : status === 'yellow' ? 'dash-yellow' : 'dash-red';
-      const icon = status === 'green' ? '✓' : status === 'yellow' ? '△' : '!';
+      const cls  = status==='green'?'dash-green':status==='yellow'?'dash-yellow':'dash-red';
+      const icon = status==='green'?'✓':status==='yellow'?'△':'!';
       const mCnt = (_eqByLocation[loc]?.machine||[]).length;
       const vCnt = (_eqByLocation[loc]?.monitor||[]).length;
       return `<button class="dash-room ${cls}" onclick="selectRoomFromDash('${loc}')">
@@ -433,7 +500,7 @@ async function ensureAuth() {
     if (u) {
       currentUser = u;
       const p = await sbAuth.getProfile().catch(() => null);
-      document.getElementById('user-info').textContent = (p?.nickname || p?.full_name || u.email);
+      document.getElementById('user-info').textContent = (p?.nickname||p?.full_name||u.email);
       document.getElementById('signOutBtn').classList.remove('hidden');
       document.getElementById('loginOverlay').style.display = 'none';
       if (p?.full_name) document.getElementById('inspNurse').value = p.full_name;
@@ -448,37 +515,30 @@ async function signIn() {
   const pwd   = document.getElementById('loginPassword').value;
   const err   = document.getElementById('loginError');
   err.classList.add('hidden');
-  try { await sbAuth.signIn(email, pwd); await window._liffAutoLink?.(); location.reload(); }
-  catch(e) { err.textContent = e.message; err.classList.remove('hidden'); }
+  try { await sbAuth.signIn(email,pwd); await window._liffAutoLink?.(); location.reload(); }
+  catch(e) { err.textContent=e.message; err.classList.remove('hidden'); }
 }
 async function signOut() { await sbAuth.signOut(); location.reload(); }
 function showForgotPw(show) {
-  document.getElementById('loginPanel').style.display = show ? 'none' : '';
-  document.getElementById('forgotPanel').style.display = show ? '' : 'none';
-  if (show) setTimeout(() => document.getElementById('resetEmail').focus(), 50);
+  document.getElementById('loginPanel').style.display = show?'none':'';
+  document.getElementById('forgotPanel').style.display = show?'':'none';
+  if (show) setTimeout(()=>document.getElementById('resetEmail').focus(),50);
 }
 async function sendPasswordReset() {
   const email = document.getElementById('resetEmail').value.trim();
   const msg = document.getElementById('resetMsg');
   msg.style.display = '';
-  if (!email) { msg.textContent = 'กรุณาใส่อีเมล'; msg.style.color = '#ef4444'; return; }
+  if (!email) { msg.textContent='กรุณาใส่อีเมล'; msg.style.color='#ef4444'; return; }
   try {
     await sbAuth.resetPasswordForEmail(email);
-    msg.textContent = '✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว';
-    msg.style.color = '#16a34a';
-  } catch(e) {
-    msg.textContent = e.message || 'เกิดข้อผิดพลาด';
-    msg.style.color = '#ef4444';
-  }
+    msg.textContent='✅ ส่งลิ้งก์รีเซ็ตไปที่อีเมลแล้ว'; msg.style.color='#16a34a';
+  } catch(e) { msg.textContent=e.message||'เกิดข้อผิดพลาด'; msg.style.color='#ef4444'; }
 }
-
 async function loadNurses() {
-  try {
-    nursesList = await sbDB.list('nurses', { eq:{active:true}, order:'sort_order', asc:true });
-  } catch(e) { nursesList = []; }
+  try { nursesList = await sbDB.list('nurses',{eq:{active:true},order:'sort_order',asc:true}); }
+  catch(e) { nursesList=[]; }
   document.getElementById('nurses-options').innerHTML =
-    nursesList.filter(n => n.role === 'พยาบาลวิสัญญี')
-      .map(n => `<option value="${n.name}"></option>`).join('');
+    nursesList.filter(n=>n.role==='พยาบาลวิสัญญี').map(n=>`<option value="${n.name}"></option>`).join('');
 }
 
 /* ── SAVE ─────────────────────────────────── */
@@ -488,33 +548,39 @@ async function saveInspection() {
   const date = document.getElementById('inspDate').value;
 
   const machineItems = currentEquipment.machine.map(eq => ({
-    eq_id: eq.id, name: eq.name || eq.kind,
-    brand: eq.brand || '', model: eq.model || '',
-    state: states.machine[eq.id] || 'pending'
+    eq_id: eq.id, name: eq.name||eq.kind, brand: eq.brand||'', model: eq.model||'',
+    checks: MACHINE_ITEMS.map(c => ({
+      code: c.code, name: c.name,
+      state: (states.machine[eq.id]||{})[c.code] || 'pending'
+    }))
   }));
   const monitorItems = currentEquipment.monitor.map(eq => ({
-    eq_id: eq.id, name: eq.name || eq.kind,
-    brand: eq.brand || '', model: eq.model || '',
-    state: states.monitor[eq.id] || 'pending'
+    eq_id: eq.id, name: eq.name||eq.kind, brand: eq.brand||'', model: eq.model||'',
+    checks: MONITOR_ITEMS.map(c => ({
+      code: c.code, name: c.name,
+      state: (states.monitor[eq.id]||{})[c.code] || 'pending'
+    }))
   }));
 
-  if (machineItems.length === 0 && monitorItems.length === 0) {
+  if (machineItems.length===0 && monitorItems.length===0) {
     sbUtils.toast('ไม่พบเครื่องมือในห้องนี้ กรุณาเพิ่มในทะเบียนก่อน','error'); return;
   }
-  const checkedCount = [...machineItems, ...monitorItems].filter(i => i.state !== 'pending').length;
-  if (checkedCount === 0 && !confirm('ยังไม่ได้ตรวจรายการใดเลย — บันทึกต่อไหม?')) return;
+  const allChecks = [...machineItems.flatMap(e=>e.checks), ...monitorItems.flatMap(e=>e.checks)];
+  const checkedCount = allChecks.filter(c=>c.state!=='pending').length;
+  if (checkedCount===0 && !confirm('ยังไม่ได้ตรวจรายการใดเลย — บันทึกต่อไหม?')) return;
 
-  const mDone = machineItems.filter(i=>i.state!=='pending').length;
-  const vDone = monitorItems.filter(i=>i.state!=='pending').length;
+  const mDone = machineItems.flatMap(e=>e.checks).filter(c=>c.state!=='pending').length;
+  const vDone = monitorItems.flatMap(e=>e.checks).filter(c=>c.state!=='pending').length;
+  const mTotal = machineItems.flatMap(e=>e.checks).length;
+  const vTotal = monitorItems.flatMap(e=>e.checks).length;
 
   try {
     document.getElementById('saveBtn').disabled = true;
     await sbDB.insert('daily_inspections', {
-      date, room,
-      inspector_id: currentUser.id,
+      date, room, inspector_id: currentUser.id,
       items: {
         nurse: document.getElementById('inspNurse').value,
-        check: `Machine ${mDone}/${machineItems.length} · Monitor ${vDone}/${monitorItems.length}`,
+        check: `Machine ${mDone}/${mTotal} · Monitor ${vDone}/${vTotal}`,
         machine: machineItems,
         monitor: monitorItems
       },
@@ -524,7 +590,8 @@ async function saveInspection() {
     document.getElementById('machineNotes').value = '';
     document.getElementById('monitorNotes').value = '';
     states = { machine:{}, monitor:{} };
-    renderLists();
+    renderEquipmentList('machine');
+    renderEquipmentList('monitor');
     loadHistory(date);
     loadDashboard(date);
   } catch(e) { sbUtils.toast(e.message,'error'); }
@@ -537,29 +604,31 @@ let _histCache = {};
 async function loadHistory(date) {
   if (!date) date = new Date().toISOString().slice(0,10);
   try {
-    const hist = await sbDB.list('daily_inspections', { eq:{date}, order:'created_at', asc:false });
+    const hist = await sbDB.list('daily_inspections',{eq:{date},order:'created_at',asc:false});
     const el = document.getElementById('historyList');
-    if (hist.length === 0) { el.innerHTML = '<div class="text-slate-400">ยังไม่มีบันทึกวันนี้</div>'; return; }
+    if (hist.length===0) { el.innerHTML='<div class="text-slate-400">ยังไม่มีบันทึกวันนี้</div>'; return; }
     _histCache = {};
     el.innerHTML = hist.map(h => {
       _histCache[h.id] = h;
-      const mItems = h.items?.machine || [];
-      const vItems = h.items?.monitor || [];
-      const mOk = mItems.filter(i=>i.state==='yes').length;
-      const mNo = mItems.filter(i=>i.state==='no').length;
-      const mNa = mItems.filter(i=>i.state==='na').length;
-      const vOk = vItems.filter(i=>i.state==='yes').length;
-      const vNo = vItems.filter(i=>i.state==='no').length;
-      const vNa = vItems.filter(i=>i.state==='na').length;
-      const hasIssue = mNo > 0 || vNo > 0;
+      const mChecks = (h.items?.machine||[]).flatMap(e => e.checks || (e.state?[e]:[]));
+      const vChecks = (h.items?.monitor||[]).flatMap(e => e.checks || (e.state?[e]:[]));
+      const mOk  = mChecks.filter(c=>c.state==='yes').length;
+      const mNo  = mChecks.filter(c=>c.state==='no').length;
+      const mNa  = mChecks.filter(c=>c.state==='na').length;
+      const vOk  = vChecks.filter(c=>c.state==='yes').length;
+      const vNo  = vChecks.filter(c=>c.state==='no').length;
+      const vNa  = vChecks.filter(c=>c.state==='na').length;
+      const mEq  = (h.items?.machine||[]).length;
+      const vEq  = (h.items?.monitor||[]).length;
+      const hasIssue = mNo>0||vNo>0;
       return `<div class="bg-slate-800 p-3 rounded-lg cursor-pointer hover:bg-slate-700 transition" onclick="openInspEditById('${h.id}')">
         <div class="flex justify-between items-center gap-2">
           <div class="font-medium truncate">${h.room||'-'} · ${h.items?.nurse||''} · ${new Date(h.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
           <div class="text-xs flex-shrink-0 ${hasIssue?'text-rose-400 font-semibold':'text-slate-400'}">${hasIssue?'⚠️ พบปัญหา':''}</div>
         </div>
         <div class="text-xs text-slate-400 mt-1 flex flex-wrap gap-x-3">
-          ${mItems.length ? `<span>Machine: <span class="text-emerald-400">${mOk} พร้อม</span>${mNo?` · <span class="text-rose-400">${mNo} ไม่พร้อม</span>`:''}${mNa?` · ${mNa} ไม่มี`:''}</span>` : ''}
-          ${vItems.length ? `<span>Monitor: <span class="text-emerald-400">${vOk} พร้อม</span>${vNo?` · <span class="text-rose-400">${vNo} ไม่พร้อม</span>`:''}${vNa?` · ${vNa} ไม่มี`:''}</span>` : ''}
+          ${mEq?`<span>Machine (${mEq} เครื่อง): <span class="text-emerald-400">${mOk} พร้อม</span>${mNo?` · <span class="text-rose-400">${mNo} ไม่พร้อม</span>`:''}${mNa?` · ${mNa} ไม่มี`:''}</span>`:''}
+          ${vEq?`<span>Monitor (${vEq} เครื่อง): <span class="text-emerald-400">${vOk} พร้อม</span>${vNo?` · <span class="text-rose-400">${vNo} ไม่พร้อม</span>`:''}${vNa?` · ${vNa} ไม่มี`:''}</span>`:''}
         </div>
       </div>`;
     }).join('');
@@ -569,8 +638,7 @@ async function loadHistory(date) {
 function subscribeRT() {
   sbRT.subscribe('daily_inspections', () => {
     const d = document.getElementById('inspDate').value;
-    loadHistory(d);
-    loadDashboard(d);
+    loadHistory(d); loadDashboard(d);
   });
 }
 
@@ -579,84 +647,112 @@ let _editStates = { machine:{}, monitor:{} };
 let _editId = null;
 
 function openInspEditById(id) {
-  const h = _histCache[id];
-  if (h) openInspEdit(h);
+  const h = _histCache[id]; if (h) openInspEdit(h);
 }
 
 function openInspEdit(h) {
   if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
   _editId = h.id;
   _editStates = { machine:{}, monitor:{} };
-  const items = h.items || {};
-  (items.machine||[]).forEach(it => { _editStates.machine[it.eq_id || it.code] = it.state; });
-  (items.monitor||[]).forEach(it => { _editStates.monitor[it.eq_id || it.code] = it.state; });
+  const items = h.items||{};
 
-  const COLORS = { yes:'#10b981', no:'#ef4444', na:'#f59e0b' };
-  const pillStyle = (active, v) => active
-    ? `background:${COLORS[v]};color:#fff;border-color:${COLORS[v]}`
-    : 'background:#1e293b;color:#94a3b8;border-color:#475569';
+  // Load existing states — key format: `eqId::checkCode`
+  const loadEqStates = (section, arr) => {
+    (arr||[]).forEach(eq => {
+      const eqKey = eq.eq_id||eq.code||eq.id||'';
+      if (eq.checks) {
+        eq.checks.forEach(c => {
+          _editStates[section][`${eqKey}::${c.code}`] = c.state||'pending';
+        });
+      } else {
+        // backward compat: old record with single state
+        const checks = section==='machine' ? MACHINE_ITEMS : MONITOR_ITEMS;
+        checks.forEach(c => { _editStates[section][`${eqKey}::${c.code}`] = eq.state||'pending'; });
+      }
+    });
+  };
+  loadEqStates('machine', items.machine);
+  loadEqStates('monitor', items.monitor);
 
-  const renderEditList = (section, arr) => arr.map(it => {
-    const key = it.eq_id || it.code;
-    const st  = _editStates[section][key] || '';
-    const desc = [it.brand, it.model].filter(Boolean).join(' / ');
-    return `<div class="flex items-start gap-2 py-2 border-b border-slate-700 last:border-0">
-      <div class="flex-1 text-sm">
-        <div>${it.name}</div>
-        ${desc ? `<div class="text-xs text-slate-400">${desc}</div>` : ''}
-      </div>
-      <div class="flex gap-1 flex-wrap justify-end flex-shrink-0">
-        ${['yes','no','na'].map(v => `
-          <button data-s="${section}" data-c="${key}" data-v="${v}"
-            class="edit-pill text-xs px-2 py-1 rounded-full border font-medium"
-            style="${pillStyle(st===v, v)}"
-            onclick="setEditPill(this)">${v==='yes'?'พร้อม':v==='no'?'ไม่พร้อม':'ไม่มี'}</button>
-        `).join('')}
-      </div>
-    </div>`;
-  }).join('');
+  const renderEditEqList = (section, arr) => {
+    const checkDefs = section==='machine' ? MACHINE_ITEMS : MONITOR_ITEMS;
+    return (arr||[]).map(eq => {
+      const eqKey  = eq.eq_id||eq.code||eq.id||'';
+      const desc   = [eq.brand,eq.model].filter(Boolean).join(' / ');
+      const checkItems = eq.checks?.length ? eq.checks : checkDefs.map(c=>({...c,state:'pending'}));
+      const rows = checkItems.map(c => {
+        const flatKey = `${eqKey}::${c.code}`;
+        const st = _editStates[section][flatKey] || c.state || '';
+        return `<div class="flex items-start gap-2 py-1.5 border-b border-slate-700/60 last:border-0">
+          <div class="flex-1 text-sm leading-snug">
+            ${c.name}<span class="text-xs text-slate-500 ml-1">${c.code}</span>
+          </div>
+          <div class="flex gap-1 flex-wrap justify-end flex-shrink-0">
+            ${['yes','no','na'].map(v=>`
+              <button data-s="${section}" data-c="${flatKey}" data-v="${v}"
+                class="edit-pill text-xs px-2 py-0.5 rounded-full border font-medium"
+                style="${st===v?`background:${PILL_COLORS[v]};color:#fff;border-color:${PILL_COLORS[v]}`:'background:#1e293b;color:#94a3b8;border-color:#475569'}"
+                onclick="setEditPill(this)">${v==='yes'?'พร้อม':v==='no'?'ไม่พร้อม':'ไม่มี'}</button>`).join('')}
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="bg-slate-900 rounded-xl p-3 mb-2">
+        <div class="font-semibold text-sm mb-0.5">${eq.name||eq.kind||'-'}</div>
+        ${desc?`<div class="text-xs text-slate-400 mb-2">${desc}</div>`:''}
+        ${rows}
+      </div>`;
+    }).join('');
+  };
 
   document.getElementById('editTitle').textContent =
     `${h.room||'-'} · ${new Date(h.date||h.created_at).toLocaleDateString('th-TH')}`;
   document.getElementById('editBody').innerHTML = `
-    <div class="text-xs text-slate-400 mb-2">วิสัญญี: ${items.nurse||'-'}</div>
-    ${items.machine?.length ? `<div class="text-sm font-semibold text-emerald-400 mb-1">Machine (${items.machine.length} เครื่อง)</div>${renderEditList('machine', items.machine)}` : ''}
-    ${items.monitor?.length ? `<div class="text-sm font-semibold text-blue-400 mb-1 mt-3">Monitor (${items.monitor.length} เครื่อง)</div>${renderEditList('monitor', items.monitor)}` : ''}
+    <div class="text-xs text-slate-400 mb-3">วิสัญญี: ${items.nurse||'-'}</div>
+    ${items.machine?.length?`<div class="text-sm font-semibold text-emerald-400 mb-2">Machine (${items.machine.length} เครื่อง)</div>${renderEditEqList('machine',items.machine)}`:''}
+    ${items.monitor?.length?`<div class="text-sm font-semibold text-blue-400 mb-2 mt-3">Monitor (${items.monitor.length} เครื่อง)</div>${renderEditEqList('monitor',items.monitor)}`:''}
     <div class="mt-3">
       <label class="text-xs text-slate-400 block mb-1">หมายเหตุ</label>
       <textarea id="editNotes" class="input" rows="2">${h.notes||''}</textarea>
-    </div>
-  `;
+    </div>`;
   document.getElementById('editModal').classList.remove('hidden');
   document.getElementById('editModal').classList.add('flex');
 }
 
 function setEditPill(btn) {
-  const s = btn.dataset.s, c = btn.dataset.c, v = btn.dataset.v;
-  _editStates[s][c] = (_editStates[s][c] === v) ? 'pending' : v;
-  const COLORS = { yes:'#10b981', no:'#ef4444', na:'#f59e0b' };
+  const s=btn.dataset.s, c=btn.dataset.c, v=btn.dataset.v;
+  _editStates[s][c] = (_editStates[s][c]===v) ? 'pending' : v;
   document.querySelectorAll(`.edit-pill[data-s="${s}"][data-c="${c}"]`).forEach(b => {
-    const active = _editStates[s][c] === b.dataset.v;
-    b.style.background   = active ? COLORS[b.dataset.v] : '#1e293b';
-    b.style.color        = active ? '#fff' : '#94a3b8';
-    b.style.borderColor  = active ? COLORS[b.dataset.v] : '#475569';
+    const active = _editStates[s][c]===b.dataset.v && b.dataset.v!=='pending';
+    b.style.background  = active ? PILL_COLORS[b.dataset.v] : '#1e293b';
+    b.style.color       = active ? '#fff' : '#94a3b8';
+    b.style.borderColor = active ? PILL_COLORS[b.dataset.v] : '#475569';
   });
 }
 
 async function saveInspEdit() {
-  if (!_editId || !currentUser) return;
+  if (!_editId||!currentUser) return;
   const btn = document.getElementById('saveEditBtn');
   btn.disabled = true;
   try {
-    const { data: orig } = await sb.from('daily_inspections').select('*').eq('id',_editId).single();
+    const { data:orig } = await sb.from('daily_inspections').select('*').eq('id',_editId).single();
     if (!orig) throw new Error('ไม่พบข้อมูล');
     const updItems = { ...orig.items };
-    updItems.machine = (orig.items?.machine||[]).map(it => ({
-      ...it, state: _editStates.machine[it.eq_id || it.code] ?? it.state
-    }));
-    updItems.monitor = (orig.items?.monitor||[]).map(it => ({
-      ...it, state: _editStates.monitor[it.eq_id || it.code] ?? it.state
-    }));
+
+    const updateEqArr = (section, arr) => (arr||[]).map(eq => {
+      const eqKey    = eq.eq_id||eq.code||eq.id||'';
+      const checkDefs = section==='machine' ? MACHINE_ITEMS : MONITOR_ITEMS;
+      const origChecks = eq.checks?.length ? eq.checks : checkDefs.map(c=>({...c,state:'pending'}));
+      return {
+        ...eq,
+        checks: origChecks.map(c => ({
+          ...c,
+          state: _editStates[section][`${eqKey}::${c.code}`] ?? c.state
+        }))
+      };
+    });
+    updItems.machine = updateEqArr('machine', orig.items?.machine);
+    updItems.monitor = updateEqArr('monitor', orig.items?.monitor);
+
     await sbDB.update('daily_inspections', _editId, {
       items: updItems,
       notes: document.getElementById('editNotes').value
@@ -664,10 +760,9 @@ async function saveInspEdit() {
     sbUtils.toast('แก้ไขแล้ว ✓','success');
     closeInspEdit();
     const d = document.getElementById('inspDate').value;
-    loadHistory(d);
-    loadDashboard(d);
+    loadHistory(d); loadDashboard(d);
   } catch(e) { sbUtils.toast(e.message,'error'); }
-  finally { btn.disabled = false; }
+  finally { btn.disabled=false; }
 }
 
 function closeInspEdit() {
