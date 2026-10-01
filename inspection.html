@@ -295,8 +295,24 @@ const ROOMS_FALLBACK = [
   'OR1','OR2','OR3','OR4','OR5','OR6','OR7','OR8','OR9','OR10','OR11','OR12',
   'OR41','OR42','OR43','OR44','OR45',
   'OR CVT1','OR CVT2','ESWL','Cath Lab',
-  'RR2','RR3','RR ตึกหัวใจ','PACU','ส่วนกลาง'
+  'RR2','RR3','RR4','RR ตึกหัวใจ','PACU','ส่วนกลาง'
 ];
+const ROOM_ORDER = [
+  'OR1','OR2','OR3','OR4','OR5','OR6','OR7','OR8','OR9','OR10','OR11','OR12',
+  'OR41','OR42','OR43','OR44','OR45',
+  'OR CVT1','OR CVT2','ESWL','Cath Lab',
+  'RR2','RR3','RR4','RR ตึกหัวใจ','PACU','ส่วนกลาง'
+];
+function sortRooms(arr) {
+  return [...arr].sort((a, b) => {
+    const ia = ROOM_ORDER.indexOf(a);
+    const ib = ROOM_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b, 'th');
+  });
+}
 // Default equipment used when a room has no registered equipment
 const DEFAULT_EQ = {
   machine: [{ id:'__machine__', name:'Machine', brand:'', model:'', asset_no:'', skh:'' }],
@@ -319,15 +335,15 @@ async function loadAllEquipment() {
       if (eq.kind === 'Machine') _eqByLocation[loc].machine.push(eq);
       else if (eq.kind === 'Monitor') _eqByLocation[loc].monitor.push(eq);
     });
-    _eqLocations = Object.keys(_eqByLocation).sort((a,b) => a.localeCompare(b,'th'));
+    _eqLocations = sortRooms(Object.keys(_eqByLocation));
   } catch(e) { console.warn('loadAllEquipment:', e.message); _eqLocations = []; }
 }
 
 function populateRooms() {
   const without = ROOMS_FALLBACK.filter(r => !_eqLocations.includes(r));
-  const all = [..._eqLocations, ...without];
+  const all = sortRooms([..._eqLocations, ...without]);
   document.getElementById('inspRoom').innerHTML = all.map(r =>
-    `<option value="${r}">${r}${_eqLocations.includes(r) ? '' : ''}</option>`
+    `<option value="${r}">${r}</option>`
   ).join('');
   if (all.length > 0) onRoomChange(all[0]);
 }
@@ -482,7 +498,7 @@ async function loadDashboard(date) {
       roomStatus[insp.room] = hasPending ? 'yellow' : 'green';
     });
 
-    grid.innerHTML = _eqLocations.map(loc => {
+    grid.innerHTML = sortRooms(_eqLocations).map(loc => {
       const status = roomStatus[loc] || 'red';
       const cls  = status==='green'?'dash-green':status==='yellow'?'dash-yellow':'dash-red';
       const icon = status==='green'?'✓':status==='yellow'?'△':'!';
