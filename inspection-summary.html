@@ -168,11 +168,11 @@ const MONITOR_ITEMS = [
   { code:'V08', name:'EtCO₂ (side=1)' },
 ];
 
-// init date defaults (last 7 days)
+// init date defaults — today
 const today = new Date();
-const week = new Date(today); week.setDate(today.getDate() - 6);
-document.getElementById('dateTo').value   = today.toISOString().slice(0,10);
-document.getElementById('dateFrom').value = week.toISOString().slice(0,10);
+const todayStr = today.toISOString().slice(0,10);
+document.getElementById('dateTo').value   = todayStr;
+document.getElementById('dateFrom').value = todayStr;
 
 // populate rooms
 document.getElementById('roomFilter').innerHTML =
@@ -379,7 +379,7 @@ function closeEdit() {
 
 (async () => {
   await ensureAuth();
-  await loadSummary();
+  await loadSummary();  // auto-load (default = today)
 })();
 </script>
 </body>

@@ -203,36 +203,13 @@
     </div>
   </div>
 
-  <!-- History -->
-  <div class="card p-4">
-    <div class="flex items-center justify-between mb-2">
-      <div class="font-semibold">📋 ประวัติวันนี้</div>
-      <a href="inspection-summary.html" class="text-xs text-blue-400 hover:text-blue-300">ดูทั้งหมด →</a>
-    </div>
-    <div id="historyList" class="space-y-1 text-sm"></div>
-  </div>
-
 </main>
 
 <!-- Fixed Save Button -->
 <div class="fixed bottom-0 left-0 right-0 p-3 bg-slate-900/95 backdrop-blur border-t border-slate-700 z-20">
-  <div class="max-w-3xl mx-auto">
-    <button class="btn btn-primary" onclick="saveInspection()" id="saveBtn">💾 บันทึกการตรวจสอบ</button>
-  </div>
-</div>
-
-<!-- Edit Modal -->
-<div id="editModal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
-  <div class="card p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-    <div class="flex items-start justify-between mb-3">
-      <div class="font-bold text-base" id="editTitle">รายละเอียดการตรวจ</div>
-      <button onclick="closeInspEdit()" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
-    </div>
-    <div id="editBody"></div>
-    <div class="flex gap-2 mt-4">
-      <button onclick="closeInspEdit()" class="btn btn-ghost flex-1">ปิด</button>
-      <button onclick="saveInspEdit()" class="btn btn-primary flex-1" id="saveEditBtn">💾 บันทึก</button>
-    </div>
+  <div class="max-w-3xl mx-auto flex gap-2">
+    <button class="btn btn-primary flex-1" onclick="saveInspection()" id="saveBtn">💾 บันทึกการตรวจสอบ</button>
+    <a href="inspection-summary.html" class="btn btn-ghost" style="width:auto;padding:14px 18px;text-decoration:none;text-align:center;">📋 สรุป</a>
   </div>
 </div>
 
@@ -625,183 +602,15 @@ async function saveInspection() {
     states = { machine:{}, monitor:{} };
     renderEquipmentList('machine');
     renderEquipmentList('monitor');
-    loadHistory(date);
     loadDashboard(date);
   } catch(e) { sbUtils.toast(e.message,'error'); }
   finally { document.getElementById('saveBtn').disabled = false; }
 }
 
-/* ── HISTORY ─────────────────────────────── */
-let _histCache = {};
-
-async function loadHistory(date) {
-  if (!date) date = new Date().toISOString().slice(0,10);
-  try {
-    const hist = await sbDB.list('daily_inspections',{eq:{date},order:'created_at',asc:false});
-    const el = document.getElementById('historyList');
-    if (hist.length===0) { el.innerHTML='<div class="text-slate-400">ยังไม่มีบันทึกวันนี้</div>'; return; }
-    _histCache = {};
-    el.innerHTML = hist.map(h => {
-      _histCache[h.id] = h;
-      const mChecks = (h.items?.machine||[]).flatMap(e => e.checks || (e.state?[e]:[]));
-      const vChecks = (h.items?.monitor||[]).flatMap(e => e.checks || (e.state?[e]:[]));
-      const mOk  = mChecks.filter(c=>c.state==='yes').length;
-      const mNo  = mChecks.filter(c=>c.state==='no').length;
-      const mNa  = mChecks.filter(c=>c.state==='na').length;
-      const vOk  = vChecks.filter(c=>c.state==='yes').length;
-      const vNo  = vChecks.filter(c=>c.state==='no').length;
-      const vNa  = vChecks.filter(c=>c.state==='na').length;
-      const mEq  = (h.items?.machine||[]).length;
-      const vEq  = (h.items?.monitor||[]).length;
-      const hasIssue = mNo>0||vNo>0;
-      return `<div class="bg-slate-800 p-3 rounded-lg cursor-pointer hover:bg-slate-700 transition" onclick="openInspEditById('${h.id}')">
-        <div class="flex justify-between items-center gap-2">
-          <div class="font-medium truncate">${h.room||'-'} · ${h.items?.nurse||''} · ${new Date(h.created_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
-          <div class="text-xs flex-shrink-0 ${hasIssue?'text-rose-400 font-semibold':'text-slate-400'}">${hasIssue?'⚠️ พบปัญหา':''}</div>
-        </div>
-        <div class="text-xs text-slate-400 mt-1 flex flex-wrap gap-x-3">
-          ${mEq?`<span>Machine (${mEq} เครื่อง): <span class="text-emerald-400">${mOk} พร้อม</span>${mNo?` · <span class="text-rose-400">${mNo} ไม่พร้อม</span>`:''}${mNa?` · ${mNa} ไม่มี`:''}</span>`:''}
-          ${vEq?`<span>Monitor (${vEq} เครื่อง): <span class="text-emerald-400">${vOk} พร้อม</span>${vNo?` · <span class="text-rose-400">${vNo} ไม่พร้อม</span>`:''}${vNa?` · ${vNa} ไม่มี`:''}</span>`:''}
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e) { console.warn('loadHistory:', e.message); }
-}
-
 function subscribeRT() {
   sbRT.subscribe('daily_inspections', () => {
-    const d = document.getElementById('inspDate').value;
-    loadHistory(d); loadDashboard(d);
+    loadDashboard(document.getElementById('inspDate').value);
   });
-}
-
-/* ── EDIT MODAL ──────────────────────────── */
-let _editStates = { machine:{}, monitor:{} };
-let _editId = null;
-
-function openInspEditById(id) {
-  const h = _histCache[id]; if (h) openInspEdit(h);
-}
-
-function openInspEdit(h) {
-  if (!currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
-  _editId = h.id;
-  _editStates = { machine:{}, monitor:{} };
-  const items = h.items||{};
-
-  // Load existing states — key format: `eqId::checkCode`
-  const loadEqStates = (section, arr) => {
-    (arr||[]).forEach(eq => {
-      const eqKey = eq.eq_id||eq.code||eq.id||'';
-      if (eq.checks) {
-        eq.checks.forEach(c => {
-          _editStates[section][`${eqKey}::${c.code}`] = c.state||'pending';
-        });
-      } else {
-        // backward compat: old record with single state
-        const checks = section==='machine' ? MACHINE_ITEMS : MONITOR_ITEMS;
-        checks.forEach(c => { _editStates[section][`${eqKey}::${c.code}`] = eq.state||'pending'; });
-      }
-    });
-  };
-  loadEqStates('machine', items.machine);
-  loadEqStates('monitor', items.monitor);
-
-  const renderEditEqList = (section, arr) => {
-    const checkDefs = section==='machine' ? MACHINE_ITEMS : MONITOR_ITEMS;
-    return (arr||[]).map(eq => {
-      const eqKey  = eq.eq_id||eq.code||eq.id||'';
-      const desc   = [eq.brand,eq.model].filter(Boolean).join(' / ');
-      const checkItems = eq.checks?.length ? eq.checks : checkDefs.map(c=>({...c,state:'pending'}));
-      const rows = checkItems.map(c => {
-        const flatKey = `${eqKey}::${c.code}`;
-        const st = _editStates[section][flatKey] || c.state || '';
-        return `<div class="flex items-start gap-2 py-1.5 border-b border-slate-700/60 last:border-0">
-          <div class="flex-1 text-sm leading-snug">
-            ${c.name}<span class="text-xs text-slate-500 ml-1">${c.code}</span>
-          </div>
-          <div class="flex gap-1 flex-wrap justify-end flex-shrink-0">
-            ${['yes','no','na'].map(v=>`
-              <button data-s="${section}" data-c="${flatKey}" data-v="${v}"
-                class="edit-pill text-xs px-2 py-0.5 rounded-full border font-medium"
-                style="${st===v?`background:${PILL_COLORS[v]};color:#fff;border-color:${PILL_COLORS[v]}`:'background:#1e293b;color:#94a3b8;border-color:#475569'}"
-                onclick="setEditPill(this)">${v==='yes'?'พร้อม':v==='no'?'ไม่พร้อม':'ไม่มี'}</button>`).join('')}
-          </div>
-        </div>`;
-      }).join('');
-      return `<div class="bg-slate-900 rounded-xl p-3 mb-2">
-        <div class="font-semibold text-sm mb-0.5">${eq.name||eq.kind||'-'}</div>
-        ${desc?`<div class="text-xs text-slate-400 mb-2">${desc}</div>`:''}
-        ${rows}
-      </div>`;
-    }).join('');
-  };
-
-  document.getElementById('editTitle').textContent =
-    `${h.room||'-'} · ${new Date(h.date||h.created_at).toLocaleDateString('th-TH')}`;
-  document.getElementById('editBody').innerHTML = `
-    <div class="text-xs text-slate-400 mb-3">วิสัญญี: ${items.nurse||'-'}</div>
-    ${items.machine?.length?`<div class="text-sm font-semibold text-emerald-400 mb-2">Machine (${items.machine.length} เครื่อง)</div>${renderEditEqList('machine',items.machine)}`:''}
-    ${items.monitor?.length?`<div class="text-sm font-semibold text-blue-400 mb-2 mt-3">Monitor (${items.monitor.length} เครื่อง)</div>${renderEditEqList('monitor',items.monitor)}`:''}
-    <div class="mt-3">
-      <label class="text-xs text-slate-400 block mb-1">หมายเหตุ</label>
-      <textarea id="editNotes" class="input" rows="2">${h.notes||''}</textarea>
-    </div>`;
-  document.getElementById('editModal').classList.remove('hidden');
-  document.getElementById('editModal').classList.add('flex');
-}
-
-function setEditPill(btn) {
-  const s=btn.dataset.s, c=btn.dataset.c, v=btn.dataset.v;
-  _editStates[s][c] = (_editStates[s][c]===v) ? 'pending' : v;
-  document.querySelectorAll(`.edit-pill[data-s="${s}"][data-c="${c}"]`).forEach(b => {
-    const active = _editStates[s][c]===b.dataset.v && b.dataset.v!=='pending';
-    b.style.background  = active ? PILL_COLORS[b.dataset.v] : '#1e293b';
-    b.style.color       = active ? '#fff' : '#94a3b8';
-    b.style.borderColor = active ? PILL_COLORS[b.dataset.v] : '#475569';
-  });
-}
-
-async function saveInspEdit() {
-  if (!_editId||!currentUser) return;
-  const btn = document.getElementById('saveEditBtn');
-  btn.disabled = true;
-  try {
-    const { data:orig } = await sb.from('daily_inspections').select('*').eq('id',_editId).single();
-    if (!orig) throw new Error('ไม่พบข้อมูล');
-    const updItems = { ...orig.items };
-
-    const updateEqArr = (section, arr) => (arr||[]).map(eq => {
-      const eqKey    = eq.eq_id||eq.code||eq.id||'';
-      const checkDefs = section==='machine' ? MACHINE_ITEMS : MONITOR_ITEMS;
-      const origChecks = eq.checks?.length ? eq.checks : checkDefs.map(c=>({...c,state:'pending'}));
-      return {
-        ...eq,
-        checks: origChecks.map(c => ({
-          ...c,
-          state: _editStates[section][`${eqKey}::${c.code}`] ?? c.state
-        }))
-      };
-    });
-    updItems.machine = updateEqArr('machine', orig.items?.machine);
-    updItems.monitor = updateEqArr('monitor', orig.items?.monitor);
-
-    await sbDB.update('daily_inspections', _editId, {
-      items: updItems,
-      notes: document.getElementById('editNotes').value
-    });
-    sbUtils.toast('แก้ไขแล้ว ✓','success');
-    closeInspEdit();
-    const d = document.getElementById('inspDate').value;
-    loadHistory(d); loadDashboard(d);
-  } catch(e) { sbUtils.toast(e.message,'error'); }
-  finally { btn.disabled=false; }
-}
-
-function closeInspEdit() {
-  document.getElementById('editModal').classList.add('hidden');
-  document.getElementById('editModal').classList.remove('flex');
-  _editId = null;
 }
 
 /* ── INIT ─────────────────────────────────── */
@@ -828,7 +637,6 @@ document.getElementById('dashDate').value = todayStr;
   await loadAllEquipment();
   populateRooms(); // re-populate with real equipment locations
 
-  await loadHistory(todayStr);
   await loadDashboard(todayStr);
   subscribeRT();
 })();
