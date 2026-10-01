@@ -297,6 +297,11 @@ const ROOMS_FALLBACK = [
   'OR CVT1','OR CVT2','ESWL','Cath Lab',
   'RR2','RR3','RR ตึกหัวใจ','PACU','ส่วนกลาง'
 ];
+// Default equipment used when a room has no registered equipment
+const DEFAULT_EQ = {
+  machine: [{ id:'__machine__', name:'Machine', brand:'', model:'', asset_no:'', skh:'' }],
+  monitor: [{ id:'__monitor__', name:'Monitor',  brand:'', model:'', asset_no:'', skh:'' }]
+};
 let _eqLocations = [];
 let _eqByLocation = {};
 let currentEquipment = { machine:[], monitor:[] };
@@ -322,16 +327,26 @@ function populateRooms() {
   const without = ROOMS_FALLBACK.filter(r => !_eqLocations.includes(r));
   const all = [..._eqLocations, ...without];
   document.getElementById('inspRoom').innerHTML = all.map(r =>
-    `<option value="${r}">${r}${_eqLocations.includes(r) ? '' : ' *'}</option>`
+    `<option value="${r}">${r}${_eqLocations.includes(r) ? '' : ''}</option>`
   ).join('');
   if (all.length > 0) onRoomChange(all[0]);
 }
 
 function onRoomChange(room) {
   states = { machine:{}, monitor:{} };
-  currentEquipment = _eqByLocation[room]
-    ? { machine:[..._eqByLocation[room].machine], monitor:[..._eqByLocation[room].monitor] }
-    : { machine:[], monitor:[] };
+  if (_eqByLocation[room]) {
+    const loc = _eqByLocation[room];
+    currentEquipment = {
+      machine: loc.machine.length > 0 ? [...loc.machine] : [...DEFAULT_EQ.machine],
+      monitor: loc.monitor.length > 0 ? [...loc.monitor] : [...DEFAULT_EQ.monitor]
+    };
+  } else {
+    // Room has no registered equipment — use defaults so checklist always shows
+    currentEquipment = {
+      machine: [...DEFAULT_EQ.machine],
+      monitor: [...DEFAULT_EQ.monitor]
+    };
+  }
   renderEquipmentList('machine');
   renderEquipmentList('monitor');
   updateTabCounts();
@@ -366,6 +381,7 @@ function renderEquipmentList(kind) {
     const statusCls  = issues > 0 ? 'text-rose-400' : done === total ? 'text-emerald-400' : 'text-slate-400';
     const statusText = issues > 0 ? `⚠️ ${issues} รายการ` : done === total ? `✓ ครบ ${total}` : `${done}/${total}`;
 
+    const isDefault = eq.id.startsWith('__');
     const desc = [eq.brand, eq.model].filter(Boolean).join(' / ');
     const sub  = [eq.asset_no, eq.skh].filter(Boolean).join(' · ');
 
@@ -391,6 +407,7 @@ function renderEquipmentList(kind) {
           <div class="font-semibold text-sm">${eq.name || eq.kind}</div>
           ${desc ? `<div class="text-xs text-slate-400 mt-0.5">${desc}</div>` : ''}
           ${sub  ? `<div class="text-xs text-slate-500">${sub}</div>` : ''}
+          ${isDefault ? `<div class="text-xs text-amber-500/80 mt-0.5">* ยังไม่มีในทะเบียน — เพิ่มได้ที่ บุคลากร → ทะเบียนเครื่องมือ</div>` : ''}
         </div>
         <div class="eq-card-hd-act">
           <span class="text-xs font-bold ${statusCls}">${statusText}</span>
@@ -778,10 +795,23 @@ document.getElementById('dashDate').value = todayStr;
 
 (async () => {
   if (window._liffAuthPromise) await window._liffAuthPromise;
-  await loadAllEquipment();
+
+  // Populate rooms with fallback first so the form is usable immediately
+  _eqByLocation = {}; _eqLocations = [];
   populateRooms();
+
   await loadNurses();
   await ensureAuth();
+
+  // Load equipment from DB (after auth so RLS tokens are ready)
+  document.getElementById('machineList').innerHTML =
+    '<div class="text-slate-400 text-sm py-3 text-center">⏳ กำลังโหลดเครื่องมือ...</div>';
+  document.getElementById('monitorList').innerHTML =
+    '<div class="text-slate-400 text-sm py-3 text-center">⏳ กำลังโหลดเครื่องมือ...</div>';
+
+  await loadAllEquipment();
+  populateRooms(); // re-populate with real equipment locations
+
   await loadHistory(todayStr);
   await loadDashboard(todayStr);
   subscribeRT();
