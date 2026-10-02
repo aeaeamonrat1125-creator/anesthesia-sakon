@@ -420,14 +420,27 @@
         <option value="ซ่อมแล้ว">🟡 ซ่อมแล้ว</option>
       </select>
       <button onclick="clearEqFilters()" class="text-xs text-slate-400 hover:text-slate-700 underline ml-1">ล้างตัวกรอง</button>
+      <div class="ml-auto flex gap-1">
+        <button id="eq-view-table-btn" onclick="setEqView('table')" title="มุมมองตาราง" class="p-1.5 rounded-lg border border-purple-600 bg-purple-600 text-white transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <button id="eq-view-card-btn" onclick="setEqView('card')" title="มุมมองการ์ด" class="p-1.5 rounded-lg border border-slate-300 bg-white text-slate-500 hover:border-purple-400 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        </button>
+      </div>
     </div>
-    <div class="card p-4 scroll-x">
+    <!-- TABLE VIEW -->
+    <div id="eq-table-wrap" class="card p-4 scroll-x">
       <table class="min-w-full text-sm">
         <thead class="text-slate-500 border-b text-left">
           <tr><th class="py-2">ชื่อ</th><th>ชนิด</th><th>ที่ตั้ง</th><th>ยี่ห้อ/รุ่น</th><th>Serial</th><th>เลขคุรุภัณฑ์</th><th>SKH</th><th>สถานะ</th><th>รับเข้า</th><th></th></tr>
         </thead>
         <tbody id="eqBody"></tbody>
       </table>
+    </div>
+    <!-- CARD VIEW -->
+    <div id="eq-card-wrap" class="hidden">
+      <div id="eqCardGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
     </div>
   </section>
 
@@ -1261,6 +1274,7 @@ async function deleteStaff(id) {
 
 // ===== EQUIPMENT =====
 let _eqKindFilter = '';
+let _eqView = 'table';
 function renderEquipment() {
   // สร้าง kind pills จากข้อมูลจริง
   const kinds = ['', ...[...new Set(cache.equipment.map(e => e.kind).filter(Boolean))].sort()];
@@ -1285,26 +1299,109 @@ function renderEquipment() {
   );
 
   document.getElementById('eq-count').textContent = filtered.length;
-  const tbody = document.getElementById('eqBody');
-  tbody.style.opacity = '0';
-  setTimeout(() => { tbody.style.opacity = '1'; }, 80);
-  tbody.innerHTML = filtered.map(e => {
-    const cls = e.status === 'ใช้งานได้' ? 'status-ok' : e.status === 'รอซ่อม' ? 'status-bad' : 'status-warn';
-    return `<tr class="border-b last:border-0 hover:bg-slate-50 cursor-pointer transition" onclick="openEqForm('${e.id}')">
-      <td class="py-2 font-medium">${e.name||'-'}</td>
-      <td class="text-xs">${e.kind||''}</td>
-      <td class="text-xs">${e.location||''}</td>
-      <td class="text-xs">${[e.brand,e.model].filter(Boolean).join(' / ')||''}</td>
-      <td class="text-xs font-mono">${e.serial||''}</td>
-      <td class="text-xs font-mono">${e.asset_no||''}</td>
-      <td class="text-xs font-mono">${e.skh||''}</td>
-      <td><span class="text-xs px-2 py-1 rounded-full ${cls}">${e.status||'-'}</span></td>
-      <td class="text-xs">${e.received_date||''}</td>
-      <td onclick="event.stopPropagation()">
-        <button class="text-blue-600 text-xs hover:underline" onclick="openEqForm('${e.id}')">แก้ไข</button>
-      </td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="10" class="text-center text-slate-500 py-4">ไม่พบเครื่องมือ</td></tr>';
+
+  if (_eqView === 'card') {
+    const grid = document.getElementById('eqCardGrid');
+    grid.style.opacity = '0';
+    setTimeout(() => { grid.style.opacity = '1'; grid.style.transition = 'opacity 0.15s'; }, 80);
+    grid.innerHTML = filtered.map(eqCard).join('') || '<p class="col-span-4 text-center text-slate-500 py-6">ไม่พบเครื่องมือ</p>';
+  } else {
+    const tbody = document.getElementById('eqBody');
+    tbody.style.opacity = '0';
+    setTimeout(() => { tbody.style.opacity = '1'; }, 80);
+    tbody.innerHTML = filtered.map(e => {
+      const cls = e.status === 'ใช้งานได้' ? 'status-ok' : e.status === 'รอซ่อม' ? 'status-bad' : 'status-warn';
+      return `<tr class="border-b last:border-0 hover:bg-slate-50 cursor-pointer transition" onclick="openEqForm('${e.id}')">
+        <td class="py-2 font-medium">${e.name||'-'}</td>
+        <td class="text-xs">${e.kind||''}</td>
+        <td class="text-xs">${e.location||''}</td>
+        <td class="text-xs">${[e.brand,e.model].filter(Boolean).join(' / ')||''}</td>
+        <td class="text-xs font-mono">${e.serial||''}</td>
+        <td class="text-xs font-mono">${e.asset_no||''}</td>
+        <td class="text-xs font-mono">${e.skh||''}</td>
+        <td><span class="text-xs px-2 py-1 rounded-full ${cls}">${e.status||'-'}</span></td>
+        <td class="text-xs">${e.received_date||''}</td>
+        <td onclick="event.stopPropagation()">
+          <button class="text-blue-600 text-xs hover:underline" onclick="openEqForm('${e.id}')">แก้ไข</button>
+        </td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="10" class="text-center text-slate-500 py-4">ไม่พบเครื่องมือ</td></tr>';
+  }
+}
+function setEqView(v) {
+  _eqView = v;
+  document.getElementById('eq-table-wrap').classList.toggle('hidden', v !== 'table');
+  document.getElementById('eq-card-wrap').classList.toggle('hidden', v !== 'card');
+  const tb = document.getElementById('eq-view-table-btn');
+  const cb = document.getElementById('eq-view-card-btn');
+  if (v === 'table') {
+    tb.className = 'p-1.5 rounded-lg border border-purple-600 bg-purple-600 text-white transition';
+    cb.className = 'p-1.5 rounded-lg border border-slate-300 bg-white text-slate-500 hover:border-purple-400 transition';
+  } else {
+    cb.className = 'p-1.5 rounded-lg border border-purple-600 bg-purple-600 text-white transition';
+    tb.className = 'p-1.5 rounded-lg border border-slate-300 bg-white text-slate-500 hover:border-purple-400 transition';
+  }
+  renderEquipment();
+}
+function eqCard(e) {
+  const badge = e.status === 'ใช้งานได้' ? 'bg-emerald-100 text-emerald-700' :
+                e.status === 'รอซ่อม'    ? 'bg-rose-100 text-rose-700' :
+                e.status === 'ซ่อมแล้ว'   ? 'bg-amber-100 text-amber-700' :
+                                            'bg-slate-100 text-slate-700';
+  const icoMap = { 'Machine':'⚙️','Monitor':'📊','Defibrillator':'⚡','Ventilator':'🫁','Infusion Pump':'💧','Suction':'🌀','Warmer':'🔥' };
+  const ico = icoMap[e.kind] || '🔧';
+  const imgSrc = e.image_url ? e.image_url.replace(/'/g,"&#39;") : '';
+  const nameEsc = (e.name||'').replace(/'/g,"&#39;");
+  return `<div class="border rounded-xl p-3 bg-white shadow-sm hover:shadow-md transition">
+    <div class="text-xs text-purple-600 font-semibold mb-1">${e.kind||'-'}</div>
+    ${e.image_url
+      ? `<img src="${imgSrc}" class="w-full h-36 object-cover rounded-lg mb-2 bg-slate-100 cursor-zoom-in" onclick="openLightbox('${imgSrc}','${nameEsc}')">`
+      : `<div class="w-full h-36 rounded-lg mb-2 bg-gradient-to-br from-purple-50 to-violet-100 flex items-center justify-center text-5xl">${ico}</div>`}
+    <div class="flex items-start justify-between gap-2 mb-1">
+      <div class="font-semibold text-slate-800 leading-tight text-sm">${e.name||'-'}</div>
+      <span class="text-xs px-2 py-0.5 rounded-full ${badge} whitespace-nowrap">${e.status||'-'}</span>
+    </div>
+    <div class="space-y-0.5 text-xs text-slate-600">
+      ${e.location  ? `<div>📍 ${e.location}</div>` : ''}
+      ${(e.brand||e.model) ? `<div>🏷️ ${[e.brand,e.model].filter(Boolean).join(' / ')}</div>` : ''}
+      ${e.serial    ? `<div>🔢 Serial: <span class="font-mono">${e.serial}</span></div>` : ''}
+      ${e.asset_no  ? `<div>📋 เลขคุรุภัณฑ์: <span class="font-mono">${e.asset_no}</span></div>` : ''}
+      ${e.skh       ? `<div>🔖 SKH: <span class="font-mono">${e.skh}</span></div>` : ''}
+      ${e.received_date ? `<div>📅 รับ ${sbUtils.fmtDate(e.received_date)}</div>` : ''}
+      ${e.repair_date   ? `<div>🔧 ซ่อม ${sbUtils.fmtDate(e.repair_date)}</div>` : ''}
+      ${e.notes     ? `<div class="text-slate-400 italic mt-1 truncate" title="${(e.notes||'').replace(/"/g,'&quot;')}">📝 ${e.notes}</div>` : ''}
+    </div>
+    <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center">
+      <button onclick="printEq('${e.id}')" class="text-xs text-slate-400 hover:text-purple-600 flex items-center gap-1 transition">🖨️ พิมพ์</button>
+      <button onclick="openEqForm('${e.id}')" class="text-xs text-blue-600 hover:underline">แก้ไข</button>
+    </div>
+  </div>`;
+}
+function printEq(id) {
+  const e = cache.equipment.find(x => x.id === id);
+  if (!e) return;
+  const w = window.open('','_blank','width=600,height=700');
+  w.document.write(`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
+  <title>ข้อมูลเครื่องมือ</title>
+  <style>body{font-family:Sarabun,sans-serif;padding:32px;color:#1e293b}h2{color:#6d28d9;margin-bottom:16px}table{width:100%;border-collapse:collapse}td{padding:6px 10px;border-bottom:1px solid #e2e8f0;font-size:14px}td:first-child{color:#64748b;width:40%}img{max-width:100%;border-radius:8px;margin-bottom:16px}@media print{button{display:none}}</style>
+  </head><body>
+  ${e.image_url ? `<img src="${e.image_url}">` : ''}
+  <h2>${e.name||'-'}</h2>
+  <table>
+    <tr><td>ชนิด</td><td>${e.kind||'-'}</td></tr>
+    <tr><td>ที่ตั้ง</td><td>${e.location||'-'}</td></tr>
+    <tr><td>ยี่ห้อ / รุ่น</td><td>${[e.brand,e.model].filter(Boolean).join(' / ')||'-'}</td></tr>
+    <tr><td>Serial</td><td>${e.serial||'-'}</td></tr>
+    <tr><td>เลขคุรุภัณฑ์</td><td>${e.asset_no||'-'}</td></tr>
+    <tr><td>SKH</td><td>${e.skh||'-'}</td></tr>
+    <tr><td>สถานะ</td><td>${e.status||'-'}</td></tr>
+    <tr><td>วันที่รับเข้า</td><td>${e.received_date||'-'}</td></tr>
+    <tr><td>วันที่ซ่อม</td><td>${e.repair_date||'-'}</td></tr>
+    <tr><td>หมายเหตุ</td><td>${e.notes||'-'}</td></tr>
+  </table>
+  <br><button onclick="window.print()">🖨️ พิมพ์</button>
+  </body></html>`);
+  w.document.close();
 }
 function setEqKind(k) { _eqKindFilter = k; renderEquipment(); }
 function clearEqFilters() {
