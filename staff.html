@@ -401,7 +401,8 @@
           <div class="text-white/70 text-sm mt-1">ทั้งหมด <span id="eq-count" class="font-bold text-white">0</span> รายการ</div>
         </div>
         <div class="flex gap-2 flex-wrap">
-          <button onclick="exportEquipExcelStaff()" class="bg-white/15 border border-white/25 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-white/25 transition">📥 Excel</button>
+          <button onclick="exportEquipExcelStaff()" class="bg-white/15 border border-white/25 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-white/25 transition">📥 ทะเบียน</button>
+          <button onclick="exportInspectionMonthly()" class="bg-white/15 border border-white/25 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-white/25 transition">📋 ตรวจเครื่องรายเดือน</button>
           <button class="flex items-center px-4 py-2 rounded-xl bg-white text-purple-700 text-sm font-semibold hover:bg-purple-50 shadow transition" onclick="openEqForm()">+ เพิ่มเครื่องมือ</button>
         </div>
       </div>
@@ -852,10 +853,6 @@
 </div>
 
 <footer class="text-center py-6 text-xs text-slate-500">
-  <button id="changePwFooterBtn" onclick="openChangePwStaff()"
-    class="hidden mb-4 mx-auto block bg-white border border-violet-200 text-violet-600 hover:bg-violet-50 font-semibold text-sm px-6 py-2.5 rounded-full shadow-sm transition">
-    🔒 เปลี่ยนรหัสผ่าน
-  </button>
   © 2026 หน่วยงานวิสัญญีพยาบาล โรงพยาบาลสกลนคร · V2 Supabase
 </footer>
 
@@ -880,7 +877,7 @@ window._liffAuthPromise = (async () => {
 </script>
 <script>
 let currentUser = null, currentProfile = null;
-const cache = { staff:[], equipment:[], schedule:[], meetings:[], activities:[], refers:[], documents:[], docTypes:[], ops:[], kpis:[], kpiHistory:[], announcements:[], nurses:[], orgChart:[], lineTokens:[] };
+const cache = { staff:[], equipment:[], schedule:[], meetings:[], activities:[], refers:[], documents:[], docTypes:[], ops:[], kpis:[], kpiHistory:[], announcements:[], nurses:[], orgChart:[], lineTokens:[], todayInspections:[] };
 
 // ===== FULLSCREEN =====
 function toggleFullscreen(on) {
@@ -924,7 +921,7 @@ function switchTab(tab) {
   if (tab === 'kpi-dashboard') renderKpiDashboard();
   if (tab === 'line') renderLineTokens();
   if (tab === 'audit') initAuditTab();
-  if (tab === 'equipment') renderEquipment();
+  if (tab === 'equipment') loadTodayInspections().then(renderEquipment);
   if (tab === 'schedule') loadSchedule();
   if (tab === 'meetings') renderMeetings();
   if (tab === 'activities') renderActivities();
@@ -961,7 +958,7 @@ async function ensureAuth() {
       currentProfile = await sbAuth.getProfile().catch(() => null);
       const uLabel = `${currentProfile?.full_name || u.email} · ${currentProfile?.role === 'admin' ? 'Admin' : 'Staff'}`;
       ['user-info'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=uLabel; });
-      ['signOutBtn','changePwFooterBtn'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
+      ['signOutBtn'].forEach(id => { document.getElementById(id)?.classList.remove('hidden'); });
       // ปุ่ม unlink LINE (แสดงเมื่อผูกบัญชีแล้ว)
       if (currentProfile?.line_user_id && !document.getElementById('unlinkLineBtn')) {
         document.getElementById('signOutBtn')?.insertAdjacentHTML('beforebegin',
@@ -1275,6 +1272,15 @@ async function deleteStaff(id) {
 // ===== EQUIPMENT =====
 let _eqKindFilter = '';
 let _eqView = 'table';
+
+async function loadTodayInspections() {
+  const today = new Date().toISOString().slice(0,10);
+  try {
+    cache.todayInspections = await sbDB.list('daily_inspections', { eq:{ date: today } });
+  } catch(e) {
+    cache.todayInspections = [];
+  }
+}
 function renderEquipment() {
   // สร้าง kind pills จากข้อมูลจริง
   const kinds = ['', ...[...new Set(cache.equipment.map(e => e.kind).filter(Boolean))].sort()];
@@ -1371,6 +1377,7 @@ function eqCard(e) {
       ${e.repair_date   ? `<div>🔧 ซ่อม ${sbUtils.fmtDate(e.repair_date)}</div>` : ''}
       ${e.notes     ? `<div class="text-slate-400 italic mt-1 truncate" title="${(e.notes||'').replace(/"/g,'&quot;')}">📝 ${e.notes}</div>` : ''}
     </div>
+    ${eqInspBadge(e.id, e.kind)}
     <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center">
       <button onclick="printEq('${e.id}')" class="text-xs text-slate-400 hover:text-purple-600 flex items-center gap-1 transition">🖨️ พิมพ์</button>
       <button onclick="openEqForm('${e.id}')" class="text-xs text-blue-600 hover:underline">แก้ไข</button>
@@ -1403,6 +1410,78 @@ function printEq(id) {
   </body></html>`);
   w.document.close();
 }
+function eqInspBadge(eqId, kind) {
+  const kindKey = (kind||'').toLowerCase() === 'monitor' ? 'monitor' : 'machine';
+  let found = null;
+  for (const rec of cache.todayInspections) {
+    const arr = rec.items?.[kindKey] || [];
+    const eq = arr.find(x => x.eq_id === eqId);
+    if (eq) { found = { eq, nurse: rec.items?.nurse||'', notes: rec.notes||'' }; break; }
+  }
+  if (!found) {
+    return `<div class="mt-2 text-xs text-slate-400 bg-slate-50 rounded-lg px-3 py-1.5">⬜ ยังไม่มีบันทึกตรวจวันนี้</div>`;
+  }
+  const checks = found.eq.checks || [];
+  const total = checks.length;
+  const yes = checks.filter(c => c.state === 'yes').length;
+  const no  = checks.filter(c => c.state === 'no').length;
+  const pct = total ? Math.round(yes/total*100) : 0;
+  const hasIssue = no > 0;
+  const failList = checks.filter(c => c.state === 'no').map(c => c.name).join(', ');
+  return `<div class="mt-2 rounded-lg px-3 py-2 text-xs ${hasIssue ? 'bg-rose-50 border border-rose-200' : 'bg-emerald-50 border border-emerald-200'}">
+    <div class="flex items-center justify-between mb-1">
+      <span class="font-semibold ${hasIssue ? 'text-rose-700' : 'text-emerald-700'}">${hasIssue ? '⚠️ พบปัญหา' : '✅ ผ่านการตรวจ'}</span>
+      <span class="${hasIssue ? 'text-rose-600' : 'text-emerald-600'}">${yes}/${total} รายการ (${pct}%)</span>
+    </div>
+    ${hasIssue ? `<div class="text-rose-600 leading-snug">❌ ${failList}</div>` : ''}
+    <div class="text-slate-500 mt-0.5">👤 ${found.nurse}</div>
+  </div>`;
+}
+
+async function exportInspectionMonthly() {
+  const monthInput = prompt('ระบุเดือนที่ต้องการ Export (รูปแบบ YYYY-MM เช่น 2026-10):', new Date().toISOString().slice(0,7));
+  if (!monthInput || !/^\d{4}-\d{2}$/.test(monthInput)) { sbUtils.toast('รูปแบบไม่ถูกต้อง','error'); return; }
+  sbUtils.toast('กำลังโหลดข้อมูล...','info');
+  try {
+    const [y, m] = monthInput.split('-');
+    const firstDay = `${y}-${m}-01`;
+    const lastDay  = new Date(+y, +m, 0).toISOString().slice(0,10);
+    const recs = await sbDB.list('daily_inspections', { order:'date', asc:true });
+    const filtered = recs.filter(r => r.date >= firstDay && r.date <= lastDay);
+    if (!filtered.length) { sbUtils.toast('ไม่พบข้อมูลในเดือนนี้','error'); return; }
+
+    const MACHINE_CODES = ['M01','M02','M03','M04','M05','M06','M07','M08','M09','M10','M11','M12','M13','M14','M15','M16','M17'];
+    const MONITOR_CODES = ['V01','V02','V03','V04','V05','V06','V07','V08'];
+    const MACHINE_NAMES = ['N2O,O2 พอ','ถัง O2 พอ','Vaporizer','Breathing system','Pop off valve','Scavenging','Ventilator','Water trap CO2','Water trap Pipeline','Desflurane/Sevo','Laryngoscope','Face mask','Stylet','Syringe 10ml','Stethoscope','Magill forceps','Ambu bag'];
+    const MONITOR_NAMES = ['NIBP','SpO₂','EKG','Temp','Cable A-line','Cuff BP Adult','Cuff BP Ped','EtCO₂'];
+
+    const mHeader = ['วันที่','ห้อง','ผู้ตรวจ','เครื่อง',...MACHINE_NAMES,'หมายเหตุ'];
+    const vHeader = ['วันที่','ห้อง','ผู้ตรวจ','Monitor',...MONITOR_NAMES,'หมายเหตุ'];
+    const mRows = [mHeader], vRows = [vHeader];
+
+    for (const rec of filtered) {
+      const nurse = rec.items?.nurse || '';
+      const notes = rec.notes || '';
+      for (const eq of (rec.items?.machine || [])) {
+        const checkMap = Object.fromEntries((eq.checks||[]).map(c => [c.code, c.state==='yes'?'✓':c.state==='no'?'✗':'-']));
+        mRows.push([rec.date, rec.room, nurse, eq.name, ...MACHINE_CODES.map(c => checkMap[c]||'-'), notes]);
+      }
+      for (const eq of (rec.items?.monitor || [])) {
+        const checkMap = Object.fromEntries((eq.checks||[]).map(c => [c.code, c.state==='yes'?'✓':c.state==='no'?'✗':'-']));
+        vRows.push([rec.date, rec.room, nurse, eq.name, ...MONITOR_CODES.map(c => checkMap[c]||'-'), notes]);
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(mRows), 'Machine');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(vRows), 'Monitor');
+    XLSX.writeFile(wb, `ตรวจเครื่อง-${monthInput}.xlsx`);
+    sbUtils.toast(`Export สำเร็จ ${filtered.length} บันทึก ✓`, 'success');
+  } catch(e) {
+    sbUtils.toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
+  }
+}
+
 function setEqKind(k) { _eqKindFilter = k; renderEquipment(); }
 function clearEqFilters() {
   _eqKindFilter = '';
