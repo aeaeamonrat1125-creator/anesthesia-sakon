@@ -122,6 +122,7 @@
     </div>
     <div id="editBody"></div>
     <div class="flex gap-2 mt-4">
+      <button onclick="deleteInsp()" class="btn flex-shrink-0" style="background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;" id="deleteInspBtn">🗑️ ลบ</button>
       <button onclick="closeEdit()" class="btn btn-ghost flex-1">ปิด</button>
       <button onclick="saveEdit()" class="btn btn-primary flex-1" id="saveEditBtn">💾 บันทึก</button>
     </div>
@@ -321,7 +322,10 @@ async function openEdit(id) {
   const dateStr = new Date(h.date).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'});
   document.getElementById('editTitle').textContent = `${h.room||'-'} · ${dateStr}`;
   document.getElementById('editBody').innerHTML = `
-    <div class="text-xs text-slate-400 mb-3">วิสัญญี: ${h.items?.nurse||'-'}</div>
+    <div class="mb-3">
+      <label class="text-xs text-slate-400 block mb-1">👤 ชื่อผู้ตรวจ</label>
+      <input id="editNurse" class="input" value="${(h.items?.nurse||'').replace(/"/g,'&quot;')}" placeholder="ชื่อวิสัญญีพยาบาล">
+    </div>
     ${h.items?.machine?.length ? `<div class="text-sm font-semibold text-emerald-400 mb-2">Machine (17 รายการ)</div>${renderPills('machine',MACHINE_ITEMS,'พร้อม','ไม่พร้อม')}` : ''}
     ${h.items?.monitor?.length ? `<div class="text-sm font-semibold text-blue-400 mb-2 mt-4">Monitor (8 รายการ)</div>${renderPills('monitor',MONITOR_ITEMS,'มี','ไม่มี')}` : ''}
     <div class="mt-3">
@@ -352,15 +356,9 @@ async function saveEdit() {
     const h = _allInsp.find(x => x.id === _editId);
     if (!h) throw new Error('ไม่พบข้อมูล');
     const updItems = { ...h.items };
-    updItems.machine = MACHINE_ITEMS.map(it => ({
-      code:it.code, name:it.name, state: _editStates.machine[it.code] || 'pending'
-    }));
-    updItems.monitor = MONITOR_ITEMS.map(it => ({
-      code:it.code, name:it.name, state: _editStates.monitor[it.code] || 'pending'
-    }));
+    updItems.nurse = document.getElementById('editNurse').value.trim();
     const notes = document.getElementById('editNotes').value;
     await sbDB.update('daily_inspections', _editId, { items: updItems, notes });
-    // update local cache
     const idx = _allInsp.findIndex(x => x.id === _editId);
     if (idx >= 0) { _allInsp[idx].items = updItems; _allInsp[idx].notes = notes; }
     sbUtils.toast('แก้ไขแล้ว ✓','success');
@@ -375,6 +373,24 @@ function closeEdit() {
   document.getElementById('editModal').classList.add('hidden');
   document.getElementById('editModal').classList.remove('flex');
   _editId = null;
+}
+
+async function deleteInsp() {
+  if (!_editId || !currentUser) { sbUtils.toast('กรุณาเข้าสู่ระบบก่อน','error'); return; }
+  const h = _allInsp.find(x => x.id === _editId);
+  if (!h) return;
+  const dateStr = new Date(h.date).toLocaleDateString('th-TH',{month:'short',day:'numeric'});
+  if (!confirm(`ลบบันทึกการตรวจ ${h.room} · ${dateStr} · ${h.items?.nurse||'-'} ?\n\nการลบไม่สามารถย้อนกลับได้`)) return;
+  const btn = document.getElementById('deleteInspBtn');
+  btn.disabled = true;
+  try {
+    await sbDB.remove('daily_inspections', _editId);
+    _allInsp = _allInsp.filter(x => x.id !== _editId);
+    sbUtils.toast('ลบแล้ว ✓','success');
+    closeEdit();
+    renderList();
+    renderStats();
+  } catch(e) { sbUtils.toast(e.message,'error'); btn.disabled = false; }
 }
 
 (async () => {
